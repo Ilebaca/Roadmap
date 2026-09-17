@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SELECTABLE_STATES, stateLabel } from '../lib/permissions'
-import { formatLong, formatStamp } from '../lib/dates'
-import { Check, Lock, Trash } from './Icons'
+import { formatRange, formatStamp } from '../lib/dates'
+import { Check, Lock, Pen, Trash } from './Icons'
 
 /**
  * A single content block sitting on the right of the date line.
@@ -28,6 +28,7 @@ export default function BlockCard({
   const innerRef = useRef(null)
   const [title, setTitle] = useState(block.title)
   const [description, setDescription] = useState(block.description)
+  const [editingDates, setEditingDates] = useState(false)
 
   // Keep local edit buffers in sync when the row changes underneath us.
   useEffect(() => setTitle(block.title), [block.title])
@@ -55,20 +56,46 @@ export default function BlockCard({
 
       <div className="block-inner" ref={innerRef}>
         <header className="block-head">
-          <span className={`pill pill-${block.state}`}>{stateLabel(block.state)}</span>
+          <span className="pill">{stateLabel(block.state)}</span>
           {locked && (
-            <span className="pill pill-locked">
-              <Lock width="12" height="12" /> Locked
+            <span className="pill pill-quiet">
+              <Lock width="11" height="11" /> Locked
             </span>
           )}
-          <span className="block-span">
-            {formatLong(block.start_date)} → {formatLong(block.end_date)}
-          </span>
-          {canEdit && (
-            <button className="icon-btn danger" onClick={() => onDelete(block.id)} title="Delete block">
-              <Trash width="15" height="15" />
-            </button>
-          )}
+
+          {/* Start date and deadline live in the top-right corner. The pen
+              swaps them for two date pickers (admin only, unlocked only). */}
+          <div className={`block-dates ${editingDates ? 'is-editing' : ''}`}>
+            {editingDates ? (
+              <>
+                <input
+                  type="date"
+                  value={block.start_date}
+                  max={block.end_date}
+                  onChange={(e) => e.target.value && onPatch(block.id, { start_date: e.target.value })}
+                />
+                <span className="arrow">–</span>
+                <input
+                  type="date"
+                  value={block.end_date}
+                  min={block.start_date}
+                  onChange={(e) => e.target.value && onPatch(block.id, { end_date: e.target.value })}
+                />
+                <button className="icon-btn" onClick={() => setEditingDates(false)} title="Done">
+                  <Check width="13" height="13" />
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="block-span">{formatRange(block.start_date, block.end_date)}</span>
+                {canEdit && (
+                  <button className="icon-btn" onClick={() => setEditingDates(true)} title="Edit dates">
+                    <Pen width="13" height="13" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </header>
 
         {canEdit ? (
@@ -114,26 +141,9 @@ export default function BlockCard({
               </label>
             )}
             {canEdit && (
-              <>
-                <label className="ctl">
-                  <span>Start</span>
-                  <input
-                    type="date"
-                    value={block.start_date}
-                    max={block.end_date}
-                    onChange={(e) => e.target.value && onPatch(block.id, { start_date: e.target.value })}
-                  />
-                </label>
-                <label className="ctl">
-                  <span>Deadline</span>
-                  <input
-                    type="date"
-                    value={block.end_date}
-                    min={block.start_date}
-                    onChange={(e) => e.target.value && onPatch(block.id, { end_date: e.target.value })}
-                  />
-                </label>
-              </>
+              <button className="icon-btn danger delete-block" onClick={() => onDelete(block.id)} title="Delete block">
+                <Trash width="14" height="14" />
+              </button>
             )}
           </div>
         )}

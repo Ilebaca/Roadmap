@@ -62,7 +62,7 @@ export default function AccountsModal({ onClose }) {
           {accounts.map((u) => (
             <div key={u.id} className="account-row">
               <span className="account-email">{u.email}</span>
-              <span className={`pill pill-${u.role === 'admin' ? 'review' : 'todo'}`}>{u.role}</span>
+              <span className={`pill ${u.role === 'admin' ? '' : 'pill-quiet'}`}>{u.role}</span>
               <span className="account-project">{u.project_id}</span>
             </div>
           ))}

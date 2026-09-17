@@ -31,6 +31,15 @@ export const formatLong = (iso) => {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`
 }
 
+/** Compact range for the block's top-right corner: "23 Feb – 6 Mar 2026". */
+export const formatRange = (a, b) => {
+  const s = parse(a)
+  const e = parse(b)
+  const left = `${s.getUTCDate()} ${MONTHS[s.getUTCMonth()]}${s.getUTCFullYear() === e.getUTCFullYear() ? '' : ` ${s.getUTCFullYear()}`}`
+  const right = `${e.getUTCDate()} ${MONTHS[e.getUTCMonth()]} ${e.getUTCFullYear()}`
+  return `${left} – ${right}`
+}
+
 export const formatStamp = (ts) => {
   const d = new Date(ts)
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
