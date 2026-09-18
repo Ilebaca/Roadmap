@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
 import { buildLayout, dateFromDrag, PX_PER_DAY } from '../lib/layout'
 import { addDays, daysBetween, formatDot } from '../lib/dates'
-import { canApprove, canCreate, canEditBlock, canSetState } from '../lib/permissions'
+import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
 import { Lock, Plus } from './Icons'
 
@@ -168,14 +168,19 @@ export default function Timeline() {
                 canEdit={canEditBlock(session, block)}
                 canSetState={canSetState(session, block)}
                 canApprove={canApprove(session, block)}
+                canUnapprove={canUnapprove(session, block)}
                 approval={store.approvalFor(block.id)}
                 approverEmail={store.userById(store.approvalFor(block.id)?.approved_by)?.email}
+                links={store.linksFor(block.id)}
                 dragging={drag?.blockId === block.id}
                 onMeasure={onMeasure}
                 onPatch={actions.updateBlock}
                 onState={actions.setBlockState}
                 onApprove={actions.approveBlock}
+                onUnapprove={actions.unapproveBlock}
                 onDelete={actions.deleteBlock}
+                onAddLink={actions.addLink}
+                onRemoveLink={actions.removeLink}
                 onResizeStart={(e, edge) => onResizeStart(e, edge, block)}
               />
             </div>

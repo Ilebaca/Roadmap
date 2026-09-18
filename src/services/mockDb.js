@@ -6,8 +6,9 @@
  * wired in, this file is deleted and `dataClient.js` swaps local reads/writes for
  * Supabase queries -- nothing else in the app changes.
  *
- * Tables: users, projects, phases, blocks, approvals
- * Relationships: project 1-N phases, phase 1-N blocks, block 0..1 approval.
+ * Tables: users, projects, phases, blocks, block_links, approvals
+ * Relationships: project 1-N phases, phase 1-N blocks, block 1-N links,
+ * block 0..1 approval.
  */
 
 export const seed = () => ({
@@ -68,7 +69,7 @@ export const seed = () => ({
       id: 'blk_4', phase_id: 'ph_2', order_index: 1,
       title: 'Logotype & wordmark',
       description:
-        'Refined lockup in horizontal, stacked and icon-only variants. Ready for your sign-off — approve to unlock production. Presentation: https://example.com/acme/logotype-v4',
+        'Refined lockup in horizontal, stacked and icon-only variants. Ready for your sign-off — approve to unlock production.',
       state: 'review', start_date: '2026-02-23', end_date: '2026-03-06', locked: false
     },
     {
@@ -98,6 +99,19 @@ export const seed = () => ({
       description: 'Written handover with file map and usage rules.',
       state: 'todo', start_date: '2026-04-16', end_date: '2026-04-24', locked: false
     }
+  ],
+
+  // TABLE: block_links
+  // The files and links a viewer opens from a block. Kept as its own table so a
+  // block row stays exactly the shape of the `blocks` table.
+  // Later: `url` can point at a Supabase Storage object via a signed URL.
+  block_links: [
+    { id: 'lnk_1', block_id: 'blk_1', label: 'Positioning brief.pdf', url: 'https://example.com/acme/positioning-brief.pdf', order_index: 0 },
+    { id: 'lnk_2', block_id: 'blk_1', label: 'Interview notes', url: 'https://example.com/acme/interviews', order_index: 1 },
+    { id: 'lnk_3', block_id: 'blk_3', label: 'Moodboards — 3 directions', url: 'https://example.com/acme/moodboards', order_index: 0 },
+    { id: 'lnk_4', block_id: 'blk_4', label: 'Logotype presentation v4', url: 'https://example.com/acme/logotype-v4', order_index: 0 },
+    { id: 'lnk_5', block_id: 'blk_4', label: 'Working files (Figma)', url: 'https://example.com/acme/logotype-figma', order_index: 1 },
+    { id: 'lnk_6', block_id: 'blk_5', label: 'Colour tokens sheet', url: 'https://example.com/acme/colour-tokens', order_index: 0 }
   ],
 
   // TABLE: approvals  (one row per approved block)

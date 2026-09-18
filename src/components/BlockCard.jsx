@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SELECTABLE_STATES, stateLabel } from '../lib/permissions'
 import { formatRange, formatStamp } from '../lib/dates'
-import { Check, Lock, Pen, Trash } from './Icons'
+import { Check, Link as LinkIcon, Lock, Pen, Plus, Trash, X } from './Icons'
 
 /**
  * A single content block sitting on the right of the date line.
@@ -15,14 +15,19 @@ export default function BlockCard({
   canEdit,
   canSetState,
   canApprove,
+  canUnapprove,
   approval,
   approverEmail,
+  links,
   dragging,
   onMeasure,
   onPatch,
   onState,
   onApprove,
+  onUnapprove,
   onDelete,
+  onAddLink,
+  onRemoveLink,
   onResizeStart
 }) {
   const innerRef = useRef(null)
@@ -148,6 +153,16 @@ export default function BlockCard({
           </div>
         )}
 
+        {(links.length > 0 || canEdit) && (
+          <LinkShelf
+            blockId={block.id}
+            links={links}
+            canEdit={canEdit}
+            onAddLink={onAddLink}
+            onRemoveLink={onRemoveLink}
+          />
+        )}
+
         {/* The Approve action is its own element, not a state. It exists only
             while the block is in Review — Review IS the approval request. */}
         {canApprove && (
@@ -171,7 +186,16 @@ export default function BlockCard({
             <span className="approve-check done" aria-hidden="true">
               <Check width="14" height="14" />
             </span>
-            Approved by {approverEmail || 'a reviewer'} · {formatStamp(approval.approved_at)}
+            <span>
+              Approved by {approverEmail || 'a reviewer'} · {formatStamp(approval.approved_at)}
+            </span>
+            {/* Admin can withdraw the approval: the block unlocks, goes back to
+                In Progress, and any phase that depended on it re-locks. */}
+            {canUnapprove && (
+              <button className="unapprove-btn" onClick={() => onUnapprove(block.id)}>
+                Unapprove
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -180,6 +204,70 @@ export default function BlockCard({
         <div className="resize-handle bottom" onPointerDown={(e) => onResizeStart(e, 'bottom')} title="Drag to change the deadline" />
       )}
     </article>
+  )
+}
+
+/**
+ * Dedicated space for the block's links and files. Viewers open them; admins
+ * add and remove them while the block is unlocked.
+ */
+function LinkShelf({ blockId, links, canEdit, onAddLink, onRemoveLink }) {
+  const [adding, setAdding] = useState(false)
+  const [label, setLabel] = useState('')
+  const [url, setUrl] = useState('')
+
+  const submit = (e) => {
+    e.preventDefault()
+    const clean = url.trim()
+    if (!clean) return
+    onAddLink(blockId, label.trim(), /^https?:\/\//i.test(clean) ? clean : `https://${clean}`)
+    setLabel('')
+    setUrl('')
+    setAdding(false)
+  }
+
+  return (
+    <div className="link-shelf">
+      <span className="shelf-label">Links &amp; files</span>
+
+      {links.length > 0 ? (
+        <ul className="link-list">
+          {links.map((l) => (
+            <li key={l.id}>
+              <a href={l.url} target="_blank" rel="noopener noreferrer" className="link-chip">
+                <LinkIcon width="12" height="12" />
+                {l.label}
+              </a>
+              {canEdit && (
+                <button className="icon-btn tiny" onClick={() => onRemoveLink(l.id)} title="Remove link">
+                  <X width="11" height="11" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        !adding && <p className="shelf-empty">{canEdit ? 'Nothing attached yet.' : 'No links yet.'}</p>
+      )}
+
+      {canEdit &&
+        (adding ? (
+          <form className="link-form" onSubmit={submit}>
+            <input autoFocus value={label} placeholder="Label" onChange={(e) => setLabel(e.target.value)} />
+            <input value={url} placeholder="https://…" onChange={(e) => setUrl(e.target.value)} />
+            <button type="submit" className="link-add-confirm">
+              Add
+            </button>
+            <button type="button" className="icon-btn tiny" onClick={() => setAdding(false)} title="Cancel">
+              <X width="11" height="11" />
+            </button>
+          </form>
+        ) : (
+          <button className="link-add" onClick={() => setAdding(true)}>
+            <Plus width="11" height="11" /> Add link or file
+          </button>
+        ))}
+    </div>
   )
 }
 

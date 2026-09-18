@@ -18,6 +18,7 @@ export function StoreProvider({ children }) {
   const [phases, setPhases] = useState([])
   const [blocks, setBlocks] = useState([])
   const [approvals, setApprovals] = useState([])
+  const [links, setLinks] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -44,16 +45,18 @@ export function StoreProvider({ children }) {
     setError(null)
     // A viewer is bound to exactly one project; an admin here works on that same
     // project. `project_id` on the user row is what RLS filters on later.
-    const [proj, ph, bl, ap] = await Promise.all([
+    const [proj, ph, bl, ap, lk] = await Promise.all([
       api.getProject(who, who.project_id),
       api.listPhases(who, who.project_id),
       api.listBlocks(who, who.project_id),
-      api.listApprovals(who, who.project_id)
+      api.listApprovals(who, who.project_id),
+      api.listLinks(who, who.project_id)
     ])
     setProject(proj)
     setPhases(ph)
     setBlocks(bl)
     setApprovals(ap)
+    setLinks(lk)
     setLoading(false)
     return ph
   }, [session])
@@ -116,6 +119,16 @@ export function StoreProvider({ children }) {
       approveBlock(id) {
         return run(() => api.approveBlock(session, id))
       },
+      /** Admin-only: undo an approval so the block is editable again. */
+      unapproveBlock(id) {
+        return run(() => api.unapproveBlock(session, id))
+      },
+      addLink(block_id, label, url) {
+        return run(() => api.createLink(session, { block_id, label, url }))
+      },
+      removeLink(id) {
+        return run(() => api.deleteLink(session, id))
+      },
       createPhase(title) {
         return run(() => api.createPhase(session, { project_id: session.project_id, title }))
       },
@@ -145,12 +158,14 @@ export function StoreProvider({ children }) {
     phases,
     blocks,
     approvals,
+    links,
     gates,
     activePhaseId,
     loading,
     error,
     actions,
     approvalFor: (blockId) => approvals.find((a) => a.block_id === blockId) || null,
+    linksFor: (blockId) => links.filter((l) => l.block_id === blockId),
     userById: (id) => accounts.find((u) => u.id === id) || null
   }
 

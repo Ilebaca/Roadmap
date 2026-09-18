@@ -26,6 +26,9 @@ export const canEditBlock = (session, block) => isAdmin(session) && !block.locke
 export const canSetState = (session, block) => isAdmin(session) && !block.locked
 export const canResize = (session, block) => isAdmin(session) && !block.locked
 
+/** Only an admin can withdraw an approval, which unlocks the block again. */
+export const canUnapprove = (session, block) => isAdmin(session) && block.state === 'approved'
+
 /** Approve is open to viewer AND admin, but only while the block is in Review. */
 export const canApprove = (session, block) => !!session && block.state === 'review' && !block.locked
 

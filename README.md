@@ -39,7 +39,10 @@ lands.
 | Edit title / description | ✅ | — |
 | Set dates, drag-resize | ✅ | — |
 | Set state (To Do → Review) | ✅ | — |
+| Attach / remove links and files | ✅ | — |
+| Open links and files | ✅ | ✅ |
 | Approve a block in Review | ✅ | ✅ |
+| Undo an approval | ✅ | — |
 | Create accounts (stub) | ✅ | — |
 
 **Approve is not a state.** An admin sets a block to **Review** — that *is* the
@@ -50,6 +53,21 @@ goes gray, stops being editable and nobody can change its state again.
 When every block in a phase is approved, the phase is complete and the next tab
 unlocks. Locked tabs are disabled in the sidebar and their contents are hidden
 on the line.
+
+**Undoing an approval.** An approved block shows an *Unapprove* button next to
+its approval stamp — admin only, a viewer never sees it. It deletes the approval
+row, unlocks the block, returns it to *In Progress*, and re-locks any later phase
+that was relying on it. That is also why the pen next to the dates disappears
+once a block is approved: an approved block is frozen until it is unapproved.
+
+**Dates.** The start date and the deadline sit in the block's top-right corner.
+The pen beside them swaps the range for two date pickers; it appears only for an
+admin, and only while the block is unapproved.
+
+**Links and files.** Each block has its own *Links & files* shelf. Admins add and
+remove entries; everyone can open them in a new tab. Rows live in their own
+`block_links` table so the `blocks` row stays exactly the shape of its table —
+when Supabase Storage is wired up, `url` becomes a signed URL.
 
 **Dragging.** With Admin selected, grab the top or bottom edge of a block
 (a grip appears on hover) and drag. The edge follows the line, snapping onto any
@@ -87,15 +105,17 @@ No component imports mock data. Every call goes through `api.*` in
    `api.getSession()` with `supabase.auth.getUser()`.
 
 Row shapes already match the target tables — `users`, `projects`, `phases`,
-`blocks`, `approvals` — same field names, same value sets, so nothing reshapes.
+`blocks`, `block_links`, `approvals` — same field names, same value sets, so
+nothing reshapes.
 
 Two things the mock layer fakes that Postgres must enforce for real:
 
 - **Write permission.** `assertAdmin` / `assertProject` in `dataClient.js` are a
   client-side mirror of the RLS policies. The policies are what actually count.
 - **Locking.** An approved block must be immutable server-side (a `BEFORE UPDATE`
-  trigger rejecting rows where `locked = true`), and approving should be one
-  Postgres function that writes the approval row and flips the block together.
+  trigger rejecting rows where `locked = true`). Approving and unapproving each
+  touch two tables, so each should be a single Postgres function —
+  `approve_block` open to viewers and admins, `unapprove_block` admin-only.
 
 Viewers are bound to a single project via `users.project_id`; the mock data
 includes a second project and a second viewer so that scoping is visible before

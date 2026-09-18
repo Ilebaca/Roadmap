@@ -245,6 +245,58 @@ export const api = {
   },
 
   // ===========================================================================
+  // BLOCK LINKS (files and links a viewer opens from a block)
+  // ===========================================================================
+
+  /**
+   * BACKEND:
+   *   supabase.from('block_links').select('*').in('block_id', blockIds)
+   *     .order('order_index')
+   * For files stored in Supabase Storage, swap `url` for a signed URL created
+   * on read: supabase.storage.from('block-files').createSignedUrl(path, 3600)
+   */
+  async listLinks(session, project_id) {
+    assertProject(session, project_id)
+    const phaseIds = db.phases.filter((p) => p.project_id === project_id).map((p) => p.id)
+    const blockIds = db.blocks.filter((b) => phaseIds.includes(b.phase_id)).map((b) => b.id)
+    const rows = db.block_links
+      .filter((l) => blockIds.includes(l.block_id))
+      .sort((a, b) => a.order_index - b.order_index)
+    return wait(clone(rows))
+  },
+
+  /** BACKEND: supabase.from('block_links').insert({...}).select().single() */
+  async createLink(session, { block_id, label, url }) {
+    assertAdmin(session)
+    const block = db.blocks.find((b) => b.id === block_id)
+    if (!block) throw new Error('Block not found')
+    if (block.locked) throw new ForbiddenError('This block is approved and locked.')
+    const siblings = db.block_links.filter((l) => l.block_id === block_id)
+    const row = {
+      id: uid('lnk'),
+      block_id,
+      label: label || url,
+      url,
+      order_index: siblings.length ? Math.max(...siblings.map((l) => l.order_index)) + 1 : 0
+    }
+    db.block_links.push(row)
+    persist()
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('block_links').delete().eq('id', id) */
+  async deleteLink(session, id) {
+    assertAdmin(session)
+    const row = db.block_links.find((l) => l.id === id)
+    if (!row) return wait(null)
+    const block = db.blocks.find((b) => b.id === row.block_id)
+    if (block?.locked) throw new ForbiddenError('This block is approved and locked.')
+    db.block_links = db.block_links.filter((l) => l.id !== id)
+    persist()
+    return wait(null)
+  },
+
+  // ===========================================================================
   // APPROVALS
   // ===========================================================================
 
@@ -285,6 +337,30 @@ export const api = {
     row.locked = true
     persist()
     return wait({ block: clone(row), approval: clone(approval) })
+  },
+
+  /**
+   * Withdraw an approval. Admin only — a viewer can approve but never undo one.
+   * The approval row is deleted, the block unlocks and goes back to work
+   * ('in_progress'), which also re-locks any phase that depended on it.
+   *
+   * BACKEND: mirror approve_block with a second Postgres function so the two
+   * writes stay together, and restrict it to admins:
+   *   create function unapprove_block(p_block_id uuid) returns blocks ...
+   *   -- delete from approvals where block_id = p_block_id
+   *   -- update blocks set state='in_progress', locked=false where id = p_block_id
+   * then: await supabase.rpc('unapprove_block', { p_block_id: blockId })
+   */
+  async unapproveBlock(session, block_id) {
+    assertAdmin(session)
+    const row = db.blocks.find((b) => b.id === block_id)
+    if (!row) throw new Error('Block not found')
+    if (row.state !== 'approved') throw new ForbiddenError('This block is not approved.')
+    db.approvals = db.approvals.filter((a) => a.block_id !== block_id)
+    row.state = 'in_progress'
+    row.locked = false
+    persist()
+    return wait(clone(row))
   },
 
   // ===========================================================================

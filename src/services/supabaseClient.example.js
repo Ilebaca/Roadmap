@@ -42,6 +42,14 @@
  *     locked boolean not null default false
  *   );
  *
+ *   create table block_links (
+ *     id uuid primary key default gen_random_uuid(),
+ *     block_id uuid not null references blocks(id) on delete cascade,
+ *     label text not null,
+ *     url text not null,
+ *     order_index int not null default 0
+ *   );
+ *
  *   create table approvals (
  *     id uuid primary key default gen_random_uuid(),
  *     block_id uuid not null unique references blocks(id) on delete cascade,
@@ -58,6 +66,11 @@
  *     using ((select role from users where id = auth.uid()) = 'admin');
  *   -- approved blocks are frozen (trigger, since RLS cannot see OLD cleanly)
  *   create trigger freeze_approved before update on blocks ...
+ *
+ * APPROVE / UNAPPROVE both write two tables, so each is one function:
+ *   approve_block(p_block_id)   -- viewer or admin, only from state 'review'
+ *   unapprove_block(p_block_id) -- admin only; deletes the approval row and
+ *                               -- sets state='in_progress', locked=false
  */
 
 // import { createClient } from '@supabase/supabase-js'
