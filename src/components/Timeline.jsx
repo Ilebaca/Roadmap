@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { buildLayout, dateFromDrag, PX_PER_DAY } from '../lib/layout'
-import { addDays, daysBetween, formatDot } from '../lib/dates'
+import { buildLayout, dateFromDrag, nowMarker, PX_PER_DAY } from '../lib/layout'
+import { addDays, daysBetween, formatDot, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
 import { Lock, Plus } from './Icons'
@@ -17,6 +17,14 @@ export default function Timeline() {
   const [heights, setHeights] = useState({})
   const [drag, setDrag] = useState(null)
   const dragRef = useRef(null)
+  const [today, setToday] = useState(todayISO())
+
+  // The "now" marker follows the clock: re-check every half minute so it moves
+  // on its own and rolls over at midnight without a reload.
+  useEffect(() => {
+    const id = setInterval(() => setToday(todayISO()), 30000)
+    return () => clearInterval(id)
+  }, [])
 
   const admin = canCreate(session)
 
@@ -41,7 +49,7 @@ export default function Timeline() {
 
   // --- drag-to-resize: an edge drag moves the block's date -------------------
   const onResizeStart = useCallback(
-    (e, edge, block) => {
+    (e, edge, block, minStart) => {
       e.preventDefault()
       // Dots to snap onto — every other date already on the line.
       const snapDates = layout.dots.filter((d) => d.blockId !== block.id).map((d) => d.date)
@@ -51,6 +59,7 @@ export default function Timeline() {
         originY: e.clientY,
         start_date: block.start_date,
         end_date: block.end_date,
+        minStart,
         snapDates
       }
       setDrag({ blockId: block.id, start_date: block.start_date, end_date: block.end_date })
@@ -66,6 +75,8 @@ export default function Timeline() {
           if (daysBetween(start_date, end_date) < 1) end_date = addDays(start_date, 1)
         } else {
           start_date = dateFromDrag(d.start_date, delta, d.snapDates)
+          // A block can never start before the block in front of it finishes.
+          if (d.minStart && daysBetween(d.minStart, start_date) < 0) start_date = d.minStart
           if (daysBetween(start_date, end_date) < 1) start_date = addDays(end_date, -1)
         }
         setDrag({ blockId: d.blockId, start_date, end_date })
@@ -165,6 +176,7 @@ export default function Timeline() {
               <BlockCard
                 block={block}
                 height={row.h}
+                minStart={row.minStart}
                 canEdit={canEditBlock(session, block)}
                 canSetState={canSetState(session, block)}
                 canApprove={canApprove(session, block)}
@@ -181,11 +193,26 @@ export default function Timeline() {
                 onDelete={actions.deleteBlock}
                 onAddLink={actions.addLink}
                 onRemoveLink={actions.removeLink}
-                onResizeStart={(e, edge) => onResizeStart(e, edge, block)}
+                onResizeStart={(e, edge) => onResizeStart(e, edge, block, row.minStart)}
               />
             </div>
           )
         })}
+
+        {/* Where today falls on the line, live. */}
+        {(() => {
+          const now = nowMarker(layout.dots, layout.totalHeight, today)
+          if (!now) return null
+          return (
+            <div className={`now-marker ${now.clamped ? 'is-clamped' : ''}`} style={{ top: now.y }}>
+              <span className="now-label">
+                Today
+                <em>{formatShort(now.date)}</em>
+              </span>
+              <span className="now-rule" />
+            </div>
+          )
+        })()}
 
         {drag && (
           <div className="drag-readout">

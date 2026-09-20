@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SELECTABLE_STATES, stateLabel } from '../lib/permissions'
 import { formatRange, formatStamp } from '../lib/dates'
-import { Check, Link as LinkIcon, Lock, Pen, Plus, Trash, X } from './Icons'
+import { Check, Link as LinkIcon, Pen, Plus, Trash, X } from './Icons'
+import StateSelect from './StateSelect'
 
 /**
  * A single content block sitting on the right of the date line.
@@ -12,6 +12,7 @@ import { Check, Link as LinkIcon, Lock, Pen, Plus, Trash, X } from './Icons'
 export default function BlockCard({
   block,
   height,
+  minStart,
   canEdit,
   canSetState,
   canApprove,
@@ -61,11 +62,19 @@ export default function BlockCard({
 
       <div className="block-inner" ref={innerRef}>
         <header className="block-head">
-          <span className="pill">{stateLabel(block.state)}</span>
-          {locked && (
-            <span className="pill pill-quiet">
-              <Lock width="11" height="11" /> Locked
+          {/* Top-left: delete while the block is open for work, and the approved
+              mark once it is signed off. Never both. */}
+          {locked ? (
+            <span className="approved-mark" title="Approved and locked">
+              <Check width="12" height="12" />
+              Approved
             </span>
+          ) : canEdit ? (
+            <button className="icon-btn danger" onClick={() => onDelete(block.id)} title="Delete block">
+              <Trash width="14" height="14" />
+            </button>
+          ) : (
+            <span className="head-spacer" />
           )}
 
           {/* Start date and deadline live in the top-right corner. The pen
@@ -76,8 +85,10 @@ export default function BlockCard({
                 <input
                   type="date"
                   value={block.start_date}
+                  min={minStart || undefined}
                   max={block.end_date}
                   onChange={(e) => e.target.value && onPatch(block.id, { start_date: e.target.value })}
+                  title={minStart ? `Cannot start before ${minStart} — the block in front finishes then` : undefined}
                 />
                 <span className="arrow">–</span>
                 <input
@@ -129,29 +140,15 @@ export default function BlockCard({
           </p>
         )}
 
-        {(canEdit || canSetState) && (
-          <div className="block-controls">
-            {canSetState && (
-              <label className="ctl">
-                <span>State</span>
-                {/* Admin only. 'Approved' is deliberately not offered — it is the
-                    result of an approval, not a state you can pick. */}
-                <select value={block.state} onChange={(e) => onState(block.id, e.target.value)}>
-                  {SELECTABLE_STATES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {canEdit && (
-              <button className="icon-btn danger delete-block" onClick={() => onDelete(block.id)} title="Delete block">
-                <Trash width="14" height="14" />
-              </button>
-            )}
-          </div>
-        )}
+        {/* State sits under the description: a dropdown for an admin, the same
+            chip read-only for a viewer. */}
+        <div className="state-row">
+          <StateSelect
+            value={block.state}
+            editable={canSetState}
+            onChange={(next) => onState(block.id, next)}
+          />
+        </div>
 
         {(links.length > 0 || canEdit) && (
           <LinkShelf
@@ -183,11 +180,8 @@ export default function BlockCard({
 
         {locked && approval && (
           <div className="approved-stamp">
-            <span className="approve-check done" aria-hidden="true">
-              <Check width="14" height="14" />
-            </span>
             <span>
-              Approved by {approverEmail || 'a reviewer'} · {formatStamp(approval.approved_at)}
+              Signed off by {approverEmail || 'a reviewer'} · {formatStamp(approval.approved_at)}
             </span>
             {/* Admin can withdraw the approval: the block unlocks, goes back to
                 In Progress, and any phase that depended on it re-locks. */}

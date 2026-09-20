@@ -14,6 +14,7 @@
  */
 
 import { seed } from './mockDb'
+import { addDays, daysBetween } from '../lib/dates'
 
 const STORAGE_KEY = 'roadmap.mock.v1'
 const LATENCY_MS = 90 // fake network latency so loading states are real
@@ -62,6 +63,74 @@ function assertAdmin(session) {
 function assertProject(session, project_id) {
   // BACKEND: RLS — `project_id = (select project_id from users where id = auth.uid())`
   if (!session || session.project_id !== project_id) throw new ForbiddenError('Wrong project.')
+}
+
+/**
+ * BLOCK DEPENDENCY CHAIN
+ * ---------------------------------------------------------------------------
+ * Blocks run one after another: a block may not start before the deadline of
+ * the block in front of it. Push a deadline out and everything downstream
+ * slides with it, keeping each block's own duration.
+ *
+ * BACKEND: this belongs in Postgres so two clients cannot race it — an AFTER
+ * UPDATE trigger on `blocks` (or a `reflow_chain(p_project_id)` function called
+ * inside the same transaction as the write) running exactly this rule.
+ */
+function chainOf(project_id) {
+  const order = new Map(
+    db.phases.filter((p) => p.project_id === project_id).map((p) => [p.id, p.order_index])
+  )
+  return db.blocks
+    .filter((b) => order.has(b.phase_id))
+    .sort(
+      (a, b) =>
+        order.get(a.phase_id) - order.get(b.phase_id) ||
+        a.start_date.localeCompare(b.start_date) ||
+        a.order_index - b.order_index
+    )
+}
+
+/** The earliest a block may start: the deadline of the block before it. */
+function earliestStart(project_id, block_id) {
+  const chain = chainOf(project_id)
+  const i = chain.findIndex((b) => b.id === block_id)
+  return i > 0 ? chain[i - 1].end_date : null
+}
+
+/** Slide every downstream block that now starts too early. Mutates in place. */
+function reflowChain(project_id) {
+  const chain = chainOf(project_id)
+  for (let i = 1; i < chain.length; i++) {
+    const prev = chain[i - 1]
+    const cur = chain[i]
+    const overlap = -daysBetween(prev.end_date, cur.start_date)
+    if (overlap <= 0) continue
+    if (cur.locked) {
+      throw new ForbiddenError(
+        `That date runs into "${cur.title}", which is approved. Unapprove it first.`
+      )
+    }
+    const duration = daysBetween(cur.start_date, cur.end_date)
+    cur.start_date = addDays(cur.start_date, overlap)
+    cur.end_date = addDays(cur.start_date, duration)
+  }
+}
+
+/** Run a mutation, then reflow. If anything throws, nothing is written. */
+function withChain(project_id, mutate) {
+  const before = JSON.stringify(db.blocks)
+  try {
+    const out = mutate()
+    reflowChain(project_id)
+    return out
+  } catch (e) {
+    db.blocks = JSON.parse(before)
+    throw e
+  }
+}
+
+function projectOfPhase(phase_id) {
+  return db.phases.find((p) => p.id === phase_id)?.project_id
 }
 
 export const api = {
@@ -205,7 +274,7 @@ export const api = {
       end_date,
       locked: false
     }
-    db.blocks.push(row)
+    withChain(projectOfPhase(phase_id), () => db.blocks.push(row))
     persist()
     return wait(clone(row))
   },
@@ -221,13 +290,29 @@ export const api = {
     const row = db.blocks.find((b) => b.id === id)
     if (!row) throw new Error('Block not found')
     if (row.locked) throw new ForbiddenError('This block is approved and locked.')
+    const project_id = projectOfPhase(row.phase_id)
     const allowed = ['title', 'description', 'start_date', 'end_date', 'state', 'order_index']
-    for (const k of Object.keys(patch)) {
-      if (!allowed.includes(k)) continue
-      // 'approved' is never set through here — it is the result of an approval.
-      if (k === 'state' && patch.state === 'approved') continue
-      row[k] = patch[k]
-    }
+
+    withChain(project_id, () => {
+      for (const k of Object.keys(patch)) {
+        if (!allowed.includes(k)) continue
+        // 'approved' is never set through here — it is the result of an approval.
+        if (k === 'state' && patch.state === 'approved') continue
+        row[k] = patch[k]
+      }
+      // A block can never start before the one in front of it finishes; the
+      // blocks behind it are pushed along by reflowChain().
+      const floor = earliestStart(project_id, row.id)
+      if (floor && daysBetween(floor, row.start_date) < 0) {
+        const duration = daysBetween(row.start_date, row.end_date)
+        row.start_date = floor
+        row.end_date = addDays(floor, Math.max(1, duration))
+      }
+      if (daysBetween(row.start_date, row.end_date) < 1) {
+        row.end_date = addDays(row.start_date, 1)
+      }
+    })
+
     persist()
     return wait(clone(row))
   },

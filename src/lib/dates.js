@@ -45,4 +45,16 @@ export const formatStamp = (ts) => {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
-export const todayISO = () => toISO(new Date())
+/** Today in the viewer's own timezone (not UTC) — this drives the "now" marker. */
+export const todayISO = () => {
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+/** "20 Sep" — the label on the now marker. */
+export const formatShort = (iso) => {
+  const d = parse(iso)
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`
+}

@@ -64,6 +64,24 @@ once a block is approved: an approved block is frozen until it is unapproved.
 The pen beside them swaps the range for two date pickers; it appears only for an
 admin, and only while the block is unapproved.
 
+**Blocks run in sequence.** A block can never start before the block in front of
+it finishes. Push a deadline out — by dragging the bottom edge or picking a new
+date — and every block behind it slides along with it, each keeping its own
+duration. Dragging a top edge back stops dead at the previous block's deadline.
+The rule is enforced in the data layer, not just the UI, so any write goes
+through it. If the slide would run into an *approved* block, the whole edit is
+rejected with a message rather than half-applied — unapprove that block first.
+
+**Today.** A live marker crosses the line at today's date, interpolated between
+the two dots it falls between. It re-checks the clock every 30 seconds, so it
+moves on its own and rolls over at midnight without a reload. The seeded mock
+dates are generated relative to today so there is always something around it.
+
+**Block chrome.** Top-left is the delete button while work is open, and the
+green *Approved* mark once it is signed off — never both. State sits under the
+description: a coloured dropdown for an admin, the same chip read-only for a
+viewer. State colour is the only colour in the UI.
+
 **Links and files.** Each block has its own *Links & files* shelf. Admins add and
 remove entries; everyone can open them in a new tab. Rows live in their own
 `block_links` table so the `blocks` row stays exactly the shape of its table —

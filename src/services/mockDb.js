@@ -11,6 +11,16 @@
  * block 0..1 approval.
  */
 
+/**
+ * Seed dates are generated relative to today so the "now" marker on the date
+ * line always has something around it. A real backend stores absolute dates;
+ * this helper disappears with the mock layer.
+ */
+const t = new Date()
+const BASE = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())
+const D = (offsetDays) => new Date(BASE + offsetDays * 86400000).toISOString().slice(0, 10)
+const TS = (offsetDays) => new Date(BASE + offsetDays * 86400000 + 10 * 3600000).toISOString()
+
 export const seed = () => ({
   // TABLE: users
   // Supabase: `users` (or `profiles` keyed to auth.users.id).
@@ -47,14 +57,14 @@ export const seed = () => ({
       title: 'Kickoff & stakeholder interviews',
       description:
         'Two workshops with the leadership team, plus five 1:1 interviews. Output is a written positioning brief and the list of constraints we design against.',
-      state: 'approved', start_date: '2026-01-12', end_date: '2026-01-23', locked: true
+      state: 'approved', start_date: D(-74), end_date: D(-60), locked: true
     },
     {
       id: 'blk_2', phase_id: 'ph_1', order_index: 1,
       title: 'Audit & competitive landscape',
       description:
         'Teardown of the current identity across every touchpoint, benchmarked against six competitors.',
-      state: 'approved', start_date: '2026-01-26', end_date: '2026-02-04', locked: true
+      state: 'approved', start_date: D(-58), end_date: D(-44), locked: true
     },
 
     // --- Phase 2: the live phase, one block of each state --------------------
@@ -63,27 +73,27 @@ export const seed = () => ({
       title: 'Moodboards & art direction',
       description:
         'Three distinct directions, each with typography, palette and image treatment. You pick one to carry forward.',
-      state: 'approved', start_date: '2026-02-09', end_date: '2026-02-20', locked: true
+      state: 'approved', start_date: D(-40), end_date: D(-26), locked: true
     },
     {
       id: 'blk_4', phase_id: 'ph_2', order_index: 1,
       title: 'Logotype & wordmark',
       description:
         'Refined lockup in horizontal, stacked and icon-only variants. Ready for your sign-off — approve to unlock production.',
-      state: 'review', start_date: '2026-02-23', end_date: '2026-03-06', locked: false
+      state: 'review', start_date: D(-24), end_date: D(-6), locked: false
     },
     {
       id: 'blk_5', phase_id: 'ph_2', order_index: 2,
       title: 'Colour system & type scale',
       description:
         'Primary, secondary and support palettes with contrast tested to WCAG AA. Type scale across print and screen.',
-      state: 'in_progress', start_date: '2026-03-09', end_date: '2026-03-18', locked: false
+      state: 'in_progress', start_date: D(-4), end_date: D(10), locked: false
     },
     {
       id: 'blk_6', phase_id: 'ph_2', order_index: 3,
       title: 'Brand guidelines draft',
       description: 'First pass of the guideline document. Blocked until the type scale is signed off.',
-      state: 'on_hold', start_date: '2026-03-20', end_date: '2026-03-27', locked: false
+      state: 'on_hold', start_date: D(12), end_date: D(22), locked: false
     },
 
     // --- Phase 3: seeded but invisible until Phase 2 is fully approved -------
@@ -91,13 +101,13 @@ export const seed = () => ({
       id: 'blk_7', phase_id: 'ph_3', order_index: 0,
       title: 'Asset production',
       description: 'Export the full asset library: logo files, templates, social kit.',
-      state: 'todo', start_date: '2026-04-01', end_date: '2026-04-14', locked: false
+      state: 'todo', start_date: D(26), end_date: D(40), locked: false
     },
     {
       id: 'blk_8', phase_id: 'ph_3', order_index: 1,
       title: 'Handover documentation',
       description: 'Written handover with file map and usage rules.',
-      state: 'todo', start_date: '2026-04-16', end_date: '2026-04-24', locked: false
+      state: 'todo', start_date: D(42), end_date: D(52), locked: false
     }
   ],
 
@@ -116,8 +126,8 @@ export const seed = () => ({
 
   // TABLE: approvals  (one row per approved block)
   approvals: [
-    { id: 'apr_1', block_id: 'blk_1', approved_by: 'u_viewer', approved_at: '2026-01-24T09:12:00.000Z' },
-    { id: 'apr_2', block_id: 'blk_2', approved_by: 'u_viewer', approved_at: '2026-02-05T14:40:00.000Z' },
-    { id: 'apr_3', block_id: 'blk_3', approved_by: 'u_viewer', approved_at: '2026-02-21T11:02:00.000Z' }
+    { id: 'apr_1', block_id: 'blk_1', approved_by: 'u_viewer', approved_at: TS(-59) },
+    { id: 'apr_2', block_id: 'blk_2', approved_by: 'u_viewer', approved_at: TS(-43) },
+    { id: 'apr_3', block_id: 'blk_3', approved_by: 'u_viewer', approved_at: TS(-25) }
   ]
 })

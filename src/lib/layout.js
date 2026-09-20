@@ -1,4 +1,4 @@
-import { addDays, daysBetween } from './dates'
+import { addDays, daysBetween, todayISO } from './dates'
 
 /**
  * Timeline geometry.
@@ -41,6 +41,9 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
   const dots = []
   const phaseOffsets = {}
   let y = TOP_PAD
+  // The deadline of the block in front of the one being laid out. A block can
+  // never start before it, which is what the drag and the date picker clamp to.
+  let chainFloor = null
 
   const ordered = [...phases].sort((a, b) => a.order_index - b.order_index)
 
@@ -66,7 +69,8 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
 
     for (const block of mine) {
       const h = blockHeight(block, heights[block.id] || 0)
-      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h })
+      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, minStart: chainFloor })
+      chainFloor = block.end_date
       dots.push({ key: `d-${block.id}-s`, y, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
       dots.push({ key: `d-${block.id}-e`, y: y + h, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
       y += h + GAP_AFTER_BLOCK
@@ -75,7 +79,7 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
     if (canCreate) {
       // An empty date slot: the dashed plus placeholder.
       const last = mine.at(-1)
-      const start = last ? addDays(last.end_date, 3) : phaseStartGuess(ordered, phase, blocks)
+      const start = last ? addDays(last.end_date, 1) : phaseStartGuess(ordered, phase, blocks, chainFloor)
       rows.push({
         key: `sl-${phase.id}`,
         type: 'slot',
@@ -96,11 +100,44 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
   return { rows, dots, phaseOffsets, totalHeight: y + BOTTOM_PAD }
 }
 
-function phaseStartGuess(ordered, phase, blocks) {
-  // First block of an empty phase starts a few days after the previous phase ends.
+function phaseStartGuess(ordered, phase, blocks, chainFloor) {
+  // The first block of an empty phase starts when the work before it finishes.
+  if (chainFloor) return addDays(chainFloor, 1)
   const earlier = ordered.filter((p) => p.order_index < phase.order_index).map((p) => p.id)
   const ends = blocks.filter((b) => earlier.includes(b.phase_id)).map((b) => b.end_date).sort()
-  return ends.length ? addDays(ends.at(-1), 3) : new Date().toISOString().slice(0, 10)
+  return ends.length ? addDays(ends.at(-1), 1) : todayISO()
+}
+
+/**
+ * Where "today" falls on the line. Dots carry dates and y positions, so the
+ * marker is a straight interpolation between the two dots it sits between;
+ * outside the range it extrapolates at the line's own px-per-day scale.
+ */
+export function nowMarker(dots, totalHeight, today = todayISO()) {
+  if (!dots.length) return null
+  const sorted = [...dots].sort((a, b) => a.y - b.y)
+  const first = sorted[0]
+  const last = sorted.at(-1)
+
+  if (daysBetween(today, first.date) > 0) {
+    const y = first.y - daysBetween(today, first.date) * PX_PER_DAY
+    return { y: Math.max(6, y), date: today, clamped: y < 6 }
+  }
+  if (daysBetween(last.date, today) > 0) {
+    const y = last.y + daysBetween(last.date, today) * PX_PER_DAY
+    const max = totalHeight - 6
+    return { y: Math.min(max, y), date: today, clamped: y > max }
+  }
+
+  for (let i = 1; i < sorted.length; i++) {
+    const a = sorted[i - 1]
+    const b = sorted[i]
+    if (daysBetween(a.date, today) < 0 || daysBetween(today, b.date) < 0) continue
+    const span = daysBetween(a.date, b.date)
+    const t = span === 0 ? 0 : daysBetween(a.date, today) / span
+    return { y: a.y + (b.y - a.y) * t, date: today, clamped: false }
+  }
+  return { y: last.y, date: today, clamped: false }
 }
 
 /**
