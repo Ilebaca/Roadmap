@@ -171,13 +171,26 @@ export default function Timeline() {
           }
 
           const block = row.block
+          const editable = canEditBlock(session, block)
           return (
-            <div key={row.key} className="block-slot" style={{ top: row.y, height: row.h }}>
+            <div key={row.key} className="block-row">
+              {/* The rail on the line runs the block's full duration, from its
+                  start dot to its end dot, however tall the card itself is. */}
+              <div className="block-extent" style={{ top: row.y, height: row.seg }} />
+              {editable && (
+                <div
+                  className="extent-handle"
+                  style={{ top: row.y + row.seg }}
+                  onPointerDown={(e) => onResizeStart(e, 'bottom', block, row.minStart)}
+                  title="Drag to move the deadline"
+                />
+              )}
+              <div className="block-slot" style={{ top: row.y, height: row.h }}>
               <BlockCard
                 block={block}
                 height={row.h}
                 minStart={row.minStart}
-                canEdit={canEditBlock(session, block)}
+                canEdit={editable}
                 canSetState={canSetState(session, block)}
                 canApprove={canApprove(session, block)}
                 canUnapprove={canUnapprove(session, block)}
@@ -195,6 +208,7 @@ export default function Timeline() {
                 onRemoveLink={actions.removeLink}
                 onResizeStart={(e, edge) => onResizeStart(e, edge, block, row.minStart)}
               />
+              </div>
             </div>
           )
         })}

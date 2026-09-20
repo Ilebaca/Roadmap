@@ -88,10 +88,16 @@ remove entries; everyone can open them in a new tab. Rows live in their own
 when Supabase Storage is wired up, `url` becomes a signed URL.
 
 **Dragging.** With Admin selected, grab the top or bottom edge of a block
-(a grip appears on hover) and drag. The edge follows the line, snapping onto any
-other date dot as it passes — as far up or down as you like — and the block's
-start or end date updates on release. A block never shrinks below the height of
-its own content, so a block with more text pushes its two dates further apart.
+(a grip appears on hover) and drag, or grab the block's end dot on the line. The
+edge snaps onto any other date dot as it passes — as far up or down as you like
+— and the date updates on release.
+
+**A card is only as tall as its content.** Stretching a deadline out by months
+does not inflate the block into an empty box: the card keeps its own height and
+the end dot simply walks further down the line, with a rail drawn between the
+two dots showing the duration. It works the other way too — a block with more
+content pushes its two dates apart, because the gap between the dots can never
+be smaller than the card.
 
 **Reset data** in the top bar restores the seeded mock rows.
 

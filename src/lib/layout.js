@@ -4,10 +4,17 @@ import { addDays, daysBetween, todayISO } from './dates'
  * Timeline geometry.
  * ---------------------------------------------------------------------------
  * One continuous vertical line carries every phase, top to bottom. A block hangs
- * off its start dot (top-left corner, with a gap) and stretches down to its end
- * dot — so the distance between two dots IS the block's height. Height is the
- * larger of: its date span in pixels, its content's natural height, or a floor.
- * That is what makes a block with more content push its two dates further apart.
+ * off its start dot by its top-left corner.
+ *
+ * Two different heights are at play:
+ *   - the CARD is only ever as tall as its own content (with a floor). A long
+ *     deadline never stretches it into an empty box.
+ *   - the SEGMENT is the distance from the start dot to the end dot: the date
+ *     span in pixels, or the card height when the card is the taller of the two.
+ *
+ * So content pushes the two dates apart, and a longer deadline just walks the
+ * end dot further down the line while the card stays put. A rail drawn on the
+ * line between the two dots shows the duration.
  */
 
 export const PX_PER_DAY = 5.5
@@ -20,10 +27,15 @@ export const PHASE_GAP = 44
 export const TOP_PAD = 24
 export const BOTTOM_PAD = 120
 
-/** Pixel height a block wants, given its dates and its measured content. */
+/** The card itself: its content, never its dates. */
 export function blockHeight(block, contentHeight = 0) {
+  return Math.round(Math.max(MIN_BLOCK_H, contentHeight))
+}
+
+/** Start dot to end dot: the date span, or the card when the card is taller. */
+export function blockSegment(block, cardHeight) {
   const span = Math.max(1, daysBetween(block.start_date, block.end_date)) * PX_PER_DAY
-  return Math.round(Math.max(MIN_BLOCK_H, contentHeight, span))
+  return Math.round(Math.max(cardHeight, span))
 }
 
 /**
@@ -69,11 +81,12 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
 
     for (const block of mine) {
       const h = blockHeight(block, heights[block.id] || 0)
-      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, minStart: chainFloor })
+      const seg = blockSegment(block, h)
+      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, seg, minStart: chainFloor })
       chainFloor = block.end_date
       dots.push({ key: `d-${block.id}-s`, y, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
-      dots.push({ key: `d-${block.id}-e`, y: y + h, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
-      y += h + GAP_AFTER_BLOCK
+      dots.push({ key: `d-${block.id}-e`, y: y + seg, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
+      y += seg + GAP_AFTER_BLOCK
     }
 
     if (canCreate) {
