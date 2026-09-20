@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { buildLayout, dateFromDrag, nowMarker, PX_PER_DAY } from '../lib/layout'
+import { buildLayout, dateFromDrag, nowMarker } from '../lib/layout'
 import { addDays, daysBetween, formatDot, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
@@ -174,13 +174,12 @@ export default function Timeline() {
           const editable = canEditBlock(session, block)
           return (
             <div key={row.key} className="block-row">
-              {/* The rail on the line runs the block's full duration, from its
-                  start dot to its end dot, however tall the card itself is. */}
-              <div className="block-extent" style={{ top: row.y, height: row.seg }} />
+              {/* The rail on the line ties the block's start dot to its end dot. */}
+              <div className="block-extent" style={{ top: row.y, height: row.h }} />
               {editable && (
                 <div
                   className="extent-handle"
-                  style={{ top: row.y + row.seg }}
+                  style={{ top: row.y + row.h }}
                   onPointerDown={(e) => onResizeStart(e, 'bottom', block, row.minStart)}
                   title="Drag to move the deadline"
                 />
@@ -237,5 +236,3 @@ export default function Timeline() {
     </div>
   )
 }
-
-export { PX_PER_DAY }

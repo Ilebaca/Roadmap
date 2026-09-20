@@ -4,20 +4,18 @@ import { addDays, daysBetween, todayISO } from './dates'
  * Timeline geometry.
  * ---------------------------------------------------------------------------
  * One continuous vertical line carries every phase, top to bottom. A block hangs
- * off its start dot by its top-left corner.
+ * off its start dot by its top-left corner and reaches down to its end dot.
  *
- * Two different heights are at play:
- *   - the CARD is only ever as tall as its own content (with a floor). A long
- *     deadline never stretches it into an empty box.
- *   - the SEGMENT is the distance from the start dot to the end dot: the date
- *     span in pixels, or the card height when the card is the taller of the two.
- *
- * So content pushes the two dates apart, and a longer deadline just walks the
- * end dot further down the line while the card stays put. A rail drawn on the
- * line between the two dots shows the duration.
+ * The line is a SEQUENCE of dates, not a proportional scale: how far apart two
+ * dots sit has nothing to do with how many days lie between them. Spacing comes
+ * from content alone — a block with more in it is taller, so its two dates sit
+ * further apart. Two days or two years between them looks exactly the same; the
+ * length of a job is read off the numbers, not off the line.
  */
 
-export const PX_PER_DAY = 5.5
+/** Drag sensitivity only — pixels dragged per day of date change. It is a
+ *  feel-of-the-gesture constant, NOT a scale the line is drawn to. */
+export const DRAG_PX_PER_DAY = 6
 export const MIN_BLOCK_H = 132
 export const GAP_AFTER_BLOCK = 72 // end dot -> next start dot
 export const PHASE_HEADER_H = 78
@@ -27,15 +25,9 @@ export const PHASE_GAP = 44
 export const TOP_PAD = 24
 export const BOTTOM_PAD = 120
 
-/** The card itself: its content, never its dates. */
+/** A block is as tall as its content. Its dates never change its height. */
 export function blockHeight(block, contentHeight = 0) {
   return Math.round(Math.max(MIN_BLOCK_H, contentHeight))
-}
-
-/** Start dot to end dot: the date span, or the card when the card is taller. */
-export function blockSegment(block, cardHeight) {
-  const span = Math.max(1, daysBetween(block.start_date, block.end_date)) * PX_PER_DAY
-  return Math.round(Math.max(cardHeight, span))
 }
 
 /**
@@ -81,12 +73,11 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
 
     for (const block of mine) {
       const h = blockHeight(block, heights[block.id] || 0)
-      const seg = blockSegment(block, h)
-      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, seg, minStart: chainFloor })
+      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, minStart: chainFloor })
       chainFloor = block.end_date
       dots.push({ key: `d-${block.id}-s`, y, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
-      dots.push({ key: `d-${block.id}-e`, y: y + seg, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
-      y += seg + GAP_AFTER_BLOCK
+      dots.push({ key: `d-${block.id}-e`, y: y + h, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
+      y += h + GAP_AFTER_BLOCK
     }
 
     if (canCreate) {
@@ -123,8 +114,9 @@ function phaseStartGuess(ordered, phase, blocks, chainFloor) {
 
 /**
  * Where "today" falls on the line. Dots carry dates and y positions, so the
- * marker is a straight interpolation between the two dots it sits between;
- * outside the range it extrapolates at the line's own px-per-day scale.
+ * marker interpolates between the two dots it sits between. Since the line is
+ * not a proportional scale there is nothing to extrapolate along past the ends:
+ * before the first date or after the last it simply parks at that end, dimmed.
  */
 export function nowMarker(dots, totalHeight, today = todayISO()) {
   if (!dots.length) return null
@@ -133,13 +125,10 @@ export function nowMarker(dots, totalHeight, today = todayISO()) {
   const last = sorted.at(-1)
 
   if (daysBetween(today, first.date) > 0) {
-    const y = first.y - daysBetween(today, first.date) * PX_PER_DAY
-    return { y: Math.max(6, y), date: today, clamped: y < 6 }
+    return { y: Math.max(8, first.y - 26), date: today, clamped: true }
   }
   if (daysBetween(last.date, today) > 0) {
-    const y = last.y + daysBetween(last.date, today) * PX_PER_DAY
-    const max = totalHeight - 6
-    return { y: Math.min(max, y), date: today, clamped: y > max }
+    return { y: Math.min(totalHeight - 8, last.y + 26), date: today, clamped: true }
   }
 
   for (let i = 1; i < sorted.length; i++) {
@@ -170,8 +159,9 @@ export function snapDate(candidate, snapDates, toleranceDays = 3) {
   return bestDist <= toleranceDays && best ? best : candidate
 }
 
-/** Pixels dragged -> a new date, snapped. */
+/** Pixels dragged -> a new date, snapped. The card does not move with the
+ *  cursor; the dates in its corner and the readout pill are the feedback. */
 export function dateFromDrag(originDate, deltaPx, snapDates) {
-  const days = Math.round(deltaPx / PX_PER_DAY)
+  const days = Math.round(deltaPx / DRAG_PX_PER_DAY)
   return snapDate(addDays(originDate, days), snapDates)
 }

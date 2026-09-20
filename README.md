@@ -92,12 +92,12 @@ when Supabase Storage is wired up, `url` becomes a signed URL.
 edge snaps onto any other date dot as it passes — as far up or down as you like
 — and the date updates on release.
 
-**A card is only as tall as its content.** Stretching a deadline out by months
-does not inflate the block into an empty box: the card keeps its own height and
-the end dot simply walks further down the line, with a rail drawn between the
-two dots showing the duration. It works the other way too — a block with more
-content pushes its two dates apart, because the gap between the dots can never
-be smaller than the card.
+**The line is a sequence, not a scale.** How far apart two dots sit has nothing
+to do with how many days lie between them — a two-day job and a two-year job look
+identical on the line; the length is read off the numbers. Spacing comes from
+content alone: a block with more in it is taller, so its two dates sit further
+apart. Dragging an edge therefore does not stretch the card, it just moves the
+date; the corner range and the readout pill follow the cursor.
 
 **Reset data** in the top bar restores the seeded mock rows.
 
