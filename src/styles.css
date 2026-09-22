@@ -387,10 +387,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   opacity: 0; transition: opacity 0.15s;
   z-index: 3; /* media fills its row — the controls sit over it, not under */
 }
-/* on a picture the toolbar rides the top-right corner of the media */
-.asset-image .asset-tools { top: 8px; right: 8px; }
-/* on a grid it sits top-left, clear of the corner cell's own controls */
-.asset-grid .asset-tools { top: 8px; left: 8px; right: auto; }
+/* media fills its row, so its controls sit in a strip above it rather than
+   on top of the picture — and clear of each cell's own controls */
+.asset-image, .asset-grid { padding-top: 34px; }
+.asset-image .asset-tools,
+.asset-grid .asset-tools { top: 0; right: 0; left: auto; }
 .size-pick { display: flex; gap: 1px; margin-right: 4px; padding-right: 4px; border-right: 1px solid var(--line); }
 .size-pick button {
   width: 22px; height: 22px;
