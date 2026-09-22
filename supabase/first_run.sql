@@ -13,12 +13,12 @@
 
 do $$
 declare
-  -- ⬇⬇⬇ THE ONLY THREE LINES YOU EDIT ⬇⬇⬇
-  v_admin_id    uuid := '00000000-0000-0000-0000-000000000000';  -- paste the User UID
-  v_admin_email text := 'you@yourstudio.com';
+  -- ⬇⬇⬇ THE ONLY TWO LINES YOU EDIT ⬇⬇⬇
+  v_admin_id    uuid := '00000000-0000-0000-0000-000000000000';  -- paste your User UID
   v_client_name text := 'First Client';
-  -- ⬆⬆⬆ -------------------------------- ⬆⬆⬆
+  -- ⬆⬆⬆ ------------------------------ ⬆⬆⬆
 
+  v_admin_email text;
   v_project uuid;
   v_slugs   text[] := array['logo-system','color-palette','typography-system',
                             'visual-language','ai-prompts-guide','brand-voice','downloadables'];
@@ -26,7 +26,9 @@ declare
                             'Visual language','AI prompts guide','Brand voice and messaging','Downloadables'];
   i int;
 begin
-  if not exists (select 1 from auth.users where id = v_admin_id) then
+  -- the email comes from the account itself, so it always matches your login
+  select email into v_admin_email from auth.users where id = v_admin_id;
+  if v_admin_email is null then
     raise exception 'No auth user with id %. Create the user first, then paste its ID.', v_admin_id;
   end if;
 
