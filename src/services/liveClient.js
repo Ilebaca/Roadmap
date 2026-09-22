@@ -358,11 +358,12 @@ export const liveApi = {
   },
 
   async reorderBrandSections(session, project_id, orderedIds) {
-    await Promise.all(
+    const results = await Promise.all(
       orderedIds.map((id, i) =>
         supabase.from('brand_sections').update({ order_index: i }).eq('id', id)
       )
     )
+    results.forEach(ok)
     return true
   },
 
@@ -405,13 +406,9 @@ export const liveApi = {
       file_size = file.size
     }
 
-    const siblings = ok(
-      await supabase
-        .from('brand_assets')
-        .select('order_index')
-        .eq('section_id', section_id)
-        .is('parent_id', parent_id ?? null)
-    )
+    // `is` is for null only — a cell inside a grid is matched with `eq`.
+    const q = supabase.from('brand_assets').select('order_index').eq('section_id', section_id)
+    const siblings = ok(await (parent_id ? q.eq('parent_id', parent_id) : q.is('parent_id', null)))
 
     const row = ok(
       await supabase
@@ -476,9 +473,10 @@ export const liveApi = {
   },
 
   async reorderBrandAssets(session, section_id, orderedIds) {
-    await Promise.all(
+    const results = await Promise.all(
       orderedIds.map((id, i) => supabase.from('brand_assets').update({ order_index: i }).eq('id', id))
     )
+    results.forEach(ok)
     return true
   },
 
@@ -493,9 +491,10 @@ export const liveApi = {
     const j = direction === 'up' ? i - 1 : i + 1
     if (j < 0 || j >= siblings.length) return row
     ;[siblings[i], siblings[j]] = [siblings[j], siblings[i]]
-    await Promise.all(
+    const results = await Promise.all(
       siblings.map((a, k) => supabase.from('brand_assets').update({ order_index: k }).eq('id', a.id))
     )
+    results.forEach(ok)
     return row
   },
 
