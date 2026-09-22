@@ -4,10 +4,12 @@
    ========================================================================== */
 
 :root {
-  --bg: #f1f2f5;
-  --card: #ffffff;
-  --card-2: #fafbfc;
-  --card-3: #f2f3f6;
+  /* Nothing here is pure white: a white image, logo or mockup dropped on a
+     panel still shows its edges. */
+  --bg: #ebedf1;
+  --card: #f9fafb;
+  --card-2: #f3f5f8;
+  --card-3: #edeff3;
   --line: #e4e6ec;
   --line-soft: #edeef2;
   --ink: #14161a;
