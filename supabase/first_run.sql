@@ -1,6 +1,10 @@
 -- =============================================================================
 -- First run: make yourself the admin and set up your first client.
 --
+-- Deliberately NOT called seed.sql: Supabase runs a file by that name by
+-- itself when a repository is connected, and this one needs your user id
+-- pasted in first. Run it by hand, once, after the three migrations.
+--
 -- BEFORE RUNNING: create your own login first —
 --   Supabase dashboard -> Authentication -> Users -> Add user
 --   (email + password, tick "Auto Confirm User")
