@@ -5,16 +5,18 @@ A single-page React app with two apps on a left icon rail:
 - **Roadmap** — a vertical date line with content blocks, phases that open to
   the client only once the previous one is fully approved, and a separate
   approve action that locks a block for everyone.
-- **Brand Delivery System** — the same shell (floating list on the left, one
+- **Visual Identity** — the same shell (floating list on the left, one
   panel on the right) holding the finished brand: Logo, Typography, Colours,
   Photography, Mockups, AI Guide and so on. Every client starts from the same
   standard category templates; an admin renames them, rewrites what they are
   for, removes the ones a client does not need and adds their own. What goes
   *inside* a category is not built yet — each one opens empty.
 
-The top-left shows the client's logo and name. An admin runs several clients and
-picks between them from a dropdown there; a viewer is bound to one and just sees
-their own.
+The top-left shows the client's logo and name. An admin runs several clients:
+the name there is editable in place, the logo and chevron open the client list,
+and a new client is started from the bottom of that list — seeded with the
+standard Visual Identity categories and an empty roadmap. A viewer is bound to
+one client and just sees the name, as plain text.
 
 **There is no backend.** All data is mock data held in one isolated module, with
 optional `localStorage` persistence so a refresh keeps your changes. Everything
@@ -133,7 +135,7 @@ src/
   components/
     AppRail, ClientSwitcher            ← the two apps, and which client
     Sidebar, Timeline, BlockCard, StateSelect   ← the roadmap
-    BrandDelivery                      ← the brand system
+    BrandDelivery                      ← Visual Identity
     AccountsModal, Icons
 ```
 

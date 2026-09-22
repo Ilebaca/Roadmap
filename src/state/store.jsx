@@ -147,6 +147,31 @@ export function StoreProvider({ children }) {
       selectPhase(phaseId) {
         setActivePhaseId(phaseId)
       },
+      /** Admin only: start a new client and open it. */
+      async createProject(name) {
+        try {
+          const row = await api.createProject(session, { name })
+          setProjects(await api.listProjects(session))
+          setActivePhaseId(null)
+          setActiveProjectId(row.id)
+          return row
+        } catch (e) {
+          setError(e.message || String(e))
+          setTimeout(() => setError(null), 4000)
+          return null
+        }
+      },
+      /** Admin only: rename the client from the top bar. */
+      async renameProject(id, name) {
+        try {
+          await api.updateProject(session, id, { name })
+          setProjects(await api.listProjects(session))
+          await refresh()
+        } catch (e) {
+          setError(e.message || String(e))
+          setTimeout(() => setError(null), 4000)
+        }
+      },
       /** Admin only in practice — a viewer's list holds just their own client. */
       selectProject(projectId) {
         if (projectId === activeProjectId) return

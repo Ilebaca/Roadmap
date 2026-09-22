@@ -5,8 +5,7 @@ import { canCreate } from '../lib/permissions'
 import { Plus, Trash, X } from './Icons'
 
 /**
- * Brand Delivery System — the second app on the rail. Same shell as the
- * roadmap: a floating list on the left, one big panel on the right.
+ * Visual Identity — the second app on the rail. Same shell as the roadmap: a floating list on the left, one big panel on the right.
  *
  * The list is standardised: every client starts from the same template
  * catalogue, and an admin adjusts those categories (rename, rewrite, remove)
@@ -34,7 +33,7 @@ export default function BrandDelivery() {
     <>
       <aside className="sidebar">
         <div className="sidebar-head">
-          <span className="eyebrow">Brand system</span>
+          <span className="eyebrow">Visual Identity</span>
           <h2>{project?.name ?? '—'}</h2>
         </div>
 

@@ -108,8 +108,30 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 5px 10px 5px 6px; border-radius: 12px;
   text-align: left;
 }
-.client-id.is-button { cursor: pointer; }
+.client-id.is-button { padding-right: 4px; }
 .client-id.is-button:hover { background: var(--card); border-color: var(--line); }
+
+.client-logo-btn,
+.client-caret-btn {
+  background: transparent; border: 0; padding: 0;
+  display: inline-flex; align-items: center; cursor: pointer; border-radius: 9px;
+}
+.client-caret-btn { padding: 6px 4px; }
+.client-caret-btn:hover .client-caret { color: var(--ink); }
+
+/* the name is the rename field, styled as plain text until you touch it */
+.client-name-input {
+  width: 15ch; min-width: 6ch;
+  background: transparent; border: 1px solid transparent; border-radius: 8px;
+  font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+  padding: 4px 7px; margin: 0 -1px;
+  cursor: text; text-overflow: ellipsis;
+}
+.client-name-input:hover { border-color: var(--line); }
+.client-name-input:focus {
+  outline: none; border-color: var(--muted-2); background: var(--card-2);
+  width: 20ch;
+}
 .client-id.is-open { background: var(--card); border-color: var(--line); box-shadow: var(--shadow-sm); }
 
 .client-logo {
@@ -143,10 +165,34 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: transparent; border: 0; border-radius: 10px;
   padding: 7px 10px; cursor: pointer; text-align: left; font-size: 13px;
 }
-.client-option > span { flex: 1; }
+.client-option > span:not(.client-logo) { flex: 1; }
 .client-option:hover { background: var(--card-3); }
 .client-option.is-current { background: var(--card-3); font-weight: 550; }
 .client-option .client-logo { border-radius: 8px; font-size: 10px; }
+
+.client-new {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: transparent; border: 0; border-top: 1px solid var(--line-soft);
+  border-radius: 0 0 10px 10px;
+  margin-top: 4px; padding: 10px; cursor: pointer;
+  font-size: 12.5px; color: var(--muted);
+}
+.client-new:hover { color: var(--ink); background: var(--card-3); }
+
+.client-new-form {
+  display: flex; gap: 6px; align-items: center;
+  border-top: 1px solid var(--line-soft); margin-top: 4px; padding: 8px 6px 4px;
+}
+.client-new-form input {
+  flex: 1; min-width: 0;
+  background: var(--card-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 9px; font-size: 12.5px;
+}
+.client-new-form input:focus { outline: none; border-color: var(--muted-2); }
+.client-new-form button {
+  background: var(--ink); color: #fff; border: 0;
+  border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer;
+}
 
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 

@@ -2,12 +2,12 @@ import { BrandGlyph, RoadmapGlyph } from './Icons'
 
 /**
  * The far-left rail: one icon per app. The selected one sits in a white box.
- * Roadmap is where work is scheduled and approved; the Brand Delivery System
- * is where the finished brand is handed over. Same shell, different contents.
+ * Roadmap is where work is scheduled and approved; Visual Identity is where
+ * the finished brand is handed over. Same shell, different contents.
  */
 export const APPS = [
   { id: 'roadmap', label: 'Roadmap', Glyph: RoadmapGlyph },
-  { id: 'brand', label: 'Brand Delivery System', Glyph: BrandGlyph }
+  { id: 'brand', label: 'Visual Identity', Glyph: BrandGlyph }
 ]
 
 export default function AppRail({ active, onSelect }) {

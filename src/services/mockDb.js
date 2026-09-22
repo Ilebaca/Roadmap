@@ -24,7 +24,7 @@ const BASE = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())
 const D = (offsetDays) => new Date(BASE + offsetDays * 86400000).toISOString().slice(0, 10)
 const TS = (offsetDays) => new Date(BASE + offsetDays * 86400000 + 10 * 3600000).toISOString()
 
-/** Every client's brand system starts from the standard template catalogue. */
+/** Every client's Visual Identity starts from the standard template catalogue. */
 const brandSectionsFor = (project_id, slugs = DEFAULT_TEMPLATE_SLUGS) =>
   slugs.map((slug, i) => {
     const t = BRAND_TEMPLATES.find((x) => x.slug === slug)
@@ -181,7 +181,7 @@ export const seed = () => ({
     { id: 'apr_4', block_id: 'blk_9', approved_by: 'u_viewer_2', approved_at: TS(-17) }
   ],
 
-  // TABLE: brand_sections — the second app's left-hand list, per client.
+  // TABLE: brand_sections — Visual Identity's left-hand list, per client.
   // Seeded from the standard templates; an admin adjusts and adds to them.
   brand_sections: [
     ...brandSectionsFor('prj_1'),

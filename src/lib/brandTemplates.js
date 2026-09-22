@@ -1,5 +1,5 @@
 /**
- * The standard Brand Delivery System categories.
+ * The standard Visual Identity categories.
  *
  * Every client starts from this catalogue, so two clients' systems are laid out
  * the same way. Each one is a starting point, not a fixture: an admin renames

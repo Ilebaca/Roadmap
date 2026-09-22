@@ -15,6 +15,7 @@
 
 import { seed } from './mockDb'
 import { addDays, daysBetween } from '../lib/dates'
+import { BRAND_TEMPLATES, DEFAULT_TEMPLATE_SLUGS } from '../lib/brandTemplates'
 
 const STORAGE_KEY = 'roadmap.mock.v1'
 const LATENCY_MS = 90 // fake network latency so loading states are real
@@ -196,6 +197,56 @@ export const api = {
         ? db.projects
         : db.projects.filter((p) => p.id === session.project_id)
     return wait(clone(rows))
+  },
+
+  /**
+   * Start a new client. The roadmap begins empty — the admin adds phases — but
+   * Visual Identity is seeded with the standard categories so every client is
+   * laid out the same way.
+   * BACKEND:
+   *   const { data } = await supabase.from('projects')
+   *     .insert({ name, created_by: auth.uid() }).select().single()
+   * and seed the categories in the same transaction, ideally a Postgres
+   * function (`create_project(p_name text)`) so a half-made client is
+   * impossible.
+   */
+  async createProject(session, { name }) {
+    assertAdmin(session)
+    const row = {
+      id: uid('prj'),
+      name: (name || '').trim() || 'New client',
+      logo_url: null,
+      created_by: session.id
+    }
+    db.projects.push(row)
+    DEFAULT_TEMPLATE_SLUGS.forEach((slug, i) => {
+      const t = BRAND_TEMPLATES.find((x) => x.slug === slug)
+      db.brand_sections.push({
+        id: uid('bs'),
+        project_id: row.id,
+        slug,
+        title: t.title,
+        blurb: t.blurb,
+        template: slug,
+        order_index: i
+      })
+    })
+    persist()
+    return wait(clone(row))
+  },
+
+  /**
+   * Rename a client (or point it at a logo).
+   * BACKEND: supabase.from('projects').update(patch).eq('id', id).select().single()
+   */
+  async updateProject(session, id, patch) {
+    assertAdmin(session)
+    const row = db.projects.find((p) => p.id === id)
+    if (!row) throw new Error('Client not found')
+    if ('name' in patch) row.name = (patch.name || '').trim() || row.name
+    if ('logo_url' in patch) row.logo_url = patch.logo_url
+    persist()
+    return wait(clone(row))
   },
 
   async getProject(session, project_id) {
@@ -391,7 +442,7 @@ export const api = {
   },
 
   // ===========================================================================
-  // BRAND SECTIONS (the Brand Delivery System's categories)
+  // BRAND SECTIONS (the Visual Identity categories)
   // ===========================================================================
 
   /**
