@@ -37,19 +37,20 @@ their own — check **Database → Migrations** and skip to step 3.
 4. **Run**. "Success. No rows returned" is what you want. Notices about
    policies "does not exist, skipping" are normal.
 
-Then run `verify.sql` the same way. Every line should read clean:
+Then run `verify.sql` the same way. It is one query, so the editor shows the
+whole answer — every row should say `ok`:
 
 ```
-tables              8 of 8
-missing tables      none — all 8 are there
-missing functions   none — all 8 are there
-row-level security  on for every table
-policies            15 (expect 15)
-triggers on blocks  2 (expect 2)
+check               found           status
+tables              8 of 8          ok
+functions           8 of 8          ok
+row-level security  8 of 8 tables   ok
+policies            15 of 15        ok
+triggers on blocks  2 of 2          ok
 ```
 
-If something is missing, run that part again — nothing is broken, and
-re-running repairs it.
+Anything else names what is missing and which part to run again. Nothing is
+broken by a half-run; re-running that part repairs it.
 
 ## 3. Create your own login
 
