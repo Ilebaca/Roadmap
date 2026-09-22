@@ -58,7 +58,7 @@ export default function BrandDelivery() {
               >
                 <span className="phase-body">
                   <span className="phase-title">{s.title}</span>
-                  <span className="phase-meta">{countLabel(store.assetsFor(s.id).length)}</span>
+                  <span className="phase-meta">{countLabel(store.topAssetsFor(s.id).length)}</span>
                 </span>
               </button>
               {admin && (
@@ -125,8 +125,8 @@ export default function BrandDelivery() {
         <ConfirmDialog
           title={`Delete "${pendingCat.title}"?`}
           body={
-            store.assetsFor(pendingCat.id).length
-              ? `Everything in it goes too — ${countLabel(store.assetsFor(pendingCat.id).length)}. This cannot be undone.`
+            store.topAssetsFor(pendingCat.id).length
+              ? `Everything in it goes too — ${countLabel(store.topAssetsFor(pendingCat.id).length)}. This cannot be undone.`
               : 'This cannot be undone.'
           }
           confirmLabel="Delete category"

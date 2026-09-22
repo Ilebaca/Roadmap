@@ -250,6 +250,9 @@ export function StoreProvider({ children }) {
       removeBrandAsset(id) {
         return run(() => api.deleteBrandAsset(session, id))
       },
+      reorderBrandAssets(sectionId, orderedIds) {
+        return run(() => api.reorderBrandAssets(session, sectionId, orderedIds))
+      },
       moveBrandAsset(id, direction) {
         return run(() => api.moveBrandAsset(session, id, direction))
       },
@@ -291,8 +294,14 @@ export function StoreProvider({ children }) {
     actions,
     approvalFor: (blockId) => approvals.find((a) => a.block_id === blockId) || null,
     linksFor: (blockId) => links.filter((l) => l.block_id === blockId),
+    /** Everything in a category, grids and their images alike. */
     assetsFor: (sectionId) =>
       brandAssets.filter((a) => a.section_id === sectionId).sort((a, b) => a.order_index - b.order_index),
+    /** Just the items that sit in the category's own column. */
+    topAssetsFor: (sectionId) =>
+      brandAssets
+        .filter((a) => a.section_id === sectionId && !a.parent_id)
+        .sort((a, b) => a.order_index - b.order_index),
     userById: (id) => accounts.find((u) => u.id === id) || null
   }
 

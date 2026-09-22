@@ -194,7 +194,7 @@ export const seed = () => ({
     },
     {
       id: 'ba_1b', section_id: 'bs_prj_1_logo-system', kind: 'paragraph', order_index: 1,
-      title: '',
+      title: null,
       body: 'Keep clear space around the lockup equal to the height of the mark. Nothing — type, rules, photography — comes inside it.',
       url: null, file_name: null, file_size: null
     },
@@ -212,7 +212,7 @@ export const seed = () => ({
     },
     {
       id: 'ba_3b', section_id: 'bs_prj_1_color-palette', kind: 'paragraph', order_index: 1,
-      title: '',
+      title: null,
       body: 'Ink #14161A carries the brand. Bone #F2F3F6 is the ground it sits on. Everything else is support and never more than a fifth of a layout.',
       url: null, file_name: null, file_size: null
     }

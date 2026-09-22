@@ -363,6 +363,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .asset { position: relative; }
 .asset:hover .asset-tools { opacity: 1; }
+.asset.is-dragging { opacity: 0.4; }
+
+/* where the block would land */
+.asset.drop-before::before,
+.asset.drop-after::after {
+  content: '';
+  position: absolute; left: 0; right: 0;
+  height: 2px; border-radius: 2px; background: var(--ink);
+  z-index: 4;
+}
+.asset.drop-before::before { top: -10px; }
+.asset.drop-after::after { bottom: -10px; }
+
+.icon-btn.grip { cursor: grab; }
+.icon-btn.grip:active { cursor: grabbing; }
 
 .asset-tools {
   position: absolute; top: -4px; right: 0;
@@ -370,7 +385,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--card); border: 1px solid var(--line);
   border-radius: 6px; padding: 2px;
   opacity: 0; transition: opacity 0.15s;
+  z-index: 3; /* media fills its row — the controls sit over it, not under */
 }
+/* on a picture or a grid the toolbar rides the top-right corner of the media */
+.asset-image .asset-tools,
+.asset-grid .asset-tools { top: 8px; right: 8px; }
 .size-pick { display: flex; gap: 1px; margin-right: 4px; padding-right: 4px; border-right: 1px solid var(--line); }
 .size-pick button {
   width: 22px; height: 22px;
@@ -447,7 +466,70 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .img-download:focus-visible { opacity: 1; transform: none; }
 .img-download:hover { border-color: var(--ink); }
 
-.asset-add { display: flex; gap: 8px; margin-top: 24px; }
+/* a row of images, two or three across */
+.img-grid { display: grid; gap: 10px; align-items: start; }
+.img-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.img-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.grid-tile {
+  position: relative; margin: 0;
+  border-radius: var(--radius); overflow: hidden; line-height: 0;
+}
+.grid-tile img { display: block; width: 100%; height: auto; }
+
+.grid-tile .img-download { right: 8px; bottom: 8px; width: 28px; height: 28px; }
+.grid-tile:hover .img-download { opacity: 1; transform: none; }
+
+/* a cell's own controls: switch it between picture and text, or take it out */
+.tile-tools {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: center; gap: 2px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 6px; padding: 2px;
+  opacity: 0; transition: opacity 0.15s;
+  z-index: 2;
+}
+.grid-tile:hover .tile-tools { opacity: 1; }
+.tile-tools .size-pick button { display: grid; place-items: center; }
+
+/* a text cell sits in the grid as a block of copy */
+.grid-tile.tile-paragraph {
+  background: var(--card-2); border: 1px solid var(--line);
+  padding: 16px; line-height: 1.6; min-height: 132px;
+}
+.tile-text { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
+.tile-text-input {
+  width: 100%; background: transparent; border: 0;
+  font-size: 13.5px; line-height: 1.65; color: var(--muted);
+  resize: none; overflow: hidden; padding: 0;
+}
+.tile-text-input:focus { outline: none; color: var(--text); }
+
+/* an image cell with nothing in it yet */
+.tile-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 7px; min-height: 132px; line-height: 1.4;
+  border: 1.5px dashed #d2d6de; border-radius: var(--radius);
+  color: var(--muted-2); cursor: pointer; font-size: 11.5px;
+}
+.tile-empty:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card-2); }
+
+.grid-tile.is-new {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; min-height: 132px; line-height: 1.4;
+  border: 1.5px dashed #d2d6de; background: transparent;
+  color: var(--muted-2);
+}
+.grid-tile.is-new:hover { border-color: var(--muted-2); }
+
+.tile-add-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent; border: 1px solid transparent; border-radius: 999px;
+  color: var(--muted); font-size: 12px; padding: 6px 12px; cursor: pointer;
+}
+.tile-add-btn:hover { color: var(--ink); background: var(--card); border-color: var(--line); }
+
+.asset-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
 .add-chip {
   display: inline-flex; align-items: center; gap: 7px;
   background: transparent; border: 1px dashed #d2d6de; color: var(--muted);
@@ -1009,4 +1091,5 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .app-rail { width: 42px; }
   .rail-btn { width: 42px; height: 42px; }
   .brand-panel { padding: 22px; }
+  .img-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
 }

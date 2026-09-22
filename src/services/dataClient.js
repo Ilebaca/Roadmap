@@ -592,21 +592,33 @@ export const api = {
    *     .upload(`${project_id}/${section_id}/${crypto.randomUUID()}`, file)
    *   await supabase.from('brand_assets').insert({ ..., file_path: data.path })
    */
-  async createBrandAsset(session, { section_id, kind, title, body, url, file_name, file_size, size }) {
+  async createBrandAsset(
+    session,
+    { section_id, kind, title, body, url, file_name, file_size, size, parent_id = null, columns }
+  ) {
     assertAdmin(session)
     const section = db.brand_sections.find((b) => b.id === section_id)
     if (!section) throw new Error('Category not found')
-    const siblings = db.brand_assets.filter((a) => a.section_id === section_id)
+    // Images inside a grid are ordered among themselves, not among the
+    // category's top-level items.
+    const siblings = db.brand_assets.filter(
+      (a) => a.section_id === section_id && (a.parent_id ?? null) === parent_id
+    )
     const row = {
       id: uid('ba'),
       section_id,
       kind,
-      title: title ?? '',
+      // null means "this block has no such part"; '' means an empty one the
+      // admin is about to fill. That is how a text block knows whether it
+      // carries a heading, a paragraph, or both.
+      title: title ?? null,
       body: body ?? null,
       url: url ?? null,
       file_name: file_name ?? null,
       file_size: file_size ?? null,
       size: size ?? (kind === 'heading' ? 'm' : null), // headline size: s | m | l
+      parent_id, // set on an image that sits inside a grid
+      columns: columns ?? (kind === 'grid' ? 2 : null), // images across, for a grid
       order_index: siblings.length ? Math.max(...siblings.map((a) => a.order_index)) + 1 : 0
     }
     db.brand_assets.push(row)
@@ -627,7 +639,9 @@ export const api = {
     assertAdmin(session)
     const row = db.brand_assets.find((a) => a.id === id)
     if (!row) throw new Error('Content not found')
-    for (const k of ['title', 'body', 'url', 'file_name', 'file_size', 'size', 'order_index']) {
+    // `kind` is patchable so a cell in a grid can be switched between an
+    // image and a block of text without losing its place in the order.
+    for (const k of ['kind', 'title', 'body', 'url', 'file_name', 'file_size', 'size', 'columns', 'order_index']) {
       if (k in patch) row[k] = patch[k]
     }
     persist()
@@ -641,9 +655,26 @@ export const api = {
    */
   async deleteBrandAsset(session, id) {
     assertAdmin(session)
-    db.brand_assets = db.brand_assets.filter((a) => a.id !== id)
+    // A grid takes its images with it (`on delete cascade` on parent_id).
+    db.brand_assets = db.brand_assets.filter((a) => a.id !== id && a.parent_id !== id)
     persist()
     return wait(null)
+  },
+
+  /**
+   * Put a category's blocks in the given order — what a drag-and-drop lands on.
+   * BACKEND: one upsert of {id, order_index} pairs, or a function taking the id
+   * array, so the whole reorder applies at once.
+   */
+  async reorderBrandAssets(session, section_id, orderedIds) {
+    assertAdmin(session)
+    const rows = db.brand_assets.filter((a) => a.section_id === section_id && !a.parent_id)
+    orderedIds.forEach((id, i) => {
+      const row = rows.find((r) => r.id === id)
+      if (row) row.order_index = i
+    })
+    persist()
+    return wait(true)
   },
 
   /**
@@ -657,7 +688,7 @@ export const api = {
     const row = db.brand_assets.find((a) => a.id === id)
     if (!row) throw new Error('Content not found')
     const siblings = db.brand_assets
-      .filter((a) => a.section_id === row.section_id)
+      .filter((a) => a.section_id === row.section_id && (a.parent_id ?? null) === (row.parent_id ?? null))
       .sort((a, b) => a.order_index - b.order_index)
     const i = siblings.findIndex((a) => a.id === id)
     const j = direction === 'up' ? i - 1 : i + 1

@@ -121,3 +121,32 @@ export const HeadingGlyph = (p) => (
     <path d="M5 13h14M5 17h9" strokeWidth="1.6" />
   </svg>
 )
+
+/** Two or three columns, depending on `cols`. */
+export const GridGlyph = ({ cols = 2, ...p }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+    {cols === 3 ? (
+      <>
+        <rect x="2.5" y="6" width="5.6" height="12" rx="1.6" />
+        <rect x="9.2" y="6" width="5.6" height="12" rx="1.6" />
+        <rect x="15.9" y="6" width="5.6" height="12" rx="1.6" />
+      </>
+    ) : (
+      <>
+        <rect x="2.5" y="6" width="8.6" height="12" rx="1.8" />
+        <rect x="12.9" y="6" width="8.6" height="12" rx="1.8" />
+      </>
+    )}
+  </svg>
+)
+
+export const GripGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+    <circle cx="9" cy="6" r="1.6" />
+    <circle cx="15" cy="6" r="1.6" />
+    <circle cx="9" cy="12" r="1.6" />
+    <circle cx="15" cy="12" r="1.6" />
+    <circle cx="9" cy="18" r="1.6" />
+    <circle cx="15" cy="18" r="1.6" />
+  </svg>
+)

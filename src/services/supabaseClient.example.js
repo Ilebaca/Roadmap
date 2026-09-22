@@ -29,7 +29,9 @@
  *   create table brand_assets (
  *     id uuid primary key default gen_random_uuid(),
  *     section_id uuid not null references brand_sections(id) on delete cascade,
- *     kind text not null check (kind in ('heading','paragraph','image','file','link')),
+ *     kind text not null check (kind in ('heading','paragraph','image','grid','file','link')),
+ *     parent_id uuid references brand_assets(id) on delete cascade, -- image in a grid
+ *     columns int,             -- images across, for kind = 'grid'
  *     title text not null default '',
  *     body text,
  *     size text,               -- headline size: 's' | 'm' | 'l'

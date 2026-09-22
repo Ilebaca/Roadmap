@@ -11,12 +11,15 @@ A single-page React app with two apps on a left icon rail:
   Visual language, AI prompts guide, Brand voice and messaging, Downloadables —
   and Photography, Mockups and Motion are there to add when a client needs one.
   An admin renames them, rewrites what they are for, removes the ones a client
-  does not need and adds their own. Inside a category, an admin adds headlines,
-  paragraphs and images, edits them in place, reorders them and takes them out
-  again. A headline comes in three sizes, picked from the hover toolbar. An
-  image spans the full width of the panel and carries no title of its own — put
-  a headline above it. Anyone can download an image: the button appears on the
-  image on hover. **Downloadables** is different: a grid of boxes, each
+  does not need and adds their own. Inside a category, an admin builds the page out
+  of blocks: headlines, paragraphs, full-width images, and grids of two or
+  three across. A text block holds a headline, a paragraph or both — add the
+  missing half from its toolbar and they stay one block. A headline comes in
+  three sizes. A grid cell switches between a picture and a block of text
+  without losing its place, and an image switched to text keeps its file, so
+  switching back brings the picture with it. Blocks are dragged by the grip in
+  their toolbar to reorder, or nudged with the arrows. Anyone can download an
+  image: the button appears on it on hover. **Downloadables** is different: a grid of boxes, each
   either a zip to download or a link out to where the files already live.
 
 The top-left shows the client's logo and name. An admin runs several clients:
