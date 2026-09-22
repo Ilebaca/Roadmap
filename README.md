@@ -55,6 +55,7 @@ lands.
 | Open any phase, released or not | ✅ | — |
 | Adjust / add brand categories | ✅ | — |
 | Create phases and blocks | ✅ | — |
+| Delete a phase (and its blocks) | ✅ | — |
 | Edit title / description | ✅ | — |
 | Set dates, drag-resize | ✅ | — |
 | Set state (To Do → Review) | ✅ | — |

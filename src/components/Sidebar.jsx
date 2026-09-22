@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
 import { canCreate } from '../lib/permissions'
-import { Check, Lock, Plus } from './Icons'
+import { Check, Lock, Plus, Trash } from './Icons'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
@@ -31,8 +31,8 @@ export default function Sidebar() {
           const gate = gates[phase.id] ?? {}
           const active = phase.id === activePhaseId
           return (
+            <div key={phase.id} className="cat-row">
             <button
-              key={phase.id}
               className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''}`}
               onClick={() => gate.unlocked && actions.selectPhase(phase.id)}
               disabled={!gate.unlocked}
@@ -66,6 +66,18 @@ export default function Sidebar() {
                 {gate.unlocked && gate.complete && <Check width="14" height="14" />}
               </span>
             </button>
+            {/* Same as a Visual Identity category: hover, trash, gone — along
+                with every block inside it. */}
+            {admin && (
+              <button
+                className="icon-btn danger cat-remove"
+                onClick={() => actions.removePhase(phase.id)}
+                title={`Delete ${phase.title}${gate.total ? ` and its ${gate.total} block${gate.total > 1 ? 's' : ''}` : ''}`}
+              >
+                <Trash width="13" height="13" />
+              </button>
+            )}
+            </div>
           )
         })}
       </nav>

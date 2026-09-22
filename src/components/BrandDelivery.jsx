@@ -138,10 +138,6 @@ function BrandSection({ section, admin, onPatch }) {
         ) : (
           <p className="brand-blurb">{section.blurb}</p>
         )}
-
-        <span className={`pill ${section.template ? '' : 'pill-quiet'}`}>
-          {section.template ? 'Standard category' : 'Custom category'}
-        </span>
       </header>
 
       {/* Deliberately empty: the contents of a category are the next build.

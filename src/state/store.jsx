@@ -222,6 +222,10 @@ export function StoreProvider({ children }) {
       removeLink(id) {
         return run(() => api.deleteLink(session, id))
       },
+      /** Admin only: removes the phase and everything inside it. */
+      removePhase(id) {
+        return run(() => api.deletePhase(session, id))
+      },
       createPhase(title) {
         return run(() => api.createPhase(session, { project_id: activeProjectId, title }))
       },

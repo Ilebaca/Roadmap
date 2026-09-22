@@ -299,6 +299,26 @@ export const api = {
     return wait(clone(row))
   },
 
+  /**
+   * Delete a phase and everything hanging off it — its blocks, their links and
+   * their approvals. Admin only, and irreversible; the UI confirms first.
+   * BACKEND: supabase.from('phases').delete().eq('id', id) — the cascade is the
+   * database's job (`on delete cascade` on blocks.phase_id, block_links.block_id
+   * and approvals.block_id), so this stays a single statement.
+   */
+  async deletePhase(session, id) {
+    assertAdmin(session)
+    const phase = db.phases.find((p) => p.id === id)
+    if (!phase) return wait(null)
+    const blockIds = db.blocks.filter((b) => b.phase_id === id).map((b) => b.id)
+    db.approvals = db.approvals.filter((a) => !blockIds.includes(a.block_id))
+    db.block_links = db.block_links.filter((l) => !blockIds.includes(l.block_id))
+    db.blocks = db.blocks.filter((b) => b.phase_id !== id)
+    db.phases = db.phases.filter((p) => p.id !== id)
+    persist()
+    return wait(null)
+  },
+
   /** BACKEND: supabase.from('phases').update(patch).eq('id', id).select().single() */
   async updatePhase(session, id, patch) {
     assertAdmin(session)
