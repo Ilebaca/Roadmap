@@ -355,7 +355,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 /* ---------- Visual Identity contents -------------------------------------- */
-.asset-list { display: flex; flex-direction: column; gap: 22px; }
+.asset-list { display: flex; flex-direction: column; gap: 18px; }
+/* a paragraph sits close under the headline it belongs to */
+.asset-heading + .asset, .asset-list .asset-heading ~ .asset { margin-top: 0; }
 
 .asset { position: relative; }
 .asset:hover .asset-tools { opacity: 1; }
@@ -381,6 +383,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .asset-title-input:hover { border-color: var(--line); }
 .asset-title-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
 
+.asset-heading { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.015em; }
+.asset-heading-input {
+  display: block; width: 100%; max-width: 62ch;
+  background: transparent; border: 1px solid transparent; border-radius: 8px;
+  font-size: 18px; font-weight: 650; letter-spacing: -0.015em;
+  padding: 4px 7px; margin: 0 -7px;
+}
+.asset-heading-input:hover { border-color: var(--line); }
+.asset-heading-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
+
 .asset-body { margin: 0; max-width: 62ch; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 .asset-body-input {
   display: block; width: 100%; max-width: 62ch;
@@ -397,7 +409,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--card-2);
 }
-.ghost-btn.download { position: absolute; right: 10px; bottom: 10px; }
+/* icon only, and only while the image is hovered or the button is focused */
+.img-download {
+  position: absolute; right: 10px; bottom: 10px;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 9px; color: var(--ink);
+  opacity: 0; transform: translateY(2px);
+  transition: opacity 0.15s, transform 0.15s, border-color 0.15s;
+}
+.asset-figure:hover .img-download,
+.img-download:focus-visible { opacity: 1; transform: none; }
+.img-download:hover { border-color: var(--ink); }
 
 .asset-add { display: flex; gap: 8px; margin-top: 24px; }
 .add-chip {

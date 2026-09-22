@@ -114,3 +114,10 @@ export const ZipGlyph = (p) => (
     <path d="M9.5 6.5h1.5M9.5 9h1.5M9.5 11.5h1.5M9.5 14h1.5" />
   </svg>
 )
+
+export const HeadingGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" {...p}>
+    <path d="M5 7h14" strokeWidth="3" />
+    <path d="M5 13h14M5 17h9" strokeWidth="1.6" />
+  </svg>
+)

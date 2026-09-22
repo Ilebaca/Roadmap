@@ -11,9 +11,10 @@ A single-page React app with two apps on a left icon rail:
   Visual language, AI prompts guide, Brand voice and messaging, Downloadables —
   and Photography, Mockups and Motion are there to add when a client needs one.
   An admin renames them, rewrites what they are for, removes the ones a client
-  does not need and adds their own. Inside a category, an admin adds text and
-  images, edits them in place, reorders them and takes them out again; anyone
-  can download an image. **Downloadables** is different: a grid of boxes, each
+  does not need and adds their own. Inside a category, an admin adds headlines,
+  paragraphs and images, edits them in place, reorders them and takes them out
+  again; an image carries no title of its own — put a headline above it. Anyone
+  can download an image: the button appears on the image on hover. **Downloadables** is different: a grid of boxes, each
   either a zip to download or a link out to where the files already live.
 
 The top-left shows the client's logo and name. An admin runs several clients:
@@ -168,6 +169,12 @@ value sets, so nothing reshapes. `projects.logo_url` is null in the mock and
 falls back to the client's initials; it will point at a Supabase Storage object.
 `brand_sections` rows are seeded per client from the template catalogue in
 `lib/brandTemplates.js`, which stays in the codebase as the standard set.
+
+**Downloads need a real host.** An image or a zip downloads through an ordinary
+`<a download>`, which works when the app is served normally and inside a plain
+iframe (the Webflow embed). A *sandboxed* preview frame blocks downloads at the
+frame level — there is nothing the page can do about it from the inside, so test
+downloads on the deployed URL rather than in a sandboxed preview.
 
 **Uploads are the one thing the mock cannot really do.** A picked file is read
 into a data URL and kept in the same browser snapshot as everything else, so

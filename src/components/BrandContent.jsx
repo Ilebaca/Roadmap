@@ -3,6 +3,7 @@ import { formatBytes, hostOf, readFileAsDataUrl, withProtocol } from '../lib/fil
 import {
   ArrowUp,
   Download,
+  HeadingGlyph,
   ImageGlyph,
   Link as LinkIcon,
   TextGlyph,
@@ -37,7 +38,8 @@ export default function BrandContent({ section, assets, admin, actions, onError 
       await actions.addBrandAsset({
         section_id: section.id,
         kind,
-        title: file.name.replace(/\.[^.]+$/, ''),
+        // A zip in Downloadables is named; an image is not.
+        title: kind === 'image' ? '' : file.name.replace(/\.[^.]+$/, ''),
         ...read
       })
     } catch (e) {
@@ -87,11 +89,15 @@ export default function BrandContent({ section, assets, admin, actions, onError 
         <div className="asset-add">
           <button
             className="add-chip"
-            onClick={() =>
-              actions.addBrandAsset({ section_id: section.id, kind: 'text', title: '', body: '' })
-            }
+            onClick={() => actions.addBrandAsset({ section_id: section.id, kind: 'heading', title: '' })}
           >
-            <TextGlyph width="13" height="13" /> Add text
+            <HeadingGlyph width="13" height="13" /> Add headline
+          </button>
+          <button
+            className="add-chip"
+            onClick={() => actions.addBrandAsset({ section_id: section.id, kind: 'paragraph', body: '' })}
+          >
+            <TextGlyph width="13" height="13" /> Add paragraph
           </button>
           <label className="add-chip">
             <ImageGlyph width="13" height="13" /> Add image
@@ -142,21 +148,31 @@ function AssetRow({ asset, admin, first, last, actions, onRemove, onMove }) {
         </div>
       )}
 
-      {admin ? (
-        <input
-          className="asset-title-input"
-          defaultValue={asset.title}
-          placeholder={asset.kind === 'image' ? 'Caption' : 'Heading'}
-          onBlur={(e) =>
-            e.target.value !== asset.title && actions.updateBrandAsset(asset.id, { title: e.target.value })
-          }
-          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-        />
-      ) : (
-        asset.title && <h4 className="asset-title">{asset.title}</h4>
-      )}
+      {/* A headline carries a title, a paragraph carries a body, and an image
+          is just the image — put a headline above it if it needs naming.
+          ('text' is the older combined row, still rendered so a snapshot
+          written before the split keeps working.) */}
+      {(asset.kind === 'heading' || asset.kind === 'text') &&
+        (admin ? (
+          <input
+            className={asset.kind === 'heading' ? 'asset-heading-input' : 'asset-title-input'}
+            defaultValue={asset.title}
+            placeholder="Headline"
+            onBlur={(e) =>
+              e.target.value !== asset.title && actions.updateBrandAsset(asset.id, { title: e.target.value })
+            }
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+          />
+        ) : (
+          asset.title &&
+          (asset.kind === 'heading' ? (
+            <h3 className="asset-heading">{asset.title}</h3>
+          ) : (
+            <h4 className="asset-title">{asset.title}</h4>
+          ))
+        ))}
 
-      {asset.kind === 'text' &&
+      {(asset.kind === 'paragraph' || asset.kind === 'text') &&
         (admin ? (
           <AutoGrow
             className="asset-body-input"
@@ -170,10 +186,17 @@ function AssetRow({ asset, admin, first, last, actions, onRemove, onMove }) {
 
       {asset.kind === 'image' && (
         <figure className="asset-figure">
-          <img src={asset.url} alt={asset.title || ''} />
-          {/* Downloadable by anyone, admin or client. */}
-          <a className="ghost-btn download" href={asset.url} download={asset.file_name || 'image'}>
-            <Download width="14" height="14" /> Download
+          <img src={asset.url} alt={asset.file_name || ''} />
+          {/* Downloadable by anyone, admin or client — the button appears on
+              hover over the image itself, and on keyboard focus. */}
+          <a
+            className="img-download"
+            href={asset.url}
+            download={asset.file_name || 'image'}
+            title="Download image"
+            aria-label={`Download ${asset.file_name || 'image'}`}
+          >
+            <Download width="15" height="15" />
           </a>
         </figure>
       )}

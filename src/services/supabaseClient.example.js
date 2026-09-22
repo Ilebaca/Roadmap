@@ -29,7 +29,7 @@
  *   create table brand_assets (
  *     id uuid primary key default gen_random_uuid(),
  *     section_id uuid not null references brand_sections(id) on delete cascade,
- *     kind text not null check (kind in ('text','image','file','link')),
+ *     kind text not null check (kind in ('heading','paragraph','image','file','link')),
  *     title text not null default '',
  *     body text,
  *     url text,                -- external link, for kind = 'link'

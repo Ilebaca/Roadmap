@@ -189,13 +189,17 @@ export const seed = () => ({
   //   link  -> somewhere external
   brand_assets: [
     {
-      id: 'ba_1', section_id: 'bs_prj_1_logo-system', kind: 'text', order_index: 0,
-      title: 'Clear space',
+      id: 'ba_1', section_id: 'bs_prj_1_logo-system', kind: 'heading', order_index: 0,
+      title: 'Clear space', body: null, url: null, file_name: null, file_size: null
+    },
+    {
+      id: 'ba_1b', section_id: 'bs_prj_1_logo-system', kind: 'paragraph', order_index: 1,
+      title: '',
       body: 'Keep clear space around the lockup equal to the height of the mark. Nothing — type, rules, photography — comes inside it.',
       url: null, file_name: null, file_size: null
     },
     {
-      id: 'ba_2', section_id: 'bs_prj_1_logo-system', kind: 'image', order_index: 1,
+      id: 'ba_2', section_id: 'bs_prj_1_logo-system', kind: 'image', order_index: 2,
       title: 'Primary lockup',
       body: null,
       url:
@@ -203,8 +207,12 @@ export const seed = () => ({
       file_name: 'acme-primary-lockup.svg', file_size: 412
     },
     {
-      id: 'ba_3', section_id: 'bs_prj_1_color-palette', kind: 'text', order_index: 0,
-      title: 'Core palette',
+      id: 'ba_3', section_id: 'bs_prj_1_color-palette', kind: 'heading', order_index: 0,
+      title: 'Core palette', body: null, url: null, file_name: null, file_size: null
+    },
+    {
+      id: 'ba_3b', section_id: 'bs_prj_1_color-palette', kind: 'paragraph', order_index: 1,
+      title: '',
       body: 'Ink #14161A carries the brand. Bone #F2F3F6 is the ground it sits on. Everything else is support and never more than a fifth of a layout.',
       url: null, file_name: null, file_size: null
     }
