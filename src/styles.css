@@ -538,17 +538,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-top: 1px dashed rgba(214, 69, 53, 0.45);
 }
 
-.now-marker::after {
-  content: '';
-  position: absolute; left: var(--line-x); top: 0;
+/* the dot where today crosses the line — above the duration rails, while the
+   rule itself stays under the cards */
+.now-dot {
+  position: absolute; left: var(--line-x);
   width: 9px; height: 9px; border-radius: 50%;
   background: #d64535;
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 3px var(--card);
+  z-index: 3; pointer-events: none;
 }
+.now-dot.is-clamped { opacity: 0.45; }
 
 .now-label {
   position: absolute; left: 18px; top: 0;
+  z-index: 1; /* sits on the rule, never under it */
   transform: translateY(-50%);
   display: inline-flex; align-items: baseline; gap: 7px;
   background: #fdecea; border: 1px solid #f5cdc7; color: #b03a2b;

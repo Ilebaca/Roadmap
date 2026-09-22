@@ -217,13 +217,17 @@ export default function Timeline() {
           const now = nowMarker(layout.dots, layout.totalHeight, today)
           if (!now) return null
           return (
+            <>
+            <span className={`now-dot ${now.clamped ? 'is-clamped' : ''}`} style={{ top: now.y }} />
             <div className={`now-marker ${now.clamped ? 'is-clamped' : ''}`} style={{ top: now.y }}>
+              {/* rule first, label second: the label paints over it */}
+              <span className="now-rule" />
               <span className="now-label">
                 Today
                 <em>{formatShort(now.date)}</em>
               </span>
-              <span className="now-rule" />
             </div>
+            </>
           )
         })()}
 
