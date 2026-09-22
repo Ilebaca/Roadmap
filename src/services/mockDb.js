@@ -50,6 +50,11 @@ export const seed = () => ({
     { id: 'u_viewer_2', email: 'client@northwind.com', role: 'viewer', project_id: 'prj_2' }
   ],
 
+  // TABLE: invites
+  // Who is allowed in, written down before they have a login. Claimed when
+  // they sign up with that address.
+  invites: [],
+
   // TABLE: projects
   // One project = one client engagement. `name` is the client shown in the top
   // bar; `logo_url` is null here and falls back to initials — later it points at

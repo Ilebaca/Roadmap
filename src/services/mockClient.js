@@ -186,18 +186,80 @@ export const mockApi = {
     return wait(clone(user))
   },
 
+  /** BACKEND: select * from invites order by created_at desc */
+  async listInvites() {
+    return wait(clone(db.invites))
+  },
+
   /**
-   * Admin creates an account. Stub UI for now.
-   * BACKEND: this cannot run from the browser with an anon key — it needs
-   * `supabase.auth.admin.createUser()` from an edge function / server route,
-   * then an INSERT into `users` with the role and project_id.
+   * Writes down who is allowed in and which client they belong to. No login is
+   * created here — the person claims the invite by signing up with this
+   * address.
+   * BACKEND: rpc('create_invite'), which also links anybody who already signed
+   * up. The mock has no signup, so it links them straight away and the
+   * Accounts list behaves the same.
    */
-  async createUser(session, { email, role, project_id }) {
+  async createInvite(session, { email, role, project_id }) {
     assertAdmin(session)
-    const row = { id: uid('u'), email, role, project_id }
-    db.users.push(row)
+    const address = String(email).trim().toLowerCase()
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
+      throw new Error('That does not look like an email address.')
+    }
+    if (role === 'viewer' && !project_id) throw new Error('A viewer has to belong to a client.')
+
+    // Re-inviting the same address replaces the open invite rather than failing.
+    db.invites = db.invites.filter((i) => i.email !== address || i.claimed_at)
+
+    const existing = db.users.find((u) => u.email.toLowerCase() === address)
+    const row = {
+      id: uid('inv'),
+      email: address,
+      role,
+      project_id: role === 'admin' ? project_id ?? null : project_id,
+      created_by: session.id,
+      created_at: new Date().toISOString(),
+      claimed_at: null,
+      claimed_by: null
+    }
+
+    if (existing) {
+      // Already has a login: move them rather than making them sign up again.
+      existing.role = row.role
+      existing.project_id = row.project_id
+      row.claimed_at = row.created_at
+      row.claimed_by = existing.id
+    }
+
+    db.invites.unshift(row)
     persist()
     return wait(clone(row))
+  },
+
+  /** BACKEND: delete from invites where id = $1 (admin-only by policy) */
+  async deleteInvite(session, id) {
+    assertAdmin(session)
+    db.invites = db.invites.filter((i) => i.id !== id)
+    persist()
+    return wait(true)
+  },
+
+  /**
+   * Takes access away. The login itself stays — only the service_role key can
+   * delete one — but with no `users` row every policy refuses.
+   * BACKEND: rpc('revoke_access')
+   */
+  async revokeAccess(session, user_id) {
+    assertAdmin(session)
+    if (user_id === session.id) throw new Error('You cannot remove your own access.')
+    db.invites = db.invites.filter((i) => i.claimed_by !== user_id)
+    db.users = db.users.filter((u) => u.id !== user_id)
+    persist()
+    return wait(true)
+  },
+
+  /** The mock has no sign-up: an invite here is claimed the moment it is made. */
+  async signUp() {
+    throw new Error('Sign-up needs the live backend.')
   },
 
   // ===========================================================================

@@ -59,14 +59,25 @@ export const liveApi = {
   async getSession() {
     const { data: auth } = await supabase.auth.getUser()
     if (!auth?.user) return null
-    const { data, error } = await supabase.from('users').select('*').eq('id', auth.user.id).single()
-    if (error) {
-      throw new Error(
-        `Signed in as ${auth.user.email}, but there is no row for you in the users table. ` +
-          'Run first_run.sql with this account’s User UID to make yourself the admin.'
-      )
-    }
+    const { data } = await supabase.from('users').select('*').eq('id', auth.user.id).maybeSingle()
+    // A login with no row here is somebody who signed up without an invite, or
+    // whose access was taken away. They are signed in and have nothing: the app
+    // shows them that rather than a broken project.
+    if (!data) return { id: auth.user.id, email: auth.user.email, role: null, project_id: null, pending: true }
     return data
+  },
+
+  /**
+   * Sets a password for an invited address. The invite is what grants access:
+   * a trigger on signup reads it and writes the `users` row with the right
+   * role and client. Signing up without one leaves an account that can see
+   * nothing, which is the point.
+   */
+  async signUp({ email, password }) {
+    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+    if (error) throw new Error(error.message)
+    // With email confirmation on, Supabase returns a user but no session.
+    return { needsConfirmation: !data.session }
   },
 
   /** Every account this session is allowed to see — admins see all. */
@@ -74,16 +85,40 @@ export const liveApi = {
     return ok(await supabase.from('users').select('*').order('email'))
   },
 
+  /** Everyone invited, claimed or still waiting. Admin-only by policy. */
+  async listInvites() {
+    return ok(await supabase.from('invites').select('*').order('created_at', { ascending: false }))
+  },
+
   /**
-   * Creating a login cannot happen from the browser: it needs the service_role
-   * key, which must never ship in the app. Add the person under
-   * Authentication -> Users in the dashboard, then insert their row here.
+   * Writes down who is allowed in and which client they belong to. It cannot
+   * create the login itself — that needs the service_role key, which must never
+   * ship in a browser app — so the person claims it by signing up with this
+   * address. If they already have a login, the function links them on the spot.
    */
-  async createUser(session, { email, role, project_id }) {
-    throw new Error(
-      `Add ${email} under Authentication → Users in Supabase, then run:\n\n` +
-        `insert into public.users (id, email, role, project_id)\nvalues ('THEIR-USER-UID', '${email}', '${role}', '${project_id}');`
-    )
+  async createInvite(session, { email, role, project_id }) {
+    const { data, error } = await supabase.rpc('create_invite', {
+      p_email: email,
+      p_role: role,
+      p_project_id: role === 'admin' ? project_id ?? null : project_id
+    })
+    if (error) throw new Error(error.message)
+    return Array.isArray(data) ? data[0] : data
+  },
+
+  /** Withdraws an invite nobody has claimed yet. */
+  async deleteInvite(session, id) {
+    ok(await supabase.from('invites').delete().eq('id', id).select())
+  },
+
+  /**
+   * Takes access away. The login itself stays — deleting one needs the
+   * service_role key — but without a `users` row every policy refuses, so they
+   * sign in to a page telling them they have no access.
+   */
+  async revokeAccess(session, user_id) {
+    const { error } = await supabase.rpc('revoke_access', { p_user_id: user_id })
+    if (error) throw new Error(error.message)
   },
 
   // ===========================================================================

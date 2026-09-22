@@ -14,7 +14,8 @@ const StoreContext = createContext(null)
 
 export function StoreProvider({ children }) {
   const [session, setSession] = useState(null) // the signed-in user row
-  const [accounts, setAccounts] = useState([]) // dev role switcher only
+  const [accounts, setAccounts] = useState([]) // everyone with access
+  const [invites, setInvites] = useState([]) // people asked in who have not signed up yet
   const [project, setProject] = useState(null)
   const [projects, setProjects] = useState([]) // every client this account can open
   const [activeProjectId, setActiveProjectId] = useState(null)
@@ -78,7 +79,7 @@ export function StoreProvider({ children }) {
 
   // --- which clients this account can open -----------------------------------
   useEffect(() => {
-    if (!session) return
+    if (!session || session.pending) return
     let alive = true
     ;(async () => {
       // BACKEND: supabase.from('projects').select('*') — RLS returns the one
@@ -86,7 +87,10 @@ export function StoreProvider({ children }) {
       const rows = await api.listProjects(session)
       if (!alive) return
       setProjects(rows)
-      if (isLive) api.listUsers().then((u) => alive && setAccounts(u)).catch(() => {})
+      if (isAdmin(session)) {
+        api.listUsers().then((u) => alive && setAccounts(u)).catch(() => {})
+        api.listInvites().then((i) => alive && setInvites(i)).catch(() => {})
+      }
       // A viewer always lands on their own project; an admin starts on theirs.
       setActiveProjectId(rows.some((p) => p.id === session.project_id) ? session.project_id : rows[0]?.id ?? null)
     })()
@@ -129,7 +133,8 @@ export function StoreProvider({ children }) {
   }, [session, activeProjectId])
 
   useEffect(() => {
-    if (!session || !activeProjectId) return
+    if (session?.pending) setLoading(false)
+    if (!session || session.pending || !activeProjectId) return
     // A viewer is bound to one project. On a session change the active project
     // can briefly still be the previous user's — skip that render; the effect
     // above corrects it.
@@ -170,7 +175,7 @@ export function StoreProvider({ children }) {
     [refresh]
   )
 
-  const actions = useMemo(
+  const actionsRef = useMemo(
     () => ({
       /** DEV ONLY — the role switcher. Real auth replaces this with sign-in. */
       async signOut() {
@@ -317,12 +322,27 @@ export function StoreProvider({ children }) {
       moveBrandAsset(id, direction) {
         return run(() => api.moveBrandAsset(session, id, direction))
       },
-      createAccount(input) {
-        return run(async () => {
-          const u = await api.createUser(session, input)
-          setAccounts(await api.listUsers())
-          return u
-        })
+      /** Ask somebody in. They claim it by signing up with that address. */
+      async inviteUser(input) {
+        const row = await api.createInvite(session, input)
+        await actionsRef.reloadAccounts()
+        return row
+      },
+      async cancelInvite(id) {
+        await api.deleteInvite(session, id)
+        await actionsRef.reloadAccounts()
+      },
+      async revokeAccess(userId) {
+        await api.revokeAccess(session, userId)
+        await actionsRef.reloadAccounts()
+      },
+      async reloadAccounts() {
+        const [u, i] = await Promise.all([api.listUsers(), api.listInvites()])
+        setAccounts(u)
+        setInvites(i)
+      },
+      signOut() {
+        return api.signOut()
       },
       async resetMockData() {
         await api.resetMockData()
@@ -333,12 +353,15 @@ export function StoreProvider({ children }) {
         await refresh(me)
       }
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [run, session, refresh, activeProjectId, phases]
   )
+  const actions = actionsRef
 
   const value = {
     session,
     accounts,
+    invites,
     authReady,
     isLive,
     project,

@@ -1088,12 +1088,44 @@ button, input, select, textarea {
 .account-form input:focus, .account-form select:focus { outline: none; border-color: var(--muted-2); }
 .account-form .primary-btn { grid-column: 1 / -1; }
 
-.stub-note { font-size: 11.5px; color: var(--muted); margin: 0 0 14px; }
+.stub-note { font-size: 11.5px; color: var(--muted); margin: 16px 0 0; }
 
-.account-list { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 14px; }
-.account-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
-.account-email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.account-project { color: var(--muted-2); font-size: 11px; }
+.account-section { border-top: 1px solid var(--line-soft); padding-top: 12px; margin-top: 14px; }
+.account-section h4 {
+  margin: 0 0 10px; font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted-2); font-weight: 700;
+}
+.account-row {
+  display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+  padding: 5px 0; min-height: 30px;
+}
+.account-email {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+/* Marks the row you are signed in as, whose revoke button is disabled. */
+.account-you {
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+}
+.account-row .pill { flex: none; }
+.account-row .icon-btn { flex: none; opacity: 0; }
+.account-row:hover .icon-btn { opacity: 1; }
+.account-row .icon-btn:disabled { opacity: 0 !important; cursor: default; }
+
+.account-note {
+  margin: 0 0 4px; font-size: 12px; line-height: 1.55; color: var(--muted);
+  background: var(--card-2); border: 1px solid var(--line-soft);
+  border-radius: 6px; padding: 10px 12px;
+}
+.account-error {
+  margin: 0 0 4px; font-size: 12.5px; line-height: 1.5; color: #8f2018;
+  background: #fdeceb; border: 1px solid #f3c6c2; border-radius: 6px; padding: 9px 11px;
+}
+
+/* The accounts panel carries three columns of its own; the default modal is
+   sized for a confirmation. */
+.modal-wide { width: min(560px, calc(100vw - 32px)); }
 
 /* ---------- sign in -------------------------------------------------------- */
 .signin-frame { height: 100%; display: grid; place-items: center; padding: 24px; }
@@ -1117,6 +1149,14 @@ button, input, select, textarea {
 .signin input:focus { outline: none; border-color: var(--muted-2); }
 .signin .primary-btn { margin-top: 4px; }
 .signin .primary-btn:disabled { opacity: 0.6; cursor: default; }
+.signin .ghost-btn { align-self: flex-start; }
+/* Swaps between signing in and claiming an invite. */
+.signin-switch {
+  background: none; border: 0; padding: 0; margin: 2px auto 0;
+  font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--line);
+}
+.signin-switch:hover { color: var(--ink); }
 .signin-error {
   margin: 0; font-size: 12.5px; line-height: 1.5; color: #8f2018;
   background: #fdeceb; border: 1px solid #f3c6c2; border-radius: 6px; padding: 9px 11px;

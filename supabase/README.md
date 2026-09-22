@@ -24,10 +24,10 @@ error if you take them out of order.
 
 ## 2. Build the database
 
-**If your repository is connected to Supabase**, the three migrations run on
+**If your repository is connected to Supabase**, the migrations run on
 their own — check **Database → Migrations** and skip to step 3.
 
-**Otherwise, paste them by hand.** For each of the three files, in order:
+**Otherwise, paste them by hand.** For each file in `migrations/`, in order:
 
 1. **SQL Editor** → **New query**.
 2. Paste the whole file.
@@ -42,10 +42,10 @@ whole answer — every row should say `ok`:
 
 ```
 check               found           status
-tables              8 of 8          ok
-functions           8 of 8          ok
-row-level security  8 of 8 tables   ok
-policies            15 of 15        ok
+tables              9 of 9          ok
+functions           11 of 11        ok
+row-level security  9 of 9 tables   ok
+policies            16 of 16        ok
 triggers on blocks  2 of 2          ok
 ```
 
@@ -105,16 +105,41 @@ signed URLs — nothing in the bucket is public.
 
 ## Adding a client login
 
-1. **Authentication** → **Users** → **Add user** (their email + a password).
-2. Copy their User UID, then in the SQL editor:
+Do it in the app: **Accounts** in the top bar (admins only).
 
-```sql
-insert into public.users (id, email, role, project_id) values
-  ('THEIR-USER-UID', 'client@theircompany.com', 'viewer', 'THE-PROJECT-ID');
-```
+1. Type their email, leave the role on **Client**, pick which client they
+   belong to, and press **Give access**.
+2. Send them the link to the app. On the sign-in screen they pick **First time
+   here? Set your password**, enter that same address and a password of their
+   own choosing, and they are in — on that one client and nothing else.
 
-The project id is in **Table Editor → projects**. They will see that one client
-and nothing else.
+You never see or set their password, and nothing has to be done in the Supabase
+dashboard.
+
+**Why it works this way.** Creating a login outright needs the `service_role`
+key, and that key can read and write every row in the database with the rules
+switched off — it can never ship inside a page anyone can open. So the app
+writes down who is allowed in, and the person claims it. A trigger on signup
+looks up that invite and writes their `users` row with the role and client you
+chose. Sign up without an invite and you get an account that can see nothing,
+which is what makes the open signup safe.
+
+Some details worth knowing:
+
+- **Already has a login?** Inviting them again moves them to the client you
+  picked, straight away — no second signup.
+- **Taking access away** (the bin icon on their row) deletes their `users` row.
+  Their password still works, but every rule refuses them and they land on a
+  page saying they have no access. Give them access again and they are back
+  where they were. Deleting the login itself is **Authentication → Users** in
+  the dashboard.
+- **You cannot remove your own access** — the button is disabled, and the
+  database refuses it too.
+- **Confirmation emails.** If **Authentication → Providers → Email → Confirm
+  email** is on, they get a link to click before the first sign-in. Turn it off
+  there if you would rather they went straight in.
+- **Admins** see every client and can add people. Only give that to your own
+  team.
 
 ---
 
@@ -123,6 +148,11 @@ and nothing else.
 Run against Postgres 16 and checked, not assumed:
 
 - A client sees only their own project; an admin sees every client.
+- An invite binds a new signup to exactly the client it names; signing up
+  without one grants nothing.
+- A client cannot invite anyone, read the invite list, make themselves an
+  admin, or move themselves to another client.
+- Only an admin can take access away, and not their own.
 - A client cannot edit anything directly — only approve, and only a block that
   is in Review.
 - Approving writes the approval and locks the block together, or not at all.

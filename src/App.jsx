@@ -33,6 +33,27 @@ function Shell() {
     )
   }
 
+  // Signed in with no row in `users`: an uninvited signup, or somebody whose
+  // access was taken away. Every policy refuses them, so there is no project to
+  // show — say so instead of spinning.
+  if (session?.pending) {
+    return (
+      <div className="signin-frame">
+        <div className="signin">
+          <span className="brand-dot" />
+          <h1>No access yet</h1>
+          <p>
+            You are signed in as <strong>{session.email}</strong>, but this address has not been given access to a
+            client. Ask the studio to add it, then sign in again.
+          </p>
+          <button className="ghost-btn" onClick={() => actions.signOut()}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (loading || !session) {
     return (
       <div className="app-frame">
