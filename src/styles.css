@@ -326,7 +326,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 4px 8px; margin: -4px -8px;
 }
 .brand-title-input:hover { border-color: var(--line); }
-.brand-title-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
+.brand-title-input:focus { outline: none; border-color: var(--muted-2); }
 
 .brand-blurb { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 62ch; }
 .brand-blurb-input {
@@ -336,7 +336,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   resize: none; overflow: hidden; padding: 5px 8px; margin: -5px -8px;
 }
 .brand-blurb-input:hover { border-color: var(--line); }
-.brand-blurb-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); color: var(--text); }
+.brand-blurb-input:focus { outline: none; border-color: var(--muted-2); color: var(--text); }
 
 .brand-shelf { margin-top: 26px; }
 
@@ -413,7 +413,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 4px 7px; margin: 0 -7px 4px;
 }
 .asset-title-input:hover { border-color: var(--line); }
-.asset-title-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
+.asset-title-input:focus { outline: none; border-color: var(--muted-2); }
 
 /* The headline itself. (The row around it is .asset-heading, from its kind.) */
 .asset-h { margin: 0; font-weight: 650; letter-spacing: -0.015em; }
@@ -427,7 +427,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 4px 7px; margin: 0 -7px;
 }
 .asset-h-input:hover { border-color: var(--line); }
-.asset-h-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
+.asset-h-input:focus { outline: none; border-color: var(--muted-2); }
 
 .asset-body { margin: 0; max-width: 62ch; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 .asset-body-input {
@@ -437,7 +437,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   resize: none; overflow: hidden; padding: 5px 7px; margin: 0 -7px;
 }
 .asset-body-input:hover { border-color: var(--line); }
-.asset-body-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); color: var(--text); }
+.asset-body-input:focus { outline: none; border-color: var(--muted-2); color: var(--text); }
 
 .asset-figure {
   margin: 0; position: relative;
@@ -493,10 +493,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .grid-tile:hover .tile-tools { opacity: 1; }
 .tile-tools .size-pick button { display: grid; place-items: center; }
 
-/* a text cell sits in the grid as a block of copy */
+/* a text cell is just text on the page — no panel behind it */
 .grid-tile.tile-paragraph {
-  background: var(--card-2); border: 1px solid var(--line);
-  padding: 16px; line-height: 1.6; min-height: 132px;
+  background: transparent; border: 0;
+  padding: 0; line-height: 1.6;
 }
 .tile-text { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 .tile-text-input {
