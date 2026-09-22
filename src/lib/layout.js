@@ -24,6 +24,9 @@ export const SLOT_H = 116
 export const PHASE_GAP = 44
 export const TOP_PAD = 24
 export const BOTTOM_PAD = 120
+/** Where today sits on an empty roadmap, with the first slot below it. */
+export const EMPTY_NOW_Y = 96
+export const EMPTY_SLOT_Y = 168
 
 /** A block is as tall as its content. Its dates never change its height. */
 export function blockHeight(block, contentHeight = 0) {
@@ -119,7 +122,9 @@ function phaseStartGuess(ordered, phase, blocks, chainFloor) {
  * before the first date or after the last it simply parks at that end, dimmed.
  */
 export function nowMarker(dots, totalHeight, today = todayISO()) {
-  if (!dots.length) return null
+  // An empty roadmap still shows the line and today on it — there is simply
+  // nothing else to place it between.
+  if (!dots.length) return { y: EMPTY_NOW_Y, date: today, clamped: false }
   const sorted = [...dots].sort((a, b) => a.y - b.y)
   const first = sorted[0]
   const last = sorted.at(-1)

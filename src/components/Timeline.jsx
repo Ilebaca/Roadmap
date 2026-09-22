@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { buildLayout, dateFromDrag, nowMarker } from '../lib/layout'
+import { buildLayout, dateFromDrag, EMPTY_SLOT_Y, nowMarker } from '../lib/layout'
 import { addDays, daysBetween, formatDot, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
@@ -119,6 +119,34 @@ export default function Timeline() {
     <div className="timeline-scroll" ref={scrollRef}>
       <div className="timeline-canvas" style={{ height: layout.totalHeight }}>
         <div className="timeline-rule" />
+
+        {/* An empty roadmap still carries the line and today's date, with the
+            first block started from here. */}
+        {!phases.length && (
+          <>
+            <div className="dot-row kind-slot" style={{ top: EMPTY_SLOT_Y }}>
+              <div className="date-label">
+                <span className="date-day">
+                  {formatDot(today).day} {formatDot(today).month}
+                </span>
+                <span className="date-year">{formatDot(today).year}</span>
+              </div>
+              <span className="dot" />
+            </div>
+            {admin ? (
+              <div className="slot" style={{ top: EMPTY_SLOT_Y }}>
+                <button className="slot-btn" onClick={actions.createFirstBlock} title="Add the first block">
+                  <Plus width="20" height="20" />
+                </button>
+                <span className="slot-hint">New block</span>
+              </div>
+            ) : (
+              <div className="slot" style={{ top: EMPTY_SLOT_Y }}>
+                <span className="slot-hint empty">Nothing scheduled yet.</span>
+              </div>
+            )}
+          </>
+        )}
 
         {/* dots + their date labels (label left of the dot) */}
         {layout.dots.map((dot) => {

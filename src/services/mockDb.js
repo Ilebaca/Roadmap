@@ -185,7 +185,8 @@ export const seed = () => ({
   // Seeded from the standard templates; an admin adjusts and adds to them.
   brand_sections: [
     ...brandSectionsFor('prj_1'),
-    ...brandSectionsFor('prj_2', ['logo', 'typography', 'colors', 'mockups']),
+    // a client whose system was trimmed to fit the job
+    ...brandSectionsFor('prj_2', ['logo-system', 'color-palette', 'typography-system', 'downloadables']),
     ...brandSectionsFor('prj_3')
   ]
 })

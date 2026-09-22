@@ -24,13 +24,24 @@ const LATENCY_MS = 90 // fake network latency so loading states are real
 let db = load()
 
 function load() {
+  const fresh = seed()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (!raw) return fresh
+    const saved = JSON.parse(raw)
+    // A snapshot written before a table existed would leave that table
+    // undefined and every read of it would throw. Keep whatever was saved and
+    // fall back to the seed for anything missing, so an old snapshot still
+    // opens. (The real backend migrates instead; this goes with the mock.)
+    const merged = {}
+    for (const table of Object.keys(fresh)) {
+      merged[table] = Array.isArray(saved?.[table]) ? saved[table] : fresh[table]
+    }
+    return merged
   } catch {
-    /* private mode / blocked storage — fall through to a fresh seed */
+    /* private mode / blocked storage / unreadable snapshot — start fresh */
   }
-  return seed()
+  return fresh
 }
 
 function persist() {
@@ -334,7 +345,31 @@ export const api = {
       end_date,
       locked: false
     }
-    withChain(projectOfPhase(phase_id), () => db.blocks.push(row))
+    const project_id = projectOfPhase(phase_id)
+    withChain(project_id, () => {
+      db.blocks.push(row)
+      // Fit the new block into the gap it was dropped into. Anything unlocked
+      // behind it gets pushed along by reflowChain(), but an approved block
+      // cannot move — so the new block ends where that one starts instead of
+      // the whole thing being refused.
+      const chain = chainOf(project_id)
+      const i = chain.findIndex((b) => b.id === row.id)
+      const prev = chain[i - 1]
+      const next = chain[i + 1]
+      if (prev && daysBetween(prev.end_date, row.start_date) < 0) {
+        const duration = daysBetween(row.start_date, row.end_date)
+        row.start_date = prev.end_date
+        row.end_date = addDays(row.start_date, Math.max(1, duration))
+      }
+      if (next?.locked && daysBetween(row.end_date, next.start_date) < 0) {
+        row.end_date = next.start_date
+        if (daysBetween(row.start_date, row.end_date) < 1) {
+          throw new ForbiddenError(
+            `There is no room before "${next.title}", which is approved. Unapprove it or move it back first.`
+          )
+        }
+      }
+    })
     persist()
     return wait(clone(row))
   },

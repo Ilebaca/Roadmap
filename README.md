@@ -6,11 +6,13 @@ A single-page React app with two apps on a left icon rail:
   the client only once the previous one is fully approved, and a separate
   approve action that locks a block for everyone.
 - **Visual Identity** — the same shell (floating list on the left, one
-  panel on the right) holding the finished brand: Logo, Typography, Colours,
-  Photography, Mockups, AI Guide and so on. Every client starts from the same
-  standard category templates; an admin renames them, rewrites what they are
-  for, removes the ones a client does not need and adds their own. What goes
-  *inside* a category is not built yet — each one opens empty.
+  panel on the right) holding the finished brand. Every client is created with
+  the same default categories — Logo system, Color palette, Typography system,
+  Visual language, AI prompts guide, Brand voice and messaging, Downloadables —
+  and Photography, Mockups and Motion are there to add when a client needs one.
+  An admin renames them, rewrites what they are for, removes the ones a client
+  does not need and adds their own. What goes *inside* a category is not built
+  yet — each one opens empty.
 
 The top-left shows the client's logo and name. An admin runs several clients:
 the name there is editable in place, the logo and chevron open the client list,
@@ -90,6 +92,10 @@ duration. Dragging a top edge back stops dead at the previous block's deadline.
 The rule is enforced in the data layer, not just the UI, so any write goes
 through it. If the slide would run into an *approved* block, the whole edit is
 rejected with a message rather than half-applied — unapprove that block first.
+
+**An empty roadmap still has a line.** A brand-new client opens on the date
+line with today marked on it and a dashed plus to start from — the first block
+creates its phase with it.
 
 **Today.** A live marker crosses the line at today's date, interpolated between
 the two dots it falls between. It re-checks the clock every 30 seconds, so it

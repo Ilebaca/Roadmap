@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { api } from '../services/dataClient'
 import { computePhaseGates, isAdmin } from '../lib/permissions'
+import { addDays, todayISO } from '../lib/dates'
 
 /**
  * The app's only state container. It talks to the data layer (`api`) and nothing
@@ -181,6 +182,24 @@ export function StoreProvider({ children }) {
       createBlock(input) {
         return run(() => api.createBlock(session, input))
       },
+      /**
+       * The first block of an empty roadmap. There is no phase to hang it on
+       * yet, so one is created first.
+       */
+      createFirstBlock() {
+        return run(async () => {
+          const phase =
+            phases[0] ?? (await api.createPhase(session, { project_id: activeProjectId, title: 'Phase 1' }))
+          const start = todayISO()
+          return api.createBlock(session, {
+            phase_id: phase.id,
+            title: 'Untitled block',
+            description: '',
+            start_date: start,
+            end_date: addDays(start, 7)
+          })
+        })
+      },
       updateBlock(id, patch) {
         return run(() => api.updateBlock(session, id, patch))
       },
@@ -231,7 +250,7 @@ export function StoreProvider({ children }) {
         await refresh(me)
       }
     }),
-    [run, session, refresh, activeProjectId]
+    [run, session, refresh, activeProjectId, phases]
   )
 
   const value = {
