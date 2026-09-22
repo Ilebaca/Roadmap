@@ -190,7 +190,7 @@ export const seed = () => ({
   brand_assets: [
     {
       id: 'ba_1', section_id: 'bs_prj_1_logo-system', kind: 'heading', order_index: 0,
-      title: 'Clear space', body: null, url: null, file_name: null, file_size: null
+      title: 'Clear space', body: null, url: null, file_name: null, file_size: null, size: 'm'
     },
     {
       id: 'ba_1b', section_id: 'bs_prj_1_logo-system', kind: 'paragraph', order_index: 1,
@@ -208,7 +208,7 @@ export const seed = () => ({
     },
     {
       id: 'ba_3', section_id: 'bs_prj_1_color-palette', kind: 'heading', order_index: 0,
-      title: 'Core palette', body: null, url: null, file_name: null, file_size: null
+      title: 'Core palette', body: null, url: null, file_name: null, file_size: null, size: 'm'
     },
     {
       id: 'ba_3b', section_id: 'bs_prj_1_color-palette', kind: 'paragraph', order_index: 1,

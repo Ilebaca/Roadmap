@@ -89,7 +89,9 @@ export default function BrandContent({ section, assets, admin, actions, onError 
         <div className="asset-add">
           <button
             className="add-chip"
-            onClick={() => actions.addBrandAsset({ section_id: section.id, kind: 'heading', title: '' })}
+            onClick={() =>
+              actions.addBrandAsset({ section_id: section.id, kind: 'heading', title: '', size: 'm' })
+            }
           >
             <HeadingGlyph width="13" height="13" /> Add headline
           </button>
@@ -136,6 +138,21 @@ function AssetRow({ asset, admin, first, last, actions, onRemove, onMove }) {
     <article className={`asset asset-${asset.kind}`}>
       {admin && (
         <div className="asset-tools">
+          {/* Headlines come in three sizes. */}
+          {asset.kind === 'heading' && (
+            <div className="size-pick" role="group" aria-label="Headline size">
+              {['s', 'm', 'l'].map((sz) => (
+                <button
+                  key={sz}
+                  className={(asset.size ?? 'm') === sz ? 'is-on' : ''}
+                  onClick={() => actions.updateBrandAsset(asset.id, { size: sz })}
+                  title={{ s: 'Small', m: 'Medium', l: 'Large' }[sz]}
+                >
+                  {sz.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
           <button className="icon-btn tiny" disabled={first} onClick={() => onMove('up')} title="Move up">
             <ArrowUp width="13" height="13" />
           </button>
@@ -155,7 +172,11 @@ function AssetRow({ asset, admin, first, last, actions, onRemove, onMove }) {
       {(asset.kind === 'heading' || asset.kind === 'text') &&
         (admin ? (
           <input
-            className={asset.kind === 'heading' ? 'asset-heading-input' : 'asset-title-input'}
+            className={
+              asset.kind === 'heading'
+                ? `asset-h-input size-${asset.size ?? 'm'}`
+                : 'asset-title-input'
+            }
             defaultValue={asset.title}
             placeholder="Headline"
             onBlur={(e) =>
@@ -166,7 +187,7 @@ function AssetRow({ asset, admin, first, last, actions, onRemove, onMove }) {
         ) : (
           asset.title &&
           (asset.kind === 'heading' ? (
-            <h3 className="asset-heading">{asset.title}</h3>
+            <h3 className={`asset-h size-${asset.size ?? 'm'}`}>{asset.title}</h3>
           ) : (
             <h4 className="asset-title">{asset.title}</h4>
           ))

@@ -32,6 +32,7 @@
  *     kind text not null check (kind in ('heading','paragraph','image','file','link')),
  *     title text not null default '',
  *     body text,
+ *     size text,               -- headline size: 's' | 'm' | 'l'
  *     url text,                -- external link, for kind = 'link'
  *     file_path text,          -- Storage object, for kind in ('image','file')
  *     file_name text,

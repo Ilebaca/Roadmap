@@ -313,7 +313,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   scrollbar-color: #d7dae1 transparent;
 }
 
-.brand-section { max-width: 760px; }
+/* Text keeps a readable measure; images take the full width of the panel. */
+.brand-section { max-width: none; }
+.brand-head { max-width: 62ch; }
 
 .brand-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .brand-title { margin: 0; font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
@@ -369,6 +371,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-radius: 6px; padding: 2px;
   opacity: 0; transition: opacity 0.15s;
 }
+.size-pick { display: flex; gap: 1px; margin-right: 4px; padding-right: 4px; border-right: 1px solid var(--line); }
+.size-pick button {
+  width: 22px; height: 22px;
+  background: transparent; border: 0; border-radius: 5px;
+  color: var(--muted-2); font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.size-pick button:hover { color: var(--ink); background: var(--card-3); }
+.size-pick button.is-on { background: var(--ink); color: #fff; }
+
 .icon-btn.flip svg { transform: rotate(180deg); }
 .icon-btn:disabled { opacity: 0.28; cursor: default; }
 .icon-btn:disabled:hover { background: transparent; color: var(--muted-2); }
@@ -383,15 +395,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .asset-title-input:hover { border-color: var(--line); }
 .asset-title-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
 
-.asset-heading { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.015em; }
-.asset-heading-input {
+/* The headline itself. (The row around it is .asset-heading, from its kind.) */
+.asset-h { margin: 0; font-weight: 650; letter-spacing: -0.015em; }
+.asset-h.size-s, .asset-h-input.size-s { font-size: 14.5px; }
+.asset-h.size-m, .asset-h-input.size-m { font-size: 18px; }
+.asset-h.size-l, .asset-h-input.size-l { font-size: 25px; letter-spacing: -0.022em; }
+.asset-h-input {
   display: block; width: 100%; max-width: 62ch;
   background: transparent; border: 1px solid transparent; border-radius: 6px;
-  font-size: 18px; font-weight: 650; letter-spacing: -0.015em;
+  font-weight: 650; letter-spacing: -0.015em;
   padding: 4px 7px; margin: 0 -7px;
 }
-.asset-heading-input:hover { border-color: var(--line); }
-.asset-heading-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
+.asset-h-input:hover { border-color: var(--line); }
+.asset-h-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); }
 
 .asset-body { margin: 0; max-width: 62ch; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 .asset-body-input {
@@ -405,7 +421,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .asset-figure {
   margin: 0; position: relative;
-  display: inline-block; max-width: 100%;
+  display: block; width: 100%;
   /* The image is the whole box: no border, no backing panel, nothing that can
      show around it. The figure clips the corners so they stay clean. */
   border-radius: var(--radius);
@@ -414,7 +430,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .asset-figure img {
   display: block;
-  max-width: 100%; max-height: 420px;
+  width: 100%; height: auto;
   border: 0; background: transparent;
 }
 /* icon only, and only while the image is hovered or the button is focused */

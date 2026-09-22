@@ -592,7 +592,7 @@ export const api = {
    *     .upload(`${project_id}/${section_id}/${crypto.randomUUID()}`, file)
    *   await supabase.from('brand_assets').insert({ ..., file_path: data.path })
    */
-  async createBrandAsset(session, { section_id, kind, title, body, url, file_name, file_size }) {
+  async createBrandAsset(session, { section_id, kind, title, body, url, file_name, file_size, size }) {
     assertAdmin(session)
     const section = db.brand_sections.find((b) => b.id === section_id)
     if (!section) throw new Error('Category not found')
@@ -606,6 +606,7 @@ export const api = {
       url: url ?? null,
       file_name: file_name ?? null,
       file_size: file_size ?? null,
+      size: size ?? (kind === 'heading' ? 'm' : null), // headline size: s | m | l
       order_index: siblings.length ? Math.max(...siblings.map((a) => a.order_index)) + 1 : 0
     }
     db.brand_assets.push(row)
@@ -626,7 +627,7 @@ export const api = {
     assertAdmin(session)
     const row = db.brand_assets.find((a) => a.id === id)
     if (!row) throw new Error('Content not found')
-    for (const k of ['title', 'body', 'url', 'file_name', 'file_size', 'order_index']) {
+    for (const k of ['title', 'body', 'url', 'file_name', 'file_size', 'size', 'order_index']) {
       if (k in patch) row[k] = patch[k]
     }
     persist()
