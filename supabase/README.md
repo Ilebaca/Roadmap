@@ -18,9 +18,20 @@ Both are safe to re-run. Full walkthrough below.
 ## 2. Run the schema
 
 1. In the left sidebar: **SQL Editor** → **New query**.
-2. Open `supabase/schema.sql` from this repo, copy all of it, paste it in.
-3. Press **Run**. You want "Success. No rows returned".
-   Green notices about policies "does not exist, skipping" are normal.
+2. Open `supabase/schema.sql` from this repo, copy **all** of it, paste it in.
+3. Click into the editor and press **Ctrl/Cmd + A** — this matters: if any text
+   is highlighted, Supabase runs *only the highlighted part*, which is how you
+   end up with half the tables.
+4. Press **Run**. You want "Success. No rows returned".
+   Notices about policies "does not exist, skipping" are normal.
+
+### If you get `relation "public.something" does not exist`
+
+Only part of the script ran. Nothing is broken — run `supabase/verify.sql` to
+see what landed, then paste the **whole** of `schema.sql` again and run it. It
+is written to be re-run: existing tables are left alone and the missing ones
+are filled in. (Tested: a database with only 4 of the 8 tables comes out
+complete after one re-run.)
 
 ## 3. Create your own login
 
@@ -56,8 +67,19 @@ the key, that keep clients apart. Never put the **service_role** key in the app.
 
 ## 6. Check it works
 
-**Table Editor** should show 8 tables, your client under `projects`, your row
-under `users` with role `admin`, and 7 rows in `brand_sections`.
+Run `supabase/verify.sql` in a new query. It should report:
+
+```
+tables              8 of 8
+missing tables      none — all 8 are there
+missing functions   none — all 8 are there
+row-level security  on for every table
+policies            15 (expect 15)
+triggers on blocks  2 (expect 2)
+```
+
+**Table Editor** should also show your client under `projects`, your row under
+`users` with role `admin`, and 7 rows in `brand_sections`.
 
 That is step 1 finished. Step 2 is the storage bucket, step 3 is pointing the
 app at this database.
