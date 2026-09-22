@@ -32,57 +32,58 @@ function Shell() {
 
   return (
     <div className="app-frame">
-      <AppRail active={app} onSelect={setApp} />
+      <header className="topbar">
+        {/* The client this account is looking at. An admin picks between
+            their clients here; a viewer only ever sees their own. */}
+        <ClientSwitcher />
 
-      <div className="app-main">
-        <header className="topbar">
-          {/* The client this account is looking at. An admin picks between
-              their clients here; a viewer only ever sees their own. */}
-          <ClientSwitcher />
+        <div className="topbar-right">
+          {canManageAccounts(session) && (
+            <button className="ghost-btn" onClick={() => setAccountsOpen(true)}>
+              <Users width="15" height="15" /> Accounts
+            </button>
+          )}
 
-          <div className="topbar-right">
-            {canManageAccounts(session) && (
-              <button className="ghost-btn" onClick={() => setAccountsOpen(true)}>
-                <Users width="15" height="15" /> Accounts
-              </button>
-            )}
-
-            {/* ---------------------------------------------------------------
-                TEMPORARY DEV TOGGLE — remove once real auth lands.
-                BACKEND: the signed-in user comes from supabase.auth, not a picker.
-               --------------------------------------------------------------- */}
-            <div className="dev-switch">
-              <span className="dev-tag">DEV</span>
-              <div className="role-toggle">
-                {['admin', 'viewer'].map((role) => {
-                  const user = accounts.find((u) => u.role === role) || null
-                  return (
-                    <button
-                      key={role}
-                      className={session.role === role ? 'is-on' : ''}
-                      disabled={!user}
-                      onClick={() => user && actions.switchUser(user.id)}
-                    >
-                      {role === 'admin' ? 'Admin' : 'Viewer'}
-                    </button>
-                  )
-                })}
-              </div>
-              <span className="dev-email">{session.email}</span>
-              <button className="ghost-btn subtle" onClick={actions.resetMockData} title="Restore the seeded mock data">
-                Reset data
-              </button>
+          {/* ---------------------------------------------------------------
+              TEMPORARY DEV TOGGLE — remove once real auth lands.
+              BACKEND: the signed-in user comes from supabase.auth, not a picker.
+             --------------------------------------------------------------- */}
+          <div className="dev-switch">
+            <span className="dev-tag">DEV</span>
+            <div className="role-toggle">
+              {['admin', 'viewer'].map((role) => {
+                const user = accounts.find((u) => u.role === role) || null
+                return (
+                  <button
+                    key={role}
+                    className={session.role === role ? 'is-on' : ''}
+                    disabled={!user}
+                    onClick={() => user && actions.switchUser(user.id)}
+                  >
+                    {role === 'admin' ? 'Admin' : 'Viewer'}
+                  </button>
+                )
+              })}
             </div>
+            <span className="dev-email">{session.email}</span>
+            <button className="ghost-btn subtle" onClick={actions.resetMockData} title="Restore the seeded mock data">
+              Reset data
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
 
+      {/* The icon rail sits with the left-hand list, not out at the window
+          edge — same top, same bottom, one unit. */}
+      <div className="workspace">
+        <AppRail active={app} onSelect={setApp} />
         {app === 'roadmap' ? (
-          <div className="workspace">
+          <>
             <Sidebar />
             <main className="stage">
               <Timeline />
             </main>
-          </div>
+          </>
         ) : (
           <BrandDelivery />
         )}

@@ -31,7 +31,7 @@ export default function BrandDelivery() {
   const available = BRAND_TEMPLATES.filter((t) => !used.has(t.slug))
 
   return (
-    <div className="workspace">
+    <>
       <aside className="sidebar">
         <div className="sidebar-head">
           <span className="eyebrow">Brand system</span>
@@ -101,7 +101,7 @@ export default function BrandDelivery() {
           )}
         </div>
       </main>
-    </div>
+    </>
   )
 }
 

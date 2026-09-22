@@ -15,15 +15,15 @@
   --muted: #6d7482;
   --muted-2: #9aa0ac;
 
-  --shadow-sm: 0 1px 2px rgba(18, 22, 31, 0.05);
-  --shadow: 0 1px 2px rgba(18, 22, 31, 0.05), 0 10px 24px rgba(18, 22, 31, 0.06);
+  /* Surfaces are flat — they separate with a border, not a shadow. Only true
+     overlays (menus, modals) lift off the page. */
+  --shadow-sm: none;
+  --shadow: none;
   --shadow-lg: 0 2px 6px rgba(18, 22, 31, 0.06), 0 24px 56px rgba(18, 22, 31, 0.12);
 
   --radius-lg: 22px;
   --radius: 14px;
-  --stage-margin: 40px;
-  /* the panels stand further off the bottom edge than the sides */
-  --stage-margin-bottom: calc(var(--stage-margin) * 2);
+  --stage-margin: 10px;   /* the gap around and between every white box */
 
   /* The date line is not pinned to the middle of the section: the whole group
      (date labels | line | blocks) is centred as one unit, so the composition
@@ -55,30 +55,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .app-frame {
   height: 100%;
   display: flex;
-  overflow: hidden;
-}
-
-.app-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* the icon rail: one app per icon, the open one in a white box */
+/* the icon rail: one app per icon, the open one in a white box. It lives with
+   the phases list rather than out at the window edge. */
 .app-rail {
   flex: none;
-  width: 66px;
-  padding: 14px 0 var(--stage-margin-bottom);
+  width: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .rail-btn {
-  width: 42px; height: 42px;
+  width: 46px; height: 46px;
   display: grid; place-items: center;
   background: transparent;
   border: 1px solid transparent;
@@ -99,8 +92,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .topbar {
   flex: none;
-  height: 60px;
-  padding: 0 24px;
+  height: 54px;
+  padding: 0 var(--stage-margin);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -193,14 +186,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .primary-btn:hover { background: #2a2e36; }
 
-.workspace { flex: 1; display: flex; min-height: 0; padding-top: var(--stage-margin); }
+.workspace {
+  flex: 1; min-height: 0;
+  display: flex;
+  gap: var(--stage-margin);
+  padding: 0 var(--stage-margin) var(--stage-margin);
+}
 
 /* ---------- floating sidebar ---------------------------------------------- */
 .sidebar {
   flex: none;
-  width: 258px;
-  margin: 0 0 var(--stage-margin-bottom) var(--stage-margin);
-  padding: 22px 14px 18px;
+  width: 250px;
+  padding: 20px 12px 16px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -337,7 +334,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tpl-none { margin: 0; padding: 4px 9px 8px; font-size: 11.5px; color: var(--muted-2); }
 
 /* ---------- stage / timeline container ------------------------------------ */
-.stage { flex: 1; min-width: 0; padding: 0 var(--stage-margin) var(--stage-margin-bottom); }
+.stage { flex: 1; min-width: 0; }
 
 .timeline-scroll {
   height: 100%;
@@ -797,9 +794,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 @media (max-width: 1000px) {
-  :root { --stage-margin: 16px; --block-w: 360px; --dot-gap: 22px; --label-ext: 60px; }
-  .sidebar { width: 200px; }
+  :root { --block-w: 360px; --dot-gap: 22px; --label-ext: 60px; }
+  .sidebar { width: 196px; }
   .date-label { right: 18px; }
-  .app-rail { width: 54px; }
-  .brand-panel { padding: 24px; }
+  .app-rail { width: 42px; }
+  .rail-btn { width: 42px; height: 42px; }
+  .brand-panel { padding: 22px; }
 }
