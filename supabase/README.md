@@ -133,3 +133,49 @@ Run against Postgres 16 and checked, not assumed:
   half-applied.
 - Deleting a phase takes its blocks, links and approvals; deleting a grid takes
   its cells.
+
+
+---
+
+# Step 3 — point the app at it
+
+The app talks to one file, `src/services/dataClient.js`, which picks a backend:
+with Supabase keys configured it uses your database, without them it runs the
+built-in demo data. Components never know the difference.
+
+1. Create a file called `.env.local` in the root of the repo:
+
+```
+VITE_SUPABASE_URL=https://YOUR-PROJECT-ID.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR-PUBLISHABLE-OR-ANON-KEY
+```
+
+Either key works — the new `sb_publishable_…` one or the older `eyJ…` anon
+one. Both are meant to be in a browser; the rules from step 1 are what keep
+clients apart. `.env.local` is git-ignored, so it stays on your machine.
+
+2. `npm install` then `npm run dev`, and open http://localhost:5173.
+3. You should get a **sign-in screen** rather than the demo. Sign in with the
+   email and password you created in step 1.
+
+### If something is wrong it will say so
+
+- *"Signed in as …, but there is no row for you in the users table"* — the
+  account exists but `first_run.sql` was not run with its User UID.
+- *"Failed to fetch"* — the URL in `.env.local` is wrong, or the project is
+  paused.
+- *"Invalid login credentials"* — wrong password; reset it under
+  Authentication → Users.
+
+### What changes once it is live
+
+- The dev Admin/Viewer toggle disappears; you are whoever you signed in as,
+  with a **Sign out** button instead.
+- Images and zips go to the `brand-assets` bucket, not the browser, so the
+  2 MB demo cap is gone and files survive a different computer.
+- Approving, unapproving and the date chain run in the database, so two people
+  working at once cannot end up with different answers.
+- **Accounts** still opens, but creating a login has to happen in the Supabase
+  dashboard — the app tells you the exact SQL to run afterwards. Creating auth
+  users from a browser needs the service_role key, which must never ship in
+  the app.

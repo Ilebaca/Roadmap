@@ -6,6 +6,7 @@ import AccountsModal from './components/AccountsModal'
 import AppRail from './components/AppRail'
 import BrandDelivery from './components/BrandDelivery'
 import ClientSwitcher from './components/ClientSwitcher'
+import SignIn from './components/SignIn'
 import { canManageAccounts } from './lib/permissions'
 import { Users } from './components/Icons'
 
@@ -18,9 +19,19 @@ export default function App() {
 }
 
 function Shell() {
-  const { session, accounts, loading, error, actions } = useStore()
+  const { session, accounts, loading, error, authReady, isLive, actions } = useStore()
   const [accountsOpen, setAccountsOpen] = useState(false)
   const [app, setApp] = useState('roadmap') // which icon on the rail is lit
+
+  // With a real backend behind it, no session means nobody is signed in.
+  if (isLive && authReady && !session) {
+    return (
+      <>
+        <SignIn />
+        {error && <div className="toast">{error}</div>}
+      </>
+    )
+  }
 
   if (loading || !session) {
     return (
@@ -44,10 +55,15 @@ function Shell() {
             </button>
           )}
 
-          {/* ---------------------------------------------------------------
-              TEMPORARY DEV TOGGLE — remove once real auth lands.
-              BACKEND: the signed-in user comes from supabase.auth, not a picker.
-             --------------------------------------------------------------- */}
+          {/* Signed in for real: no pretending to be someone else. */}
+          {isLive ? (
+            <div className="who">
+              <span className="dev-email">{session.email}</span>
+              <button className="ghost-btn subtle" onClick={actions.signOut}>
+                Sign out
+              </button>
+            </div>
+          ) : (
           <div className="dev-switch">
             <span className="dev-tag">DEV</span>
             <div className="role-toggle">
@@ -70,6 +86,7 @@ function Shell() {
               Reset data
             </button>
           </div>
+          )}
         </div>
       </header>
 

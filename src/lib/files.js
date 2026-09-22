@@ -10,6 +10,8 @@
  * and the row keeps that path instead of the data URL. The cap then becomes
  * whatever the bucket allows, and downloads go through a signed URL.
  */
+import { isLive } from '../services/supabaseClient'
+
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 // 2 MB while we are local
 
 export const formatBytes = (n) => {
@@ -26,6 +28,15 @@ export class FileTooLargeError extends Error {
     )
     this.name = 'FileTooLargeError'
   }
+}
+
+/**
+ * With a real backend behind it there is no cap worth enforcing here — the
+ * bucket decides. Only the mock, which keeps files in this browser, needs one.
+ */
+export function checkSize(file) {
+  if (!isLive && file.size > MAX_UPLOAD_BYTES) throw new FileTooLargeError(file.size)
+  return file
 }
 
 /** Read a picked File into a data URL, refusing anything too big to keep. */

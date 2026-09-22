@@ -1071,9 +1071,39 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .account-email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .account-project { color: var(--muted-2); font-size: 11px; }
 
+/* ---------- sign in -------------------------------------------------------- */
+.signin-frame { height: 100%; display: grid; place-items: center; padding: 24px; }
+
+.signin {
+  width: min(360px, 100%);
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); padding: 30px 28px 26px;
+}
+.signin h1 { margin: 4px 0 0; font-size: 20px; font-weight: 650; letter-spacing: -0.02em; }
+.signin > p { margin: -8px 0 6px; font-size: 13px; color: var(--muted); }
+.signin label { display: flex; flex-direction: column; gap: 6px; }
+.signin label > span {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-2);
+}
+.signin input {
+  background: var(--card-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 10px 11px; font-size: 13.5px;
+}
+.signin input:focus { outline: none; border-color: var(--muted-2); }
+.signin .primary-btn { margin-top: 4px; }
+.signin .primary-btn:disabled { opacity: 0.6; cursor: default; }
+.signin-error {
+  margin: 0; font-size: 12.5px; line-height: 1.5; color: #8f2018;
+  background: #fdeceb; border: 1px solid #f3c6c2; border-radius: 6px; padding: 9px 11px;
+}
+
+.who { display: flex; align-items: center; gap: 10px; }
+
 /* ---------- toast ---------------------------------------------------------- */
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  max-width: min(560px, calc(100vw - 40px)); white-space: pre-line; text-align: left;
   background: #fdeceb; border: 1px solid #f3c6c2; color: #8f2018;
   padding: 10px 16px; border-radius: 7px; font-size: 12.5px; z-index: 60;
   box-shadow: var(--shadow);

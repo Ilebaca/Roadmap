@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { formatBytes, hostOf, readFileAsDataUrl, withProtocol } from '../lib/files'
+import { formatBytes, hostOf, checkSize, withProtocol } from '../lib/files'
 import {
   ArrowUp,
   Download,
@@ -73,16 +73,16 @@ export default function BrandContent({ section, assets, admin, actions, onError 
   const addFile = async (file, kind, parent_id = null, intoCell = null) => {
     if (!file) return
     try {
-      const read = await readFileAsDataUrl(file)
+      checkSize(file)
       // Filling a cell that is already there, rather than adding a new one.
-      if (intoCell) return await actions.updateBrandAsset(intoCell, { kind: 'image', ...read })
+      if (intoCell) return await actions.updateBrandAsset(intoCell, { kind: 'image', file })
       await actions.addBrandAsset({
         section_id: section.id,
         kind,
         parent_id,
         // A zip in Downloadables is named; an image is not.
-        title: kind === 'image' ? '' : file.name.replace(/\.[^.]+$/, ''),
-        ...read
+        title: kind === 'image' ? null : file.name.replace(/\.[^.]+$/, ''),
+        file
       })
     } catch (e) {
       onError(e.message)

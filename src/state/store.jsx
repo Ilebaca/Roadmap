@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { api } from '../services/dataClient'
+import { api, isLive } from '../services/dataClient'
 import { computePhaseGates, isAdmin } from '../lib/permissions'
 import { addDays, todayISO } from '../lib/dates'
 
@@ -27,20 +27,48 @@ export function StoreProvider({ children }) {
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Live: whether we have asked the backend who is signed in yet. Without it
+  // the sign-in screen flashes up before the answer comes back.
+  const [authReady, setAuthReady] = useState(!isLive)
 
-  // --- boot: pick a session --------------------------------------------------
+  // --- boot: who is signed in? ----------------------------------------------
   useEffect(() => {
     let alive = true
+    let unsubscribe = () => {}
+
+    const readSession = async () => {
+      try {
+        const me = await api.getSession()
+        if (!alive) return
+        setSession(me)
+        setLoading(Boolean(me))
+      } catch (e) {
+        if (!alive) return
+        setError(e.message)
+        setSession(null)
+        setLoading(false)
+      } finally {
+        if (alive) setAuthReady(true)
+      }
+    }
+
     ;(async () => {
-      // BACKEND: replace with supabase.auth.getUser() + a redirect to sign-in.
+      if (isLive) {
+        await readSession()
+        unsubscribe = api.onAuthChange(readSession)
+        return
+      }
+      // The mock has no sign-in: the dev toggle picks who you are.
       const users = await api.listUsers()
       const me = await api.getSession(users[0].id)
       if (!alive) return
       setAccounts(users)
       setSession(me)
     })()
+
     return () => {
       alive = false
+      unsubscribe()
     }
   }, [])
 
@@ -54,6 +82,7 @@ export function StoreProvider({ children }) {
       const rows = await api.listProjects(session)
       if (!alive) return
       setProjects(rows)
+      if (isLive) api.listUsers().then((u) => alive && setAccounts(u)).catch(() => {})
       // A viewer always lands on their own project; an admin starts on theirs.
       setActiveProjectId(rows.some((p) => p.id === session.project_id) ? session.project_id : rows[0]?.id ?? null)
     })()
@@ -140,6 +169,12 @@ export function StoreProvider({ children }) {
   const actions = useMemo(
     () => ({
       /** DEV ONLY — the role switcher. Real auth replaces this with sign-in. */
+      async signOut() {
+        await api.signOut()
+        setSession(null)
+        setProjects([])
+        setActiveProjectId(null)
+      },
       async switchUser(userId) {
         const me = await api.getSession(userId)
         // Move the active client with the user so no render sees the previous
@@ -300,6 +335,8 @@ export function StoreProvider({ children }) {
   const value = {
     session,
     accounts,
+    authReady,
+    isLive,
     project,
     projects,
     activeProjectId,
