@@ -40,8 +40,12 @@ export function StoreProvider({ children }) {
       try {
         const me = await api.getSession()
         if (!alive) return
-        setSession(me)
-        setLoading(Boolean(me))
+        // Supabase re-checks the session whenever the tab regains focus. When
+        // it is the same person, keep the object we already have: replacing it
+        // would reload the whole project and flash the loading screen every
+        // time you come back to the tab.
+        setSession((prev) => (prev && me && prev.id === me.id ? prev : me))
+        if (!me) setLoading(false)
       } catch (e) {
         if (!alive) return
         setError(e.message)

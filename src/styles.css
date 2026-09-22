@@ -494,11 +494,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .grid-tile:hover .tile-tools { opacity: 1; }
 .tile-tools .size-pick button { display: grid; place-items: center; }
 
-/* a text cell is just text on the page — no panel behind it */
+/* a text cell is just text on the page — no panel behind it, and its own
+   controls sit in a strip above the words rather than across them */
 .grid-tile.tile-paragraph {
   background: transparent; border: 0;
-  padding: 0; line-height: 1.6;
+  padding: 34px 0 0; line-height: 1.6;
 }
+.grid-tile.tile-paragraph .tile-tools { top: 0; right: 0; }
 .tile-text { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 .tile-text-input {
   width: 100%; background: transparent; border: 0;
