@@ -86,6 +86,23 @@ That is step 1 done.
 
 ---
 
+# Step 2 — file storage
+
+Images and zips go in a private bucket, filed under the client they belong to.
+
+1. **SQL Editor** → **New query** → paste
+   `supabase/migrations/20260922000004_storage.sql` → **Run**.
+   (Or let the connected repository run it.)
+2. **Storage** in the sidebar should now list a bucket called **brand-assets**,
+   marked private.
+
+Files are stored as `<project_id>/<section_id>/<random>.<ext>`, and the rules
+read the project out of that path: a client reaches their own files and nobody
+else's, and only an admin can add or remove them. Reads go through short-lived
+signed URLs — nothing in the bucket is public.
+
+---
+
 ## Adding a client login
 
 1. **Authentication** → **Users** → **Add user** (their email + a password).
