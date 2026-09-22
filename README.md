@@ -1,8 +1,20 @@
 # Roadmap — phased approval timeline
 
-A single-page React app: a vertical date line with content blocks, phase tabs
-that unlock only when the previous phase is fully approved, and a separate
-approve action that locks a block for everyone.
+A single-page React app with two apps on a left icon rail:
+
+- **Roadmap** — a vertical date line with content blocks, phases that open to
+  the client only once the previous one is fully approved, and a separate
+  approve action that locks a block for everyone.
+- **Brand Delivery System** — the same shell (floating list on the left, one
+  panel on the right) holding the finished brand: Logo, Typography, Colours,
+  Photography, Mockups, AI Guide and so on. Every client starts from the same
+  standard category templates; an admin renames them, rewrites what they are
+  for, removes the ones a client does not need and adds their own. What goes
+  *inside* a category is not built yet — each one opens empty.
+
+The top-left shows the client's logo and name. An admin runs several clients and
+picks between them from a dropdown there; a viewer is bound to one and just sees
+their own.
 
 **There is no backend.** All data is mock data held in one isolated module, with
 optional `localStorage` persistence so a refresh keeps your changes. Everything
@@ -35,6 +47,9 @@ lands.
 
 | | Admin | Viewer |
 |---|---|---|
+| Switch between clients | ✅ | — |
+| Open any phase, released or not | ✅ | — |
+| Adjust / add brand categories | ✅ | — |
 | Create phases and blocks | ✅ | — |
 | Edit title / description | ✅ | — |
 | Set dates, drag-resize | ✅ | — |
@@ -50,9 +65,11 @@ approval request. Only then does the Approve box appear. Clicking it writes an
 approval row, flips the block to `approved` and sets `locked = true`: the block
 goes gray, stops being editable and nobody can change its state again.
 
-When every block in a phase is approved, the phase is complete and the next tab
-unlocks. Locked tabs are disabled in the sidebar and their contents are hidden
-on the line.
+When every block in a phase is approved, the phase is complete and the next one
+is released to the client. **That gate is the client's view only** — nothing is
+ever locked for an admin, who plans the whole project across every phase. A
+phase the client cannot see yet is marked *not released* in the sidebar and on
+the line. For a viewer, a locked tab is disabled and its contents are hidden.
 
 **Undoing an approval.** An approved block shows an *Unapprove* button next to
 its approval stamp — admin only, a viewer never sees it. It deletes the approval
@@ -112,8 +129,12 @@ src/
     mockDb.js                ← seed rows, shaped exactly like Postgres rows
     supabaseClient.example.js← the target schema + RLS sketch (not wired in)
   state/store.jsx            ← calls dataClient, holds UI state
-  lib/{permissions,layout,dates}.js
-  components/{Sidebar,Timeline,BlockCard,AccountsModal,Icons}.jsx
+  lib/{permissions,layout,dates,brandTemplates}.js
+  components/
+    AppRail, ClientSwitcher            ← the two apps, and which client
+    Sidebar, Timeline, BlockCard, StateSelect   ← the roadmap
+    BrandDelivery                      ← the brand system
+    AccountsModal, Icons
 ```
 
 No component imports mock data. Every call goes through `api.*` in
@@ -129,8 +150,11 @@ No component imports mock data. Every call goes through `api.*` in
    `api.getSession()` with `supabase.auth.getUser()`.
 
 Row shapes already match the target tables — `users`, `projects`, `phases`,
-`blocks`, `block_links`, `approvals` — same field names, same value sets, so
-nothing reshapes.
+`blocks`, `block_links`, `approvals`, `brand_sections` — same field names, same
+value sets, so nothing reshapes. `projects.logo_url` is null in the mock and
+falls back to the client's initials; it will point at a Supabase Storage object.
+`brand_sections` rows are seeded per client from the template catalogue in
+`lib/brandTemplates.js`, which stays in the codebase as the standard set.
 
 Two things the mock layer fakes that Postgres must enforce for real:
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { api } from '../services/dataClient'
-import { computePhaseGates } from '../lib/permissions'
+import { computePhaseGates, isAdmin } from '../lib/permissions'
 
 /**
  * The app's only state container. It talks to the data layer (`api`) and nothing
@@ -15,10 +15,13 @@ export function StoreProvider({ children }) {
   const [session, setSession] = useState(null) // the signed-in user row
   const [accounts, setAccounts] = useState([]) // dev role switcher only
   const [project, setProject] = useState(null)
+  const [projects, setProjects] = useState([]) // every client this account can open
+  const [activeProjectId, setActiveProjectId] = useState(null)
   const [phases, setPhases] = useState([])
   const [blocks, setBlocks] = useState([])
   const [approvals, setApprovals] = useState([])
   const [links, setLinks] = useState([])
+  const [brandSections, setBrandSections] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -39,35 +42,71 @@ export function StoreProvider({ children }) {
     }
   }, [])
 
-  // --- load everything scoped to the session's project -----------------------
-  const refresh = useCallback(async (who = session) => {
-    if (!who) return
-    setError(null)
-    // A viewer is bound to exactly one project; an admin here works on that same
-    // project. `project_id` on the user row is what RLS filters on later.
-    const [proj, ph, bl, ap, lk] = await Promise.all([
-      api.getProject(who, who.project_id),
-      api.listPhases(who, who.project_id),
-      api.listBlocks(who, who.project_id),
-      api.listApprovals(who, who.project_id),
-      api.listLinks(who, who.project_id)
-    ])
-    setProject(proj)
-    setPhases(ph)
-    setBlocks(bl)
-    setApprovals(ap)
-    setLinks(lk)
-    setLoading(false)
-    return ph
-  }, [session])
-
+  // --- which clients this account can open -----------------------------------
   useEffect(() => {
     if (!session) return
-    setLoading(true)
-    refresh(session)
-  }, [session, refresh])
+    let alive = true
+    ;(async () => {
+      // BACKEND: supabase.from('projects').select('*') — RLS returns the one
+      // project a viewer is bound to, or every client an admin runs.
+      const rows = await api.listProjects(session)
+      if (!alive) return
+      setProjects(rows)
+      // A viewer always lands on their own project; an admin starts on theirs.
+      setActiveProjectId(rows.some((p) => p.id === session.project_id) ? session.project_id : rows[0]?.id ?? null)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [session])
 
-  const gates = useMemo(() => computePhaseGates(phases, blocks), [phases, blocks])
+  // --- load everything scoped to the active project --------------------------
+  const refresh = useCallback(async (who = session, projectId = activeProjectId) => {
+    if (!who || !projectId) return
+    setError(null)
+    // Every read is scoped to the project on screen. For a viewer that is the
+    // one project their user row is bound to; RLS enforces it for real later.
+    try {
+      const [proj, ph, bl, ap, lk, bs] = await Promise.all([
+        api.getProject(who, projectId),
+        api.listPhases(who, projectId),
+        api.listBlocks(who, projectId),
+        api.listApprovals(who, projectId),
+        api.listLinks(who, projectId),
+        api.listBrandSections(who, projectId)
+      ])
+      setProject(proj)
+      setPhases(ph)
+      setBlocks(bl)
+      setApprovals(ap)
+      setLinks(lk)
+      setBrandSections(bs)
+      setLoading(false)
+      return ph
+    } catch (e) {
+      setLoading(false)
+      setError(e.message || String(e))
+      setTimeout(() => setError(null), 4000)
+      return null
+    }
+  }, [session, activeProjectId])
+
+  useEffect(() => {
+    if (!session || !activeProjectId) return
+    // A viewer is bound to one project. On a session change the active project
+    // can briefly still be the previous user's — skip that render; the effect
+    // above corrects it.
+    if (session.role !== 'admin' && session.project_id !== activeProjectId) return
+    setLoading(true)
+    refresh(session, activeProjectId)
+  }, [session, activeProjectId, refresh])
+
+  // Admins plan the whole project, so no phase is ever closed to them; the gate
+  // is what releases work to the client.
+  const gates = useMemo(
+    () => computePhaseGates(phases, blocks, { unlockAll: isAdmin(session) }),
+    [phases, blocks, session]
+  )
 
   // Keep the active tab valid: default to the last unlocked phase, and bounce
   // off any tab that has become locked again.
@@ -99,10 +138,20 @@ export function StoreProvider({ children }) {
       /** DEV ONLY — the role switcher. Real auth replaces this with sign-in. */
       async switchUser(userId) {
         const me = await api.getSession(userId)
+        // Move the active client with the user so no render sees the previous
+        // user's project under the new session.
+        setActiveProjectId(me.project_id)
+        setActivePhaseId(null)
         setSession(me)
       },
       selectPhase(phaseId) {
         setActivePhaseId(phaseId)
+      },
+      /** Admin only in practice — a viewer's list holds just their own client. */
+      selectProject(projectId) {
+        if (projectId === activeProjectId) return
+        setActivePhaseId(null)
+        setActiveProjectId(projectId)
       },
       createBlock(input) {
         return run(() => api.createBlock(session, input))
@@ -130,7 +179,16 @@ export function StoreProvider({ children }) {
         return run(() => api.deleteLink(session, id))
       },
       createPhase(title) {
-        return run(() => api.createPhase(session, { project_id: session.project_id, title }))
+        return run(() => api.createPhase(session, { project_id: activeProjectId, title }))
+      },
+      addBrandSection(input) {
+        return run(() => api.createBrandSection(session, { project_id: activeProjectId, ...input }))
+      },
+      updateBrandSection(id, patch) {
+        return run(() => api.updateBrandSection(session, id, patch))
+      },
+      removeBrandSection(id) {
+        return run(() => api.deleteBrandSection(session, id))
       },
       createAccount(input) {
         return run(async () => {
@@ -148,17 +206,20 @@ export function StoreProvider({ children }) {
         await refresh(me)
       }
     }),
-    [run, session, refresh]
+    [run, session, refresh, activeProjectId]
   )
 
   const value = {
     session,
     accounts,
     project,
+    projects,
+    activeProjectId,
     phases,
     blocks,
     approvals,
     links,
+    brandSections,
     gates,
     activePhaseId,
     loading,

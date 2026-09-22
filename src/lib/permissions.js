@@ -40,10 +40,16 @@ export const isPhaseComplete = (blocks) =>
   blocks.length > 0 && blocks.every((b) => b.state === 'approved')
 
 /**
- * Dependency gate: phase N is enterable only if every earlier phase is complete.
- * Returns a map { [phaseId]: { unlocked, complete, approvedCount, total } }.
+ * Dependency gate: a phase is enterable only once every earlier phase is
+ * complete. That gate is what the CLIENT sees — it is how the work is released
+ * to them. The admin plans the whole project, so nothing is ever gated for
+ * them: pass `unlockAll` and every phase opens, while `complete` and the counts
+ * still report the real state so the admin can see how far the client has got.
+ *
+ * Returns { [phaseId]: { unlocked, complete, approvedCount, total, gated } }
+ * where `gated` is true when this phase would be locked for a viewer.
  */
-export function computePhaseGates(phases, blocks) {
+export function computePhaseGates(phases, blocks, { unlockAll = false } = {}) {
   const out = {}
   let previousComplete = true
   for (const phase of [...phases].sort((a, b) => a.order_index - b.order_index)) {
@@ -51,7 +57,8 @@ export function computePhaseGates(phases, blocks) {
     const approvedCount = mine.filter((b) => b.state === 'approved').length
     const complete = isPhaseComplete(mine)
     out[phase.id] = {
-      unlocked: previousComplete,
+      unlocked: unlockAll || previousComplete,
+      gated: !previousComplete,
       complete,
       approvedCount,
       total: mine.length

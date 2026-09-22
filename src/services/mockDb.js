@@ -1,3 +1,5 @@
+import { BRAND_TEMPLATES, DEFAULT_TEMPLATE_SLUGS } from '../lib/brandTemplates'
+
 /**
  * MOCK DATABASE
  * -----------------------------------------------------------------------------
@@ -6,9 +8,10 @@
  * wired in, this file is deleted and `dataClient.js` swaps local reads/writes for
  * Supabase queries -- nothing else in the app changes.
  *
- * Tables: users, projects, phases, blocks, block_links, approvals
+ * Tables: users, projects, phases, blocks, block_links, approvals,
+ * brand_sections
  * Relationships: project 1-N phases, phase 1-N blocks, block 1-N links,
- * block 0..1 approval.
+ * block 0..1 approval, project 1-N brand_sections.
  */
 
 /**
@@ -20,6 +23,21 @@ const t = new Date()
 const BASE = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())
 const D = (offsetDays) => new Date(BASE + offsetDays * 86400000).toISOString().slice(0, 10)
 const TS = (offsetDays) => new Date(BASE + offsetDays * 86400000 + 10 * 3600000).toISOString()
+
+/** Every client's brand system starts from the standard template catalogue. */
+const brandSectionsFor = (project_id, slugs = DEFAULT_TEMPLATE_SLUGS) =>
+  slugs.map((slug, i) => {
+    const t = BRAND_TEMPLATES.find((x) => x.slug === slug)
+    return {
+      id: `bs_${project_id}_${slug}`,
+      project_id,
+      slug,
+      title: t.title,
+      blurb: t.blurb,
+      template: slug, // which standard category this came from; null once custom
+      order_index: i
+    }
+  })
 
 export const seed = () => ({
   // TABLE: users
@@ -33,9 +51,13 @@ export const seed = () => ({
   ],
 
   // TABLE: projects
+  // One project = one client engagement. `name` is the client shown in the top
+  // bar; `logo_url` is null here and falls back to initials — later it points at
+  // a Supabase Storage object.
   projects: [
-    { id: 'prj_1', name: 'Acme — Brand Platform', created_by: 'u_admin' },
-    { id: 'prj_2', name: 'Northwind — Site Refresh', created_by: 'u_admin' }
+    { id: 'prj_1', name: 'Acme Studios', logo_url: null, created_by: 'u_admin' },
+    { id: 'prj_2', name: 'Northwind Coffee', logo_url: null, created_by: 'u_admin' },
+    { id: 'prj_3', name: 'Vantage Labs', logo_url: null, created_by: 'u_admin' }
   ],
 
   // TABLE: phases  (order_index drives sidebar order AND the dependency chain)
@@ -44,7 +66,12 @@ export const seed = () => ({
     { id: 'ph_2', project_id: 'prj_1', title: 'Concept & Design', order_index: 1 },
     { id: 'ph_3', project_id: 'prj_1', title: 'Production', order_index: 2 },
     { id: 'ph_4', project_id: 'prj_1', title: 'Launch', order_index: 3 },
-    { id: 'ph_5', project_id: 'prj_2', title: 'Kickoff', order_index: 0 }
+    // A second client, so the admin's client switcher has somewhere to go.
+    { id: 'ph_5', project_id: 'prj_2', title: 'Kickoff', order_index: 0 },
+    { id: 'ph_6', project_id: 'prj_2', title: 'Site Design', order_index: 1 },
+    { id: 'ph_7', project_id: 'prj_2', title: 'Build', order_index: 2 },
+    // A third client with nothing started yet.
+    { id: 'ph_8', project_id: 'prj_3', title: 'Discovery', order_index: 0 }
   ],
 
   // TABLE: blocks
@@ -108,6 +135,26 @@ export const seed = () => ({
       title: 'Handover documentation',
       description: 'Written handover with file map and usage rules.',
       state: 'todo', start_date: D(42), end_date: D(52), locked: false
+    },
+
+    // --- Northwind Coffee (prj_2) -------------------------------------------
+    {
+      id: 'blk_9', phase_id: 'ph_5', order_index: 0,
+      title: 'Scope & sitemap',
+      description: 'Page inventory, what stays, what goes, and the new navigation.',
+      state: 'approved', start_date: D(-30), end_date: D(-18), locked: true
+    },
+    {
+      id: 'blk_10', phase_id: 'ph_5', order_index: 1,
+      title: 'Content audit',
+      description: 'Every page rated keep / rewrite / bin, with owners against each one.',
+      state: 'review', start_date: D(-16), end_date: D(-2), locked: false
+    },
+    {
+      id: 'blk_11', phase_id: 'ph_6', order_index: 0,
+      title: 'Homepage concepts',
+      description: 'Two directions for the homepage, desktop and mobile.',
+      state: 'todo', start_date: D(4), end_date: D(18), locked: false
     }
   ],
 
@@ -121,13 +168,24 @@ export const seed = () => ({
     { id: 'lnk_3', block_id: 'blk_3', label: 'Moodboards — 3 directions', url: 'https://example.com/acme/moodboards', order_index: 0 },
     { id: 'lnk_4', block_id: 'blk_4', label: 'Logotype presentation v4', url: 'https://example.com/acme/logotype-v4', order_index: 0 },
     { id: 'lnk_5', block_id: 'blk_4', label: 'Working files (Figma)', url: 'https://example.com/acme/logotype-figma', order_index: 1 },
-    { id: 'lnk_6', block_id: 'blk_5', label: 'Colour tokens sheet', url: 'https://example.com/acme/colour-tokens', order_index: 0 }
+    { id: 'lnk_6', block_id: 'blk_5', label: 'Colour tokens sheet', url: 'https://example.com/acme/colour-tokens', order_index: 0 },
+    { id: 'lnk_7', block_id: 'blk_9', label: 'Sitemap v2', url: 'https://example.com/northwind/sitemap', order_index: 0 },
+    { id: 'lnk_8', block_id: 'blk_10', label: 'Content audit sheet', url: 'https://example.com/northwind/audit', order_index: 0 }
   ],
 
   // TABLE: approvals  (one row per approved block)
   approvals: [
     { id: 'apr_1', block_id: 'blk_1', approved_by: 'u_viewer', approved_at: TS(-59) },
     { id: 'apr_2', block_id: 'blk_2', approved_by: 'u_viewer', approved_at: TS(-43) },
-    { id: 'apr_3', block_id: 'blk_3', approved_by: 'u_viewer', approved_at: TS(-25) }
+    { id: 'apr_3', block_id: 'blk_3', approved_by: 'u_viewer', approved_at: TS(-25) },
+    { id: 'apr_4', block_id: 'blk_9', approved_by: 'u_viewer_2', approved_at: TS(-17) }
+  ],
+
+  // TABLE: brand_sections — the second app's left-hand list, per client.
+  // Seeded from the standard templates; an admin adjusts and adds to them.
+  brand_sections: [
+    ...brandSectionsFor('prj_1'),
+    ...brandSectionsFor('prj_2', ['logo', 'typography', 'colors', 'mockups']),
+    ...brandSectionsFor('prj_3')
   ]
 })

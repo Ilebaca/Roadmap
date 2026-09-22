@@ -5,7 +5,7 @@ import { Check, Lock, Plus } from './Icons'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
-  const { session, project, phases, gates, activePhaseId, actions } = useStore()
+  const { session, phases, gates, activePhaseId, actions } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const admin = canCreate(session)
@@ -22,8 +22,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
-        <span className="eyebrow">Project</span>
-        <h2>{project?.name ?? '—'}</h2>
+        <span className="eyebrow">Roadmap</span>
+        <h2>Phases</h2>
       </div>
 
       <nav className="phase-list">
@@ -36,17 +36,23 @@ export default function Sidebar() {
               className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''}`}
               onClick={() => gate.unlocked && actions.selectPhase(phase.id)}
               disabled={!gate.unlocked}
-              title={gate.unlocked ? phase.title : 'Locked until the previous phase is fully approved'}
+              title={
+                gate.unlocked
+                  ? gate.gated
+                    ? `${phase.title} — hidden from the client until the previous phase is approved`
+                    : phase.title
+                  : 'Locked until the previous phase is fully approved'
+              }
             >
               <span className="phase-index">{String(i + 1).padStart(2, '0')}</span>
               <span className="phase-body">
                 <span className="phase-title">{phase.title}</span>
                 <span className="phase-meta">
-                  {gate.unlocked
-                    ? gate.total
-                      ? `${gate.approvedCount}/${gate.total} approved`
-                      : 'No blocks yet'
-                    : 'Locked'}
+                  {!gate.unlocked
+                    ? 'Locked'
+                    : gate.total
+                      ? `${gate.approvedCount}/${gate.total} approved${gate.gated ? ' · not released' : ''}`
+                      : `No blocks yet${gate.gated ? ' · not released' : ''}`}
                 </span>
                 {gate.unlocked && gate.total > 0 && (
                   <span className="progress">
@@ -56,6 +62,7 @@ export default function Sidebar() {
               </span>
               <span className="phase-status">
                 {!gate.unlocked && <Lock width="14" height="14" />}
+                {gate.unlocked && gate.gated && <Lock width="13" height="13" className="gate-hint" />}
                 {gate.unlocked && gate.complete && <Check width="14" height="14" />}
               </span>
             </button>
@@ -82,7 +89,9 @@ export default function Sidebar() {
         ))}
 
       <p className="sidebar-foot">
-        A phase unlocks only when every block in the phase before it is approved.
+        {admin
+          ? 'You can open and plan any phase. The client only sees a phase once every block in the one before it is approved.'
+          : 'A phase unlocks only when every block in the phase before it is approved.'}
       </p>
     </aside>
   )

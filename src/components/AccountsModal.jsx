@@ -9,7 +9,7 @@ import { useStore } from '../state/store'
  * project_id. Until then it just appends to the mock users table.
  */
 export default function AccountsModal({ onClose }) {
-  const { accounts, project, session, actions } = useStore()
+  const { accounts, project, activeProjectId, session, actions } = useStore()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('viewer')
   const [done, setDone] = useState(null)
@@ -17,7 +17,7 @@ export default function AccountsModal({ onClose }) {
   const submit = async (e) => {
     e.preventDefault()
     if (!email.trim()) return
-    await actions.createAccount({ email: email.trim(), role, project_id: session.project_id })
+    await actions.createAccount({ email: email.trim(), role, project_id: activeProjectId })
     setDone(email.trim())
     setEmail('')
   }

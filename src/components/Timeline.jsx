@@ -143,6 +143,8 @@ export default function Timeline() {
                 <span className="phase-marker-chip">
                   {!row.gate.unlocked && <Lock width="12" height="12" />}
                   {row.phase.title}
+                  {/* Open to the admin, but not released to the client yet. */}
+                  {row.gate.unlocked && row.gate.gated && <em className="chip-hint">not released</em>}
                 </span>
               </div>
             )

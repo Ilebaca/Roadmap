@@ -11,8 +11,19 @@
  *
  *   create table projects (
  *     id uuid primary key default gen_random_uuid(),
- *     name text not null,
+ *     name text not null,        -- the client, shown in the top bar
+ *     logo_url text,             -- Supabase Storage object; initials if null
  *     created_by uuid references auth.users(id)
+ *   );
+ *
+ *   create table brand_sections (
+ *     id uuid primary key default gen_random_uuid(),
+ *     project_id uuid not null references projects(id) on delete cascade,
+ *     slug text not null,
+ *     title text not null,
+ *     blurb text not null default '',
+ *     template text,          -- which standard category it came from, null if custom
+ *     order_index int not null default 0
  *   );
  *
  *   create table users (

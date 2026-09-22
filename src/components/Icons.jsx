@@ -60,3 +60,22 @@ export const Chevron = (p) => (
     <path d="m6 9 6 6 6-6" />
   </svg>
 )
+
+/** App rail — the roadmap: a date line with two stops on it. */
+export const RoadmapGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M12 4v16" />
+    <circle cx="12" cy="8" r="2.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="16.5" r="2.4" />
+    <path d="M15.5 8h3.5M15.5 16.5h3.5M5 8h1.5M5 16.5h1.5" />
+  </svg>
+)
+
+/** App rail — the brand delivery system: stacked, handed-over assets. */
+export const BrandGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M12 3.5 20 8l-8 4.5L4 8Z" />
+    <path d="m4 12 8 4.5L20 12" />
+    <path d="m4 16 8 4.5L20 16" />
+  </svg>
+)

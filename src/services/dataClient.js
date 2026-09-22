@@ -43,6 +43,8 @@ function persist() {
 const wait = (v) => new Promise((res) => setTimeout(() => res(v), LATENCY_MS))
 const clone = (v) => JSON.parse(JSON.stringify(v))
 const uid = (p) => `${p}_${Math.random().toString(36).slice(2, 9)}`
+const slugify = (v = '') =>
+  v.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 /** Thrown when the caller is not allowed to do something. The real backend
  *  enforces the same rules in row-level security policies; this mirror keeps the
@@ -61,8 +63,15 @@ function assertAdmin(session) {
 }
 
 function assertProject(session, project_id) {
-  // BACKEND: RLS — `project_id = (select project_id from users where id = auth.uid())`
-  if (!session || session.project_id !== project_id) throw new ForbiddenError('Wrong project.')
+  // A viewer is bound to exactly one project. An admin runs several clients and
+  // switches between them from the top bar.
+  // BACKEND: RLS —
+  //   viewers: `project_id = (select project_id from users where id = auth.uid())`
+  //   admins:  scope to the projects their organisation owns, e.g.
+  //            `project_id in (select id from projects where created_by = auth.uid())`
+  if (!session) throw new ForbiddenError('Not signed in.')
+  if (session.role === 'admin') return
+  if (session.project_id !== project_id) throw new ForbiddenError('Wrong project.')
 }
 
 /**
@@ -377,6 +386,66 @@ export const api = {
     const block = db.blocks.find((b) => b.id === row.block_id)
     if (block?.locked) throw new ForbiddenError('This block is approved and locked.')
     db.block_links = db.block_links.filter((l) => l.id !== id)
+    persist()
+    return wait(null)
+  },
+
+  // ===========================================================================
+  // BRAND SECTIONS (the Brand Delivery System's categories)
+  // ===========================================================================
+
+  /**
+   * BACKEND:
+   *   supabase.from('brand_sections').select('*').eq('project_id', project_id)
+   *     .order('order_index')
+   */
+  async listBrandSections(session, project_id) {
+    assertProject(session, project_id)
+    const rows = db.brand_sections
+      .filter((b) => b.project_id === project_id)
+      .sort((a, b) => a.order_index - b.order_index)
+    return wait(clone(rows))
+  },
+
+  /**
+   * Add a category. `template` is the standard category it starts from, or null
+   * for one of the admin's own.
+   * BACKEND: supabase.from('brand_sections').insert({...}).select().single()
+   */
+  async createBrandSection(session, { project_id, title, blurb, template = null, slug }) {
+    assertAdmin(session)
+    assertProject(session, project_id)
+    const siblings = db.brand_sections.filter((b) => b.project_id === project_id)
+    const row = {
+      id: uid('bs'),
+      project_id,
+      slug: slug || slugify(title) || uid('cat'),
+      title: title || 'New category',
+      blurb: blurb || '',
+      template,
+      order_index: siblings.length ? Math.max(...siblings.map((b) => b.order_index)) + 1 : 0
+    }
+    db.brand_sections.push(row)
+    persist()
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('brand_sections').update(patch).eq('id', id) */
+  async updateBrandSection(session, id, patch) {
+    assertAdmin(session)
+    const row = db.brand_sections.find((b) => b.id === id)
+    if (!row) throw new Error('Category not found')
+    for (const k of ['title', 'blurb', 'order_index']) {
+      if (k in patch) row[k] = patch[k]
+    }
+    persist()
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('brand_sections').delete().eq('id', id) */
+  async deleteBrandSection(session, id) {
+    assertAdmin(session)
+    db.brand_sections = db.brand_sections.filter((b) => b.id !== id)
     persist()
     return wait(null)
   },
