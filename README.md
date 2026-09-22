@@ -11,8 +11,10 @@ A single-page React app with two apps on a left icon rail:
   Visual language, AI prompts guide, Brand voice and messaging, Downloadables —
   and Photography, Mockups and Motion are there to add when a client needs one.
   An admin renames them, rewrites what they are for, removes the ones a client
-  does not need and adds their own. What goes *inside* a category is not built
-  yet — each one opens empty.
+  does not need and adds their own. Inside a category, an admin adds text and
+  images, edits them in place, reorders them and takes them out again; anyone
+  can download an image. **Downloadables** is different: a grid of boxes, each
+  either a zip to download or a link out to where the files already live.
 
 The top-left shows the client's logo and name. An admin runs several clients:
 the name there is editable in place, the logo and chevron open the client list,
@@ -54,6 +56,8 @@ lands.
 | Switch between clients | ✅ | — |
 | Open any phase, released or not | ✅ | — |
 | Adjust / add brand categories | ✅ | — |
+| Add, edit, reorder, remove category contents | ✅ | — |
+| Download images and asset packs | ✅ | ✅ |
 | Create phases and blocks | ✅ | — |
 | Delete a phase (and its blocks) | ✅ | — |
 | Edit title / description | ✅ | — |
@@ -159,11 +163,18 @@ No component imports mock data. Every call goes through `api.*` in
    `api.getSession()` with `supabase.auth.getUser()`.
 
 Row shapes already match the target tables — `users`, `projects`, `phases`,
-`blocks`, `block_links`, `approvals`, `brand_sections` — same field names, same
+`blocks`, `block_links`, `approvals`, `brand_sections`, `brand_assets` — same field names, same
 value sets, so nothing reshapes. `projects.logo_url` is null in the mock and
 falls back to the client's initials; it will point at a Supabase Storage object.
 `brand_sections` rows are seeded per client from the template catalogue in
 `lib/brandTemplates.js`, which stays in the codebase as the standard set.
+
+**Uploads are the one thing the mock cannot really do.** A picked file is read
+into a data URL and kept in the same browser snapshot as everything else, so
+there is a 2 MB cap per file and a few megabytes in total; going over it is
+refused with a message rather than failing silently. With Supabase wired in the
+file goes to Storage and the row keeps its path — `lib/files.js` and
+`createBrandAsset` mark both ends of that swap.
 
 Two things the mock layer fakes that Postgres must enforce for real:
 

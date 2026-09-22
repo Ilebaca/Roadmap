@@ -23,6 +23,7 @@ export function StoreProvider({ children }) {
   const [approvals, setApprovals] = useState([])
   const [links, setLinks] = useState([])
   const [brandSections, setBrandSections] = useState([])
+  const [brandAssets, setBrandAssets] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -68,13 +69,14 @@ export function StoreProvider({ children }) {
     // Every read is scoped to the project on screen. For a viewer that is the
     // one project their user row is bound to; RLS enforces it for real later.
     try {
-      const [proj, ph, bl, ap, lk, bs] = await Promise.all([
+      const [proj, ph, bl, ap, lk, bs, ba] = await Promise.all([
         api.getProject(who, projectId),
         api.listPhases(who, projectId),
         api.listBlocks(who, projectId),
         api.listApprovals(who, projectId),
         api.listLinks(who, projectId),
-        api.listBrandSections(who, projectId)
+        api.listBrandSections(who, projectId),
+        api.listBrandAssets(who, projectId)
       ])
       setProject(proj)
       setPhases(ph)
@@ -82,6 +84,7 @@ export function StoreProvider({ children }) {
       setApprovals(ap)
       setLinks(lk)
       setBrandSections(bs)
+      setBrandAssets(ba)
       setLoading(false)
       return ph
     } catch (e) {
@@ -238,6 +241,18 @@ export function StoreProvider({ children }) {
       removeBrandSection(id) {
         return run(() => api.deleteBrandSection(session, id))
       },
+      addBrandAsset(input) {
+        return run(() => api.createBrandAsset(session, input))
+      },
+      updateBrandAsset(id, patch) {
+        return run(() => api.updateBrandAsset(session, id, patch))
+      },
+      removeBrandAsset(id) {
+        return run(() => api.deleteBrandAsset(session, id))
+      },
+      moveBrandAsset(id, direction) {
+        return run(() => api.moveBrandAsset(session, id, direction))
+      },
       createAccount(input) {
         return run(async () => {
           const u = await api.createUser(session, input)
@@ -268,6 +283,7 @@ export function StoreProvider({ children }) {
     approvals,
     links,
     brandSections,
+    brandAssets,
     gates,
     activePhaseId,
     loading,
@@ -275,6 +291,8 @@ export function StoreProvider({ children }) {
     actions,
     approvalFor: (blockId) => approvals.find((a) => a.block_id === blockId) || null,
     linksFor: (blockId) => links.filter((l) => l.block_id === blockId),
+    assetsFor: (sectionId) =>
+      brandAssets.filter((a) => a.section_id === sectionId).sort((a, b) => a.order_index - b.order_index),
     userById: (id) => accounts.find((u) => u.id === id) || null
   }
 

@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useStore } from '../state/store'
 import { canCreate } from '../lib/permissions'
 import { Check, Lock, Plus, Trash } from './Icons'
+import ConfirmDialog from './ConfirmDialog'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
   const { session, phases, gates, activePhaseId, actions } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
+  const [pending, setPending] = useState(null) // phase waiting on a confirm
   const admin = canCreate(session)
 
   const submit = (e) => {
@@ -71,7 +73,7 @@ export default function Sidebar() {
             {admin && (
               <button
                 className="icon-btn danger cat-remove"
-                onClick={() => actions.removePhase(phase.id)}
+                onClick={() => setPending({ phase, blocks: gate.total ?? 0 })}
                 title={`Delete ${phase.title}${gate.total ? ` and its ${gate.total} block${gate.total > 1 ? 's' : ''}` : ''}`}
               >
                 <Trash width="13" height="13" />
@@ -99,6 +101,23 @@ export default function Sidebar() {
             <Plus width="14" height="14" /> New phase
           </button>
         ))}
+
+      {pending && (
+        <ConfirmDialog
+          title={`Delete "${pending.phase.title}"?`}
+          body={
+            pending.blocks
+              ? `Its ${pending.blocks} block${pending.blocks > 1 ? 's' : ''} go with it, along with their links and approvals. This cannot be undone.`
+              : 'This cannot be undone.'
+          }
+          confirmLabel="Delete phase"
+          onCancel={() => setPending(null)}
+          onConfirm={() => {
+            actions.removePhase(pending.phase.id)
+            setPending(null)
+          }}
+        />
+      )}
 
       <p className="sidebar-foot">
         {admin

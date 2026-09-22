@@ -9,7 +9,7 @@ import { BRAND_TEMPLATES, DEFAULT_TEMPLATE_SLUGS } from '../lib/brandTemplates'
  * Supabase queries -- nothing else in the app changes.
  *
  * Tables: users, projects, phases, blocks, block_links, approvals,
- * brand_sections
+ * brand_sections, brand_assets
  * Relationships: project 1-N phases, phase 1-N blocks, block 1-N links,
  * block 0..1 approval, project 1-N brand_sections.
  */
@@ -179,6 +179,35 @@ export const seed = () => ({
     { id: 'apr_2', block_id: 'blk_2', approved_by: 'u_viewer', approved_at: TS(-43) },
     { id: 'apr_3', block_id: 'blk_3', approved_by: 'u_viewer', approved_at: TS(-25) },
     { id: 'apr_4', block_id: 'blk_9', approved_by: 'u_viewer_2', approved_at: TS(-17) }
+  ],
+
+  // TABLE: brand_assets — the contents of a Visual Identity category.
+  // kind: 'text' | 'image' | 'file' | 'link'
+  //   text  -> title + body
+  //   image -> title + url (a data URL here, a Storage object later)
+  //   file  -> a download, e.g. the asset pack zip
+  //   link  -> somewhere external
+  brand_assets: [
+    {
+      id: 'ba_1', section_id: 'bs_prj_1_logo-system', kind: 'text', order_index: 0,
+      title: 'Clear space',
+      body: 'Keep clear space around the lockup equal to the height of the mark. Nothing — type, rules, photography — comes inside it.',
+      url: null, file_name: null, file_size: null
+    },
+    {
+      id: 'ba_2', section_id: 'bs_prj_1_logo-system', kind: 'image', order_index: 1,
+      title: 'Primary lockup',
+      body: null,
+      url:
+        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='300'><rect width='640' height='300' fill='%23f2f3f6'/><circle cx='210' cy='150' r='52' fill='%2314161a'/><rect x='292' y='126' width='168' height='18' rx='9' fill='%2314161a'/><rect x='292' y='158' width='104' height='14' rx='7' fill='%239aa0ac'/></svg>",
+      file_name: 'acme-primary-lockup.svg', file_size: 412
+    },
+    {
+      id: 'ba_3', section_id: 'bs_prj_1_color-palette', kind: 'text', order_index: 0,
+      title: 'Core palette',
+      body: 'Ink #14161A carries the brand. Bone #F2F3F6 is the ground it sits on. Everything else is support and never more than a fifth of a layout.',
+      url: null, file_name: null, file_size: null
+    }
   ],
 
   // TABLE: brand_sections — Visual Identity's left-hand list, per client.

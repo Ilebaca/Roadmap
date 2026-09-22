@@ -26,6 +26,20 @@
  *     order_index int not null default 0
  *   );
  *
+ *   create table brand_assets (
+ *     id uuid primary key default gen_random_uuid(),
+ *     section_id uuid not null references brand_sections(id) on delete cascade,
+ *     kind text not null check (kind in ('text','image','file','link')),
+ *     title text not null default '',
+ *     body text,
+ *     url text,                -- external link, for kind = 'link'
+ *     file_path text,          -- Storage object, for kind in ('image','file')
+ *     file_name text,
+ *     file_size int,
+ *     order_index int not null default 0
+ *   );
+ *   -- bucket: brand-assets, private; reads go through signed URLs
+ *
  *   create table users (
  *     id uuid primary key references auth.users(id) on delete cascade,
  *     email text not null,

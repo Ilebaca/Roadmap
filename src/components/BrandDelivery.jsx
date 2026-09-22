@@ -3,6 +3,8 @@ import { useStore } from '../state/store'
 import { BRAND_TEMPLATES } from '../lib/brandTemplates'
 import { canCreate } from '../lib/permissions'
 import { Plus, Trash, X } from './Icons'
+import BrandContent from './BrandContent'
+import ConfirmDialog from './ConfirmDialog'
 
 /**
  * Visual Identity — the second app on the rail. Same shell as the roadmap: a floating list on the left, one big panel on the right.
@@ -13,12 +15,22 @@ import { Plus, Trash, X } from './Icons'
  * not built yet, so each one opens empty.
  */
 export default function BrandDelivery() {
-  const { session, project, brandSections, actions } = useStore()
+  const store = useStore()
+  const { session, project, brandSections, actions } = store
   const [activeId, setActiveId] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [pendingCat, setPendingCat] = useState(null)
+  const [notice, setNotice] = useState(null)
   const admin = canCreate(session)
 
   const active = brandSections.find((s) => s.id === activeId) ?? brandSections[0] ?? null
+
+  // An upload that will not fit in browser storage says so, then clears.
+  useEffect(() => {
+    if (!notice) return
+    const id = setTimeout(() => setNotice(null), 6000)
+    return () => clearTimeout(id)
+  }, [notice])
 
   // Keep a valid selection as categories come and go, or the client changes.
   useEffect(() => {
@@ -46,13 +58,13 @@ export default function BrandDelivery() {
               >
                 <span className="phase-body">
                   <span className="phase-title">{s.title}</span>
-                  <span className="phase-meta">{s.template ? 'Standard' : 'Custom'} · empty</span>
+                  <span className="phase-meta">{countLabel(store.assetsFor(s.id).length)}</span>
                 </span>
               </button>
               {admin && (
                 <button
                   className="icon-btn danger cat-remove"
-                  onClick={() => actions.removeBrandSection(s.id)}
+                  onClick={() => setPendingCat(s)}
                   title={`Remove ${s.title}`}
                 >
                   <Trash width="13" height="13" />
@@ -91,7 +103,15 @@ export default function BrandDelivery() {
       <main className="stage">
         <div className="brand-panel">
           {active ? (
-            <BrandSection key={active.id} section={active} admin={admin} onPatch={actions.updateBrandSection} />
+            <BrandSection
+              key={active.id}
+              section={active}
+              assets={store.assetsFor(active.id)}
+              admin={admin}
+              actions={actions}
+              onPatch={actions.updateBrandSection}
+              onError={setNotice}
+            />
           ) : (
             <div className="brand-empty">
               <h3>No categories</h3>
@@ -100,12 +120,37 @@ export default function BrandDelivery() {
           )}
         </div>
       </main>
+
+      {pendingCat && (
+        <ConfirmDialog
+          title={`Delete "${pendingCat.title}"?`}
+          body={
+            store.assetsFor(pendingCat.id).length
+              ? `Everything in it goes too — ${countLabel(store.assetsFor(pendingCat.id).length)}. This cannot be undone.`
+              : 'This cannot be undone.'
+          }
+          confirmLabel="Delete category"
+          onCancel={() => setPendingCat(null)}
+          onConfirm={() => {
+            actions.removeBrandSection(pendingCat.id)
+            setPendingCat(null)
+          }}
+        />
+      )}
+
+      {notice && (
+        <div className="toast" onClick={() => setNotice(null)} role="status">
+          {notice}
+        </div>
+      )}
     </>
   )
 }
 
+const countLabel = (n) => (n ? `${n} item${n > 1 ? 's' : ''}` : 'Empty')
+
 /** One category: an adjustable heading and description over an empty shelf. */
-function BrandSection({ section, admin, onPatch }) {
+function BrandSection({ section, assets, admin, actions, onPatch, onError }) {
   const [title, setTitle] = useState(section.title)
   const [blurb, setBlurb] = useState(section.blurb)
   useEffect(() => setTitle(section.title), [section.title])
@@ -140,15 +185,13 @@ function BrandSection({ section, admin, onPatch }) {
         )}
       </header>
 
-      {/* Deliberately empty: the contents of a category are the next build.
-          BACKEND: files land in Supabase Storage with a row in `brand_assets`
-          pointing at them, scoped to this section_id. */}
-      <div className="brand-shelf">
-        <div className="brand-empty">
-          <span className="brand-empty-note">Nothing here yet</span>
-          <p>This category is set up and waiting for its contents.</p>
-        </div>
-      </div>
+      <BrandContent
+        section={section}
+        assets={assets}
+        admin={admin}
+        actions={actions}
+        onError={onError}
+      />
     </div>
   )
 }

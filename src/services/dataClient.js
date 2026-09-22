@@ -44,11 +44,13 @@ function load() {
   return fresh
 }
 
+/** Returns false when the snapshot could not be written (quota, private mode). */
 function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(db))
+    return true
   } catch {
-    /* ignore — the app works fine from memory */
+    return false
   }
 }
 
@@ -548,12 +550,125 @@ export const api = {
     return wait(clone(row))
   },
 
-  /** BACKEND: supabase.from('brand_sections').delete().eq('id', id) */
+  /**
+   * BACKEND: supabase.from('brand_sections').delete().eq('id', id) — the
+   * contents go with it via `on delete cascade` on brand_assets.section_id.
+   */
   async deleteBrandSection(session, id) {
     assertAdmin(session)
     db.brand_sections = db.brand_sections.filter((b) => b.id !== id)
+    db.brand_assets = db.brand_assets.filter((a) => a.section_id !== id)
     persist()
     return wait(null)
+  },
+
+  // ===========================================================================
+  // BRAND ASSETS (what lives inside a Visual Identity category)
+  // ===========================================================================
+
+  /**
+   * BACKEND:
+   *   supabase.from('brand_assets').select('*, brand_sections!inner(project_id)')
+   *     .eq('brand_sections.project_id', project_id).order('order_index')
+   * An image or file row carries a Storage path; turn it into a signed URL on
+   * read rather than storing a public one.
+   */
+  async listBrandAssets(session, project_id) {
+    assertProject(session, project_id)
+    const sectionIds = db.brand_sections
+      .filter((b) => b.project_id === project_id)
+      .map((b) => b.id)
+    const rows = db.brand_assets
+      .filter((a) => sectionIds.includes(a.section_id))
+      .sort((a, b) => a.order_index - b.order_index)
+    return wait(clone(rows))
+  },
+
+  /**
+   * Add a piece of content to a category.
+   * BACKEND: upload the File to Storage first, then insert the row with its
+   * path — never the file itself:
+   *   const { data } = await supabase.storage.from('brand-assets')
+   *     .upload(`${project_id}/${section_id}/${crypto.randomUUID()}`, file)
+   *   await supabase.from('brand_assets').insert({ ..., file_path: data.path })
+   */
+  async createBrandAsset(session, { section_id, kind, title, body, url, file_name, file_size }) {
+    assertAdmin(session)
+    const section = db.brand_sections.find((b) => b.id === section_id)
+    if (!section) throw new Error('Category not found')
+    const siblings = db.brand_assets.filter((a) => a.section_id === section_id)
+    const row = {
+      id: uid('ba'),
+      section_id,
+      kind,
+      title: title ?? '',
+      body: body ?? null,
+      url: url ?? null,
+      file_name: file_name ?? null,
+      file_size: file_size ?? null,
+      order_index: siblings.length ? Math.max(...siblings.map((a) => a.order_index)) + 1 : 0
+    }
+    db.brand_assets.push(row)
+    // An upload only exists in browser storage while there is no backend, so a
+    // failed write means it would vanish on reload. Better to refuse it now.
+    if (!persist() && (kind === 'image' || kind === 'file')) {
+      db.brand_assets = db.brand_assets.filter((a) => a.id !== row.id)
+      persist()
+      throw new ForbiddenError(
+        'There is no room left in browser storage for that file. Remove a file or two — with the backend wired up they go to Supabase Storage instead.'
+      )
+    }
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('brand_assets').update(patch).eq('id', id) */
+  async updateBrandAsset(session, id, patch) {
+    assertAdmin(session)
+    const row = db.brand_assets.find((a) => a.id === id)
+    if (!row) throw new Error('Content not found')
+    for (const k of ['title', 'body', 'url', 'file_name', 'file_size', 'order_index']) {
+      if (k in patch) row[k] = patch[k]
+    }
+    persist()
+    return wait(clone(row))
+  },
+
+  /**
+   * BACKEND: delete the row, and the Storage object with it:
+   *   supabase.storage.from('brand-assets').remove([row.file_path])
+   *   supabase.from('brand_assets').delete().eq('id', id)
+   */
+  async deleteBrandAsset(session, id) {
+    assertAdmin(session)
+    db.brand_assets = db.brand_assets.filter((a) => a.id !== id)
+    persist()
+    return wait(null)
+  },
+
+  /**
+   * Move one item up or down inside its category by swapping order_index with
+   * its neighbour.
+   * BACKEND: two updates in one transaction, or a `move_brand_asset(id, dir)`
+   * function, so a reorder can never half-apply.
+   */
+  async moveBrandAsset(session, id, direction) {
+    assertAdmin(session)
+    const row = db.brand_assets.find((a) => a.id === id)
+    if (!row) throw new Error('Content not found')
+    const siblings = db.brand_assets
+      .filter((a) => a.section_id === row.section_id)
+      .sort((a, b) => a.order_index - b.order_index)
+    const i = siblings.findIndex((a) => a.id === id)
+    const j = direction === 'up' ? i - 1 : i + 1
+    if (j < 0 || j >= siblings.length) return wait(clone(row))
+    // Rewrite the whole run so a snapshot with duplicate indexes still sorts.
+    const reordered = [...siblings]
+    ;[reordered[i], reordered[j]] = [reordered[j], reordered[i]]
+    reordered.forEach((a, k) => {
+      a.order_index = k
+    })
+    persist()
+    return wait(clone(row))
   },
 
   // ===========================================================================

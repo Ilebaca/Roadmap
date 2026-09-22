@@ -79,3 +79,38 @@ export const BrandGlyph = (p) => (
     <path d="m4 16 8 4.5L20 16" />
   </svg>
 )
+
+export const Download = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M12 4v11m0 0 4-4m-4 4-4-4" />
+    <path d="M5 19h14" />
+  </svg>
+)
+
+export const ArrowUp = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M12 19V6m0 0-6 6m6-6 6 6" />
+  </svg>
+)
+
+export const TextGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" {...p}>
+    <path d="M5 6h14M5 11h14M5 16h9" />
+  </svg>
+)
+
+export const ImageGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="m4.5 17 4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5" />
+  </svg>
+)
+
+export const ZipGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M5 4.5h9l5 5V19a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19Z" />
+    <path d="M14 4.5V10h5" />
+    <path d="M9.5 6.5h1.5M9.5 9h1.5M9.5 11.5h1.5M9.5 14h1.5" />
+  </svg>
+)

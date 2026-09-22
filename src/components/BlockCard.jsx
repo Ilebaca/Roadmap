@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatRange, formatStamp } from '../lib/dates'
 import { Check, Link as LinkIcon, Pen, Plus, Trash, X } from './Icons'
 import StateSelect from './StateSelect'
+import ConfirmDialog from './ConfirmDialog'
 
 /**
  * A single content block sitting on the right of the date line.
@@ -35,6 +36,7 @@ export default function BlockCard({
   const [title, setTitle] = useState(block.title)
   const [description, setDescription] = useState(block.description)
   const [editingDates, setEditingDates] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   // Keep local edit buffers in sync when the row changes underneath us.
   useEffect(() => setTitle(block.title), [block.title])
@@ -70,7 +72,7 @@ export default function BlockCard({
               Approved
             </span>
           ) : canEdit ? (
-            <button className="icon-btn danger" onClick={() => onDelete(block.id)} title="Delete block">
+            <button className="icon-btn danger" onClick={() => setConfirming(true)} title="Delete block">
               <Trash width="14" height="14" />
             </button>
           ) : (
@@ -193,6 +195,19 @@ export default function BlockCard({
           </div>
         )}
       </div>
+
+      {confirming && (
+        <ConfirmDialog
+          title={`Delete "${block.title || 'this block'}"?`}
+          body="Its links go with it. This cannot be undone."
+          confirmLabel="Delete block"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false)
+            onDelete(block.id)
+          }}
+        />
+      )}
 
       {canEdit && (
         <div className="resize-handle bottom" onPointerDown={(e) => onResizeStart(e, 'bottom')} title="Drag to change the deadline" />
