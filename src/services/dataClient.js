@@ -538,6 +538,23 @@ export const api = {
     return wait(clone(row))
   },
 
+  /**
+   * Put a client's categories in the given order — what a drag in the sidebar
+   * lands on.
+   * BACKEND: one upsert of {id, order_index} pairs so it applies at once.
+   */
+  async reorderBrandSections(session, project_id, orderedIds) {
+    assertAdmin(session)
+    assertProject(session, project_id)
+    const rows = db.brand_sections.filter((b) => b.project_id === project_id)
+    orderedIds.forEach((id, i) => {
+      const row = rows.find((r) => r.id === id)
+      if (row) row.order_index = i
+    })
+    persist()
+    return wait(true)
+  },
+
   /** BACKEND: supabase.from('brand_sections').update(patch).eq('id', id) */
   async updateBrandSection(session, id, patch) {
     assertAdmin(session)

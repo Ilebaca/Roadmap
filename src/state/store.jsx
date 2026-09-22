@@ -235,6 +235,9 @@ export function StoreProvider({ children }) {
       addBrandSection(input) {
         return run(() => api.createBrandSection(session, { project_id: activeProjectId, ...input }))
       },
+      reorderBrandSections(orderedIds) {
+        return run(() => api.reorderBrandSections(session, activeProjectId, orderedIds))
+      },
       updateBrandSection(id, patch) {
         return run(() => api.updateBrandSection(session, id, patch))
       },
@@ -243,6 +246,25 @@ export function StoreProvider({ children }) {
       },
       addBrandAsset(input) {
         return run(() => api.createBrandAsset(session, input))
+      },
+      /**
+       * A grid arrives with its cells already in place — two or three empty
+       * ones, nothing else. How many cells it has is what makes it a grid of
+       * two or of three.
+       */
+      addGrid(section_id, count) {
+        return run(async () => {
+          const grid = await api.createBrandAsset(session, {
+            section_id,
+            kind: 'grid',
+            columns: count,
+            title: null
+          })
+          for (let i = 0; i < count; i++) {
+            await api.createBrandAsset(session, { section_id, kind: 'image', parent_id: grid.id })
+          }
+          return grid
+        })
       },
       updateBrandAsset(id, patch) {
         return run(() => api.updateBrandAsset(session, id, patch))

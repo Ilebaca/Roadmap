@@ -12,13 +12,15 @@ A single-page React app with two apps on a left icon rail:
   and Photography, Mockups and Motion are there to add when a client needs one.
   An admin renames them, rewrites what they are for, removes the ones a client
   does not need and adds their own. Inside a category, an admin builds the page out
-  of blocks: headlines, paragraphs, full-width images, and grids of two or
-  three across. A text block holds a headline, a paragraph or both — add the
+  of blocks: headlines, paragraphs, full-width images, and grids. A grid of
+  two or three arrives with that many empty cells and nothing else; delete one
+  and it becomes a grid of two, and the last one to go takes the grid with it. A text block holds a headline, a paragraph or both — add the
   missing half from its toolbar and they stay one block. A headline comes in
   three sizes. A grid cell switches between a picture and a block of text
   without losing its place, and an image switched to text keeps its file, so
   switching back brings the picture with it. Blocks are dragged by the grip in
-  their toolbar to reorder, or nudged with the arrows. Anyone can download an
+  their toolbar to reorder, or nudged with the arrows, and the categories
+  themselves drag into order in the sidebar. Anyone can download an
   image: the button appears on it on hover. **Downloadables** is different: a grid of boxes, each
   either a zip to download or a link out to where the files already live.
 

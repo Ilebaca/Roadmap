@@ -31,7 +31,8 @@
  *     section_id uuid not null references brand_sections(id) on delete cascade,
  *     kind text not null check (kind in ('heading','paragraph','image','grid','file','link')),
  *     parent_id uuid references brand_assets(id) on delete cascade, -- image in a grid
- *     columns int,             -- images across, for kind = 'grid'
+ *     columns int,             -- how many cells a grid was made with; the
+ *                              -- layout follows the cells it actually has
  *     title text not null default '',
  *     body text,
  *     size text,               -- headline size: 's' | 'm' | 'l'

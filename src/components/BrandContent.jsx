@@ -52,6 +52,22 @@ export default function BrandContent({ section, assets, admin, actions, onError 
 
   const remove = (asset) => setPending(asset)
 
+  /** Make a grid two or three across by adding or taking away a trailing cell. */
+  const setCells = async (grid, n) => {
+    const cells = assets.filter((a) => a.parent_id === grid.id)
+    if (n === cells.length) return
+    if (n > cells.length) {
+      for (let i = cells.length; i < n; i++) {
+        await actions.addBrandAsset({ section_id: section.id, kind: 'image', parent_id: grid.id })
+      }
+      return
+    }
+    // Taking one away never throws work out without asking.
+    const doomed = cells.slice(n)
+    if (doomed.some((c) => c.url || c.body)) return setPending(doomed.at(-1))
+    for (const c of doomed) await actions.removeBrandAsset(c.id)
+  }
+
   const move = (asset, direction) => actions.moveBrandAsset(asset.id, direction)
 
   const addFile = async (file, kind, parent_id = null, intoCell = null) => {
@@ -101,9 +117,7 @@ export default function BrandContent({ section, assets, admin, actions, onError 
           last={i === top.length - 1}
           actions={actions}
           onAddImage={(file, intoCell) => addFile(file, 'image', a.id, intoCell)}
-          onAddText={() =>
-            actions.addBrandAsset({ section_id: section.id, kind: 'paragraph', parent_id: a.id, body: '' })
-          }
+          onSetCells={(n) => setCells(a, n)}
           onRemove={() => remove(a)}
           onRemoveChild={(child) => remove(child)}
           onMove={(d) => move(a, d)}
@@ -155,9 +169,7 @@ export default function BrandContent({ section, assets, admin, actions, onError 
             <button
               key={n}
               className="add-chip"
-              onClick={() =>
-                actions.addBrandAsset({ section_id: section.id, kind: 'grid', columns: n, title: '' })
-              }
+              onClick={() => actions.addGrid(section.id, n)}
             >
               <GridGlyph width="13" height="13" cols={n} /> Grid of {n}
             </button>
@@ -171,7 +183,11 @@ export default function BrandContent({ section, assets, admin, actions, onError 
           body="This cannot be undone."
           onCancel={() => setPending(null)}
           onConfirm={() => {
-            actions.removeBrandAsset(pending.id)
+            // The last cell of a grid takes the grid with it — deleting the
+            // grid cascades to the cell, so that is the one call to make.
+            const lastCell =
+              pending.parent_id && assets.filter((a) => a.parent_id === pending.parent_id).length === 1
+            actions.removeBrandAsset(lastCell ? pending.parent_id : pending.id)
             setPending(null)
           }}
         />
@@ -190,7 +206,7 @@ function AssetRow({
   last,
   actions,
   onAddImage,
-  onAddText,
+  onSetCells,
   onRemove,
   onRemoveChild,
   onMove,
@@ -279,14 +295,14 @@ function AssetRow({
             </div>
           )}
 
-          {/* A grid can switch between two and three across. */}
+          {/* Two or three across — the number of cells in the grid. */}
           {asset.kind === 'grid' && (
-            <div className="size-pick" role="group" aria-label="Images across">
+            <div className="size-pick" role="group" aria-label="Cells across">
               {[2, 3].map((n) => (
                 <button
                   key={n}
-                  className={(asset.columns ?? 2) === n ? 'is-on' : ''}
-                  onClick={() => actions.updateBrandAsset(asset.id, { columns: n })}
+                  className={images.length === n ? 'is-on' : ''}
+                  onClick={() => onSetCells(n)}
                   title={`${n} across`}
                 >
                   {n}
@@ -342,7 +358,6 @@ function AssetRow({
           admin={admin}
           actions={actions}
           onAddImage={onAddImage}
-          onAddText={onAddText}
           onRemoveChild={onRemoveChild}
         />
       )}
@@ -373,12 +388,16 @@ function AssetRow({
  * it losing its place — an image switched to text keeps its file, so switching
  * back brings the picture with it.
  */
-function ImageGrid({ grid, cells, admin, actions, onAddImage, onAddText, onRemoveChild }) {
+function ImageGrid({ grid, cells, admin, actions, onAddImage, onRemoveChild }) {
   const visible = admin ? cells : cells.filter((c) => (c.kind === 'image' ? c.url : c.body))
   if (!visible.length && !admin) return null
 
+  // The layout follows the cells: three of them is a grid of three, and taking
+  // one out leaves a grid of two.
+  const cols = Math.min(3, Math.max(1, cells.length))
+
   return (
-    <div className={`img-grid cols-${grid.columns ?? 2}`}>
+    <div className={`img-grid cols-${cols}`}>
       {visible.map((cell) => (
         <div key={cell.id} className={`grid-tile tile-${cell.kind}`}>
           {cell.kind === 'paragraph' ? (
@@ -448,27 +467,6 @@ function ImageGrid({ grid, cells, admin, actions, onAddImage, onAddText, onRemov
         </div>
       ))}
 
-      {admin && (
-        <div className="grid-tile is-new">
-          <label className="tile-add-btn" title="Add an image to this grid">
-            <ImageGlyph width="15" height="15" />
-            Image
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                onAddImage(e.target.files?.[0])
-                e.target.value = ''
-              }}
-            />
-          </label>
-          <button className="tile-add-btn" onClick={onAddText} title="Add a block of text to this grid">
-            <TextGlyph width="15" height="15" />
-            Text
-          </button>
-        </div>
-      )}
     </div>
   )
 }

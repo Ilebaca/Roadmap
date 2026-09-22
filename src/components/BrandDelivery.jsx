@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store'
 import { BRAND_TEMPLATES } from '../lib/brandTemplates'
 import { canCreate } from '../lib/permissions'
-import { Plus, Trash, X } from './Icons'
+import { GripGlyph, Plus, Trash, X } from './Icons'
 import BrandContent from './BrandContent'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -21,6 +21,9 @@ export default function BrandDelivery() {
   const [adding, setAdding] = useState(false)
   const [pendingCat, setPendingCat] = useState(null)
   const [notice, setNotice] = useState(null)
+  // Drag a category by its grip to move it up or down the list.
+  const [dragId, setDragId] = useState(null)
+  const [over, setOver] = useState(null) // { id, where: 'before' | 'after' }
   const admin = canCreate(session)
 
   const active = brandSections.find((s) => s.id === activeId) ?? brandSections[0] ?? null
@@ -38,6 +41,20 @@ export default function BrandDelivery() {
     if (!brandSections.some((s) => s.id === activeId)) setActiveId(brandSections[0].id)
   }, [brandSections, activeId])
 
+  const endDrag = () => {
+    setDragId(null)
+    setOver(null)
+  }
+
+  const dropIt = () => {
+    if (!dragId || !over || dragId === over.id) return endDrag()
+    const ids = brandSections.map((s) => s.id).filter((id) => id !== dragId)
+    const at = ids.indexOf(over.id) + (over.where === 'after' ? 1 : 0)
+    ids.splice(at, 0, dragId)
+    actions.reorderBrandSections(ids)
+    endDrag()
+  }
+
   const used = new Set(brandSections.map((s) => s.template).filter(Boolean))
   const available = BRAND_TEMPLATES.filter((t) => !used.has(t.slug))
 
@@ -51,7 +68,38 @@ export default function BrandDelivery() {
 
         <nav className="phase-list">
           {brandSections.map((s) => (
-            <div key={s.id} className="cat-row">
+            <div
+              key={s.id}
+              className={`cat-row ${dragId === s.id ? 'is-dragging' : ''} ${
+                over?.id === s.id && dragId && dragId !== s.id ? `drop-${over.where}` : ''
+              }`}
+              onDragOver={(e) => {
+                if (!admin || !dragId) return
+                e.preventDefault()
+                const r = e.currentTarget.getBoundingClientRect()
+                setOver({ id: s.id, where: e.clientY < r.top + r.height / 2 ? 'before' : 'after' })
+              }}
+              onDrop={(e) => {
+                if (!admin) return
+                e.preventDefault()
+                dropIt()
+              }}
+            >
+              {admin && (
+                <button
+                  className="icon-btn tiny grip cat-grip"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', s.id)
+                    setDragId(s.id)
+                  }}
+                  onDragEnd={endDrag}
+                  title="Drag to reorder"
+                >
+                  <GripGlyph width="12" height="12" />
+                </button>
+              )}
               <button
                 className={`phase-tab ${s.id === active?.id ? 'is-active' : ''}`}
                 onClick={() => setActiveId(s.id)}
