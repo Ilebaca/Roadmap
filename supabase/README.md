@@ -143,6 +143,37 @@ Some details worth knowing:
 
 ---
 
+## Keeping the project awake
+
+A Supabase project on the free plan is **paused after a week with no
+activity**, and a paused project means nobody can sign in. One request a day is
+enough to count as activity, so `.github/workflows/keep-supabase-awake.yml`
+asks it a trivial question every morning.
+
+It needs two repository secrets. In GitHub, on this repo:
+
+1. **Settings** → **Secrets and variables** → **Actions**.
+2. **New repository secret**, twice:
+   - `SUPABASE_URL` → `https://YOUR-PROJECT.supabase.co`
+   - `SUPABASE_ANON_KEY` → the same publishable key the app is built with
+     (Vercel has it as `VITE_SUPABASE_ANON_KEY`).
+3. Go to the **Actions** tab → **Keep Supabase awake** → **Run workflow** to
+   prove it works now rather than waiting until tomorrow. A green tick and
+   `Still awake.` in the log is a pass.
+
+Two things to know about it:
+
+- **It shouts when it breaks.** If Supabase answers anything but `200` — the
+  key was rotated, the project is already paused — the run fails and GitHub
+  emails you. A ping that quietly stopped working would be worse than none.
+- **GitHub switches off scheduled workflows in a repository with no commits
+  for 60 days.** It emails you first, and the Actions tab has a button to turn
+  it back on. If this app goes quiet for two months, watch for that email.
+
+None of this is needed on a paid Supabase plan, which never pauses.
+
+---
+
 ## What the rules enforce
 
 Run against Postgres 16 and checked, not assumed:

@@ -1,0 +1,53 @@
+# A Supabase project on the free plan is paused after a week with no activity,
+# and a paused project means the app cannot sign anyone in. One request a day is
+# enough to count as activity, so this asks it a trivial question every morning.
+#
+# It needs two repository secrets — Settings -> Secrets and variables -> Actions:
+#   SUPABASE_URL       https://YOUR-PROJECT.supabase.co
+#   SUPABASE_ANON_KEY  the same publishable key the app is built with
+name: Keep Supabase awake
+
+on:
+  schedule:
+    # 06:17 UTC. Not on the hour on purpose: GitHub's scheduler is busiest then
+    # and runs get delayed or dropped, and a dropped run is a day of silence.
+    - cron: '17 6 * * *'
+  # A Run workflow button, so you can prove it works without waiting a day.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask Supabase for one row
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -u
+          if [ -z "${URL:-}" ] || [ -z "${KEY:-}" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add both under"
+            echo "::error::Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          # Row-level security answers an anonymous caller with an empty list,
+          # which is the point: no data comes back, but the project has been
+          # spoken to. A 200 with [] is a pass.
+          # curl leaves the file untouched if it never connects, so start empty
+          # rather than printing a stale body next to a failure.
+          : > response.txt
+          code=$(curl -sS -o response.txt -w '%{http_code}' --max-time 30 \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "${URL%/}/rest/v1/projects?select=id&limit=1")
+
+          echo "HTTP $code"
+          head -c 400 response.txt; echo
+
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase answered $code. If it is already paused, resume it in the"
+            echo "::error::dashboard; if the key was rotated, update the SUPABASE_ANON_KEY secret."
+            exit 1
+          fi
+          echo "Still awake."
