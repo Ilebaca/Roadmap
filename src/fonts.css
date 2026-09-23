@@ -1,0 +1,13 @@
+/* Injected into the host page's <head>, not the shadow root: @font-face is
+   ignored inside a shadow tree, and a font declaration cannot affect the
+   page around it. */
+/* ClashDisplay, one variable file covering 200-700, so the odd in-between
+   weights below (550, 650) render as written instead of snapping. */
+@font-face {
+  font-family: 'ClashDisplay';
+  src: url('./fonts/ClashDisplay-Variable.woff2') format('woff2-variations'),
+       url('./fonts/ClashDisplay-Variable.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}

@@ -143,23 +143,44 @@ Some details worth knowing:
 
 ---
 
-## Embedding it in a page
+## Putting it on a Webflow page
 
-The app is framed by a Webflow page at `mimant.studio/thequest`, and it is
-served from `roadmap.mimant.studio` rather than a Vercel address on purpose:
-browsers treat an iframe from an unrelated domain as third-party and partition
-or block its storage, which is where the Supabase session lives. A client would
-sign in and be thrown straight back out, Safari worst of all. A subdomain of
-the site doing the framing counts as same-site, so the session sticks.
+The app lives at `mimant.studio/thequest`, which is a normal Webflow page. It
+is not an iframe. The page loads the app's script, so the app runs *as part of*
+`mimant.studio` — same origin, first-party storage — and the Supabase session
+survives in every browser, Safari and iPhones included. An iframe from a
+different domain would be treated as third-party, its storage partitioned or
+blocked, and a client would be thrown back to the sign-in screen over and over.
 
-`vercel.json` sets `frame-ancestors` to name who may frame it. Without that,
-anyone can put the real, signed-in app inside a page of their own and get a
-client to click things in it. `X-Frame-Options` is deliberately **not** set:
-it only understands same-origin, so it would refuse the one embed that is
-supposed to work.
+Paste this into a Webflow **Embed** element on that page:
 
-Nothing in that file takes comments — it is JSON, and Vercel rejects keys that
-are not in its schema, deploy and all.
+```html
+<div id="roadmap-app"></div>
+<script type="module" src="https://roadmap-mimant.vercel.app/assets/app.js"></script>
+```
+
+Three things make that work, and all three are easy to undo by accident:
+
+- **The app mounts inside a shadow root.** Webflow ships its own stylesheet,
+  and without that boundary it restyles every heading, button and input in the
+  app, while the app's rules leak back out over the site. Nothing crosses it
+  except inherited properties, which `:host { all: initial }` in `styles.css`
+  cuts off.
+- **The filename never changes.** `vite.config.js` pins the bundle to
+  `assets/app.js` instead of a hashed name, because that URL is written into a
+  Webflow embed nobody will think to update. `vercel.json` makes the browser
+  revalidate it on each load, which is what replaces the hash. So a deploy
+  reaches the page on its own — there is nothing to change in Webflow.
+- **`Access-Control-Allow-Origin` on `/assets/`.** A module script loaded from
+  another origin is fetched with CORS, and so is the font it pulls in. Without
+  that header the page loads nothing and shows a blank space.
+
+Put the Embed element at the top level of the page rather than inside an
+animated container: a CSS `transform` on an ancestor changes what `position:
+fixed` is measured against, and the app's menus and dialogs rely on it.
+
+`vercel.json` also sets `frame-ancestors`, which is unrelated to the above — it
+stops anyone framing the standalone app on a site of their own.
 
 ---
 

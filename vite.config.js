@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Plain SPA build. Output in /dist -> deploy that folder to Vercel/Cloudflare
-// and embed the resulting URL in Webflow with a full-page iframe/code embed.
 export default defineConfig({
   plugins: [react()],
   base: './',
-  server: { port: 5173, host: true }
+  server: { port: 5173, host: true },
+  build: {
+    rollupOptions: {
+      output: {
+        // Stable names, not hashed ones. A Webflow page hard-codes this URL in
+        // an embed nobody will remember to update, so the filename has to
+        // survive every deploy. vercel.json revalidates it instead of trusting
+        // a hash to change, which is what pays for losing the hash.
+        entryFileNames: 'assets/app.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]'
+      }
+    }
+  }
 })

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SELECTABLE_STATES, stateLabel } from '../lib/permissions'
 import { Check, Chevron } from './Icons'
+import { eventInside } from '../lib/dom'
 
 /**
  * The block's state control, sitting under the description.
@@ -37,7 +38,7 @@ export default function StateSelect({ value, editable, onChange }) {
     const closeOnScroll = () => Date.now() - opened > 200 && setOpen(false)
     const onKey = (e) => e.key === 'Escape' && close()
     const onDown = (e) => {
-      if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return
+      if (eventInside(btnRef.current, e) || eventInside(menuRef.current, e)) return
       close()
     }
     // `true` catches the timeline's own scroll container too

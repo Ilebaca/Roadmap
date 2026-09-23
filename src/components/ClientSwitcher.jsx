@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store'
 import { isAdmin } from '../lib/permissions'
 import { Chevron, Plus } from './Icons'
+import { eventInside } from '../lib/dom'
 
 /** Initials fallback until a real logo is uploaded. */
 const initials = (name = '') =>
@@ -49,7 +50,7 @@ export default function ClientSwitcher() {
 
   useEffect(() => {
     if (!open) return setCreating(false)
-    const onDown = (e) => !wrapRef.current?.contains(e.target) && setOpen(false)
+    const onDown = (e) => !eventInside(wrapRef.current, e) && setOpen(false)
     const onKey = (e) => e.key === 'Escape' && setOpen(false)
     document.addEventListener('pointerdown', onDown, true)
     window.addEventListener('keydown', onKey)
