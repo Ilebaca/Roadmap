@@ -150,13 +150,21 @@ export function StoreProvider({ children }) {
     [phases, blocks, session]
   )
 
-  // Keep the active tab valid: default to the last unlocked phase, and bounce
-  // off any tab that has become locked again.
+  // Keep the active tab valid: open on the phase the work is actually in, and
+  // bounce off any tab that has become locked again.
+  //
+  // "The last unlocked phase" was wrong for an admin, who has every phase
+  // unlocked and so always landed on the final one — usually the emptiest.
+  // The first phase that is not finished is where both of them want to be: the
+  // admin's live front, and the one thing the client still has to approve.
   useEffect(() => {
     if (!phases.length) return
-    const unlocked = phases.filter((p) => gates[p.id]?.unlocked)
+    const ordered = [...phases].sort((a, b) => a.order_index - b.order_index)
+    const unlocked = ordered.filter((p) => gates[p.id]?.unlocked)
     const stillOk = activePhaseId && gates[activePhaseId]?.unlocked
-    if (!stillOk) setActivePhaseId((unlocked.at(-1) ?? phases[0]).id)
+    if (stillOk) return
+    const working = unlocked.find((p) => !gates[p.id]?.complete)
+    setActivePhaseId((working ?? unlocked.at(-1) ?? ordered[0]).id)
   }, [phases, gates, activePhaseId])
 
   // --- actions ---------------------------------------------------------------
