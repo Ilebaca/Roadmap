@@ -2,5 +2,19 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "//": "Who may put this app in an iframe. Without it anyone can frame the real, signed-in app inside a page of their own and trick a client into clicking things in it. X-Frame-Options is deliberately not set: it only understands same-origin, which would refuse mimant.studio framing a subdomain.",
+          "value": "frame-ancestors 'self' https://mimant.studio https://www.mimant.studio https://*.webflow.io"
+        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
 }
