@@ -143,6 +143,26 @@ Some details worth knowing:
 
 ---
 
+## Embedding it in a page
+
+The app is framed by a Webflow page at `mimant.studio/thequest`, and it is
+served from `roadmap.mimant.studio` rather than a Vercel address on purpose:
+browsers treat an iframe from an unrelated domain as third-party and partition
+or block its storage, which is where the Supabase session lives. A client would
+sign in and be thrown straight back out, Safari worst of all. A subdomain of
+the site doing the framing counts as same-site, so the session sticks.
+
+`vercel.json` sets `frame-ancestors` to name who may frame it. Without that,
+anyone can put the real, signed-in app inside a page of their own and get a
+client to click things in it. `X-Frame-Options` is deliberately **not** set:
+it only understands same-origin, so it would refuse the one embed that is
+supposed to work.
+
+Nothing in that file takes comments — it is JSON, and Vercel rejects keys that
+are not in its schema, deploy and all.
+
+---
+
 ## Keeping the project awake
 
 A Supabase project on the free plan is **paused after a week with no
