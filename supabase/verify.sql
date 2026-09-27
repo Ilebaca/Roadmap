@@ -58,4 +58,14 @@ select 'roadmap triggers',
         where tgname in ('projects_first_roadmap','phases_sync_project') and not tgisinternal) || ' of 2',
        case when (select count(*) from pg_trigger
                   where tgname in ('projects_first_roadmap','phases_sync_project') and not tgisinternal) = 2
-            then 'ok' else 'run part 6 again' end;
+            then 'ok' else 'run part 6 again' end
+union all
+select 'block owner column',
+       case when exists (
+         select 1 from information_schema.columns
+          where table_schema='public' and table_name='blocks' and column_name='owner'
+       ) then '1 of 1' else '0 of 1' end,
+       case when exists (
+         select 1 from information_schema.columns
+          where table_schema='public' and table_name='blocks' and column_name='owner'
+       ) then 'ok' else 'run part 7 again' end;

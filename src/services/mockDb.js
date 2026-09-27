@@ -97,7 +97,7 @@ export const seed = () => ({
   ],
 
   // TABLE: blocks
-  // state: 'todo' | 'in_progress' | 'on_hold' | 'review' | 'approved'
+  // state: 'todo', owner: 'studio' | 'in_progress' | 'on_hold' | 'review' | 'approved'
   // locked: true once approved -> nobody can edit or change state again.
   blocks: [
     // --- Phase 1: fully approved, so Phase 2 is unlocked ---------------------
@@ -106,14 +106,14 @@ export const seed = () => ({
       title: 'Kickoff & stakeholder interviews',
       description:
         'Two workshops with the leadership team, plus five 1:1 interviews. Output is a written positioning brief and the list of constraints we design against.',
-      state: 'approved', start_date: D(-74), end_date: D(-60), locked: true
+      state: 'approved', owner: 'studio', start_date: D(-74), end_date: D(-60), locked: true
     },
     {
       id: 'blk_2', phase_id: 'ph_1', order_index: 1,
       title: 'Audit & competitive landscape',
       description:
         'Teardown of the current identity across every touchpoint, benchmarked against six competitors.',
-      state: 'approved', start_date: D(-58), end_date: D(-44), locked: true
+      state: 'approved', owner: 'client', start_date: D(-58), end_date: D(-44), locked: true
     },
 
     // --- Phase 2: the live phase, one block of each state --------------------
@@ -122,27 +122,27 @@ export const seed = () => ({
       title: 'Moodboards & art direction',
       description:
         'Three distinct directions, each with typography, palette and image treatment. You pick one to carry forward.',
-      state: 'approved', start_date: D(-40), end_date: D(-26), locked: true
+      state: 'approved', owner: 'studio', start_date: D(-40), end_date: D(-26), locked: true
     },
     {
       id: 'blk_4', phase_id: 'ph_2', order_index: 1,
       title: 'Logotype & wordmark',
       description:
         'Refined lockup in horizontal, stacked and icon-only variants. Ready for your sign-off — approve to unlock production.',
-      state: 'review', start_date: D(-24), end_date: D(-6), locked: false
+      state: 'review', owner: 'studio', start_date: D(-24), end_date: D(-6), locked: false
     },
     {
       id: 'blk_5', phase_id: 'ph_2', order_index: 2,
       title: 'Colour system & type scale',
       description:
         'Primary, secondary and support palettes with contrast tested to WCAG AA. Type scale across print and screen.',
-      state: 'in_progress', start_date: D(-4), end_date: D(10), locked: false
+      state: 'in_progress', owner: 'client', start_date: D(-4), end_date: D(10), locked: false
     },
     {
       id: 'blk_6', phase_id: 'ph_2', order_index: 3,
       title: 'Brand guidelines draft',
       description: 'First pass of the guideline document. Blocked until the type scale is signed off.',
-      state: 'on_hold', start_date: D(12), end_date: D(22), locked: false
+      state: 'on_hold', owner: 'studio', start_date: D(12), end_date: D(22), locked: false
     },
 
     // --- Phase 3: seeded but invisible until Phase 2 is fully approved -------
@@ -150,13 +150,13 @@ export const seed = () => ({
       id: 'blk_7', phase_id: 'ph_3', order_index: 0,
       title: 'Asset production',
       description: 'Export the full asset library: logo files, templates, social kit.',
-      state: 'todo', start_date: D(26), end_date: D(40), locked: false
+      state: 'todo', owner: 'studio', start_date: D(26), end_date: D(40), locked: false
     },
     {
       id: 'blk_8', phase_id: 'ph_3', order_index: 1,
       title: 'Handover documentation',
       description: 'Written handover with file map and usage rules.',
-      state: 'todo', start_date: D(42), end_date: D(52), locked: false
+      state: 'todo', owner: 'client', start_date: D(42), end_date: D(52), locked: false
     },
 
     // --- Northwind Coffee (prj_2) -------------------------------------------
@@ -164,19 +164,19 @@ export const seed = () => ({
       id: 'blk_9', phase_id: 'ph_5', order_index: 0,
       title: 'Scope & sitemap',
       description: 'Page inventory, what stays, what goes, and the new navigation.',
-      state: 'approved', start_date: D(-30), end_date: D(-18), locked: true
+      state: 'approved', owner: 'studio', start_date: D(-30), end_date: D(-18), locked: true
     },
     {
       id: 'blk_10', phase_id: 'ph_5', order_index: 1,
       title: 'Content audit',
       description: 'Every page rated keep / rewrite / bin, with owners against each one.',
-      state: 'review', start_date: D(-16), end_date: D(-2), locked: false
+      state: 'review', owner: 'studio', start_date: D(-16), end_date: D(-2), locked: false
     },
     {
       id: 'blk_11', phase_id: 'ph_6', order_index: 0,
       title: 'Homepage concepts',
       description: 'Two directions for the homepage, desktop and mobile.',
-      state: 'todo', start_date: D(4), end_date: D(18), locked: false
+      state: 'todo', owner: 'client', start_date: D(4), end_date: D(18), locked: false
     }
   ],
 

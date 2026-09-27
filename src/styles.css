@@ -811,11 +811,32 @@ button, input, select, textarea {
   transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 .block:hover { box-shadow: var(--shadow); border-color: var(--line-2); }
-.block.state-review { border-color: var(--line-2); box-shadow: 0 0 0 3px var(--hover-soft), var(--shadow-sm); }
+/* Work in hand is lit by its own state, so which card is live reads from
+   across the room. To Do stays plain — most of the board is To Do, and
+   colouring all of it would say nothing. */
+.block.state-in_progress,
+.block.state-on_hold,
+.block.state-review {
+  border-color: var(--tone-br);
+  background: color-mix(in srgb, var(--tone-bg) 40%, var(--card));
+  /* a bar along the edge the card hangs from, in the state's own colour */
+  box-shadow: inset 0 2px 0 var(--tone-dot);
+}
+.block.state-in_progress:hover,
+.block.state-on_hold:hover,
+.block.state-review:hover { border-color: var(--tone-dot); }
 
-/* an approved block is locked: slightly grey and transparent, nothing editable */
-.block.is-locked { background: var(--card-2); opacity: 0.62; }
-.block.is-locked:hover { opacity: 0.88; }
+/* An approved block is done with: grey, and faded back so the live work
+   stands out against it.
+   The fade is on each part rather than the card, because opacity on the card
+   would composite the whole thing as one group and nothing inside could be
+   lifted back out of it — and the links have to stay readable and clickable
+   long after the work is signed off. */
+.block.is-locked { background: var(--card-2); }
+.block.is-locked .block-inner > * { opacity: 0.5; transition: opacity 0.15s; }
+.block.is-locked .block-inner > .link-shelf { opacity: 1; }
+.block.is-locked:hover .block-inner > * { opacity: 0.85; }
+.block.is-locked:hover .block-inner > .link-shelf { opacity: 1; }
 
 .block.is-dragging { border-color: var(--ink); box-shadow: var(--shadow-lg); }
 
@@ -871,11 +892,11 @@ button, input, select, textarea {
 .block-link:hover { border-bottom-color: var(--ink); }
 
 /* ---------- states (the one place colour is used) -------------------------- */
-.tone-todo        { --tone-fg: #a8b1c0; --tone-bg: #232830; --tone-dot: #79838f; --tone-br: #333a45; }
-.tone-in_progress { --tone-fg: #7db0ff; --tone-bg: #14203a; --tone-dot: #4a8ff7; --tone-br: #24365c; }
-.tone-on_hold     { --tone-fg: #f0b95c; --tone-bg: #2c2110; --tone-dot: #e0a23c; --tone-br: #4a3718; }
-.tone-review      { --tone-fg: #b79cff; --tone-bg: #1f1936; --tone-dot: #8b5cf6; --tone-br: #362b57; }
-.tone-approved    { --tone-fg: #5fd39b; --tone-bg: #10241c; --tone-dot: #22a06b; --tone-br: #1d3f30; }
+.tone-todo, .state-todo        { --tone-fg: #a8b1c0; --tone-bg: #232830; --tone-dot: #79838f; --tone-br: #333a45; }
+.tone-in_progress, .state-in_progress { --tone-fg: #7db0ff; --tone-bg: #14203a; --tone-dot: #4a8ff7; --tone-br: #24365c; }
+.tone-on_hold, .state-on_hold     { --tone-fg: #f0b95c; --tone-bg: #2c2110; --tone-dot: #e0a23c; --tone-br: #4a3718; }
+.tone-review, .state-review      { --tone-fg: #b79cff; --tone-bg: #1f1936; --tone-dot: #8b5cf6; --tone-br: #362b57; }
+.tone-approved, .state-approved    { --tone-fg: #5fd39b; --tone-bg: #10241c; --tone-dot: #22a06b; --tone-br: #1d3f30; }
 
 .state-row { display: flex; margin-top: 2px; }
 
@@ -1544,3 +1565,30 @@ button, input, select, textarea {
 
 /* the strip's head is now a name and a menu, not a heading */
 .workspace.is-stacked .sidebar-head { align-items: center; }
+
+/* ---------- whose job is this block? -------------------------------------- */
+.state-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.owner-switch {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--card-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.owner-switch button {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 4px 10px; border-radius: var(--radius-xs);
+  font-size: 11px; font-weight: 550; color: var(--muted-2);
+}
+.owner-switch button:hover { color: var(--text); }
+/* Deliberately colourless. The states already own every useful hue — grey,
+   blue, amber, purple, green — and a sixth here would read as a sixth state.
+   The words say which side it is; the fill only says which one is chosen. */
+.owner-switch button.is-on { background: var(--card); color: var(--ink); }
+
+.owner-chip {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  font-size: 11px; font-weight: 550;
+  background: var(--card-2); border: 1px solid var(--line); color: var(--muted);
+}
+.owner-chip.is-client { color: var(--ink); border-color: var(--line-2); }

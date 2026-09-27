@@ -182,6 +182,16 @@ dashboard.
 
 ---
 
+## Whose job a block is
+
+Every block carries `owner`, either `studio` or `client`, defaulting to the
+studio. It is the commonest reason a roadmap stalls — both sides waiting on the
+other — so each block says out loud which of them it is on. An admin flips it;
+a client reads it. An approved block refuses the change like any other edit,
+because the freeze trigger from part 3 covers the whole row.
+
+---
+
 ## Putting it on a Webflow page
 
 The app lives at `mimant.studio/thequest`, which is a normal Webflow page. It

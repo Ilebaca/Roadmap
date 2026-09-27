@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatRange, formatStamp } from '../lib/dates'
 import { Check, Link as LinkIcon, Pen, Plus, Trash, X } from './Icons'
 import StateSelect from './StateSelect'
+import OwnerSwitch from './OwnerSwitch'
 import ConfirmDialog from './ConfirmDialog'
 
 /**
@@ -154,6 +155,14 @@ export default function BlockCard({
             value={block.state}
             editable={canSetState}
             onChange={(next) => onState(block.id, next)}
+          />
+          {/* Whose job this is. The commonest way a roadmap stalls is both
+              sides waiting on the other, so every block says out loud which
+              of them it is on. */}
+          <OwnerSwitch
+            value={block.owner ?? 'studio'}
+            editable={canEdit}
+            onChange={(next) => onPatch(block.id, { owner: next })}
           />
         </div>
 

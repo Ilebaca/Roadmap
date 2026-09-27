@@ -319,7 +319,7 @@ export const liveApi = {
   /** Approving is not an edit — it goes through approveBlock(). */
   async updateBlock(session, id, patch) {
     const clean = {}
-    for (const k of ['title', 'description', 'start_date', 'end_date', 'state', 'order_index']) {
+    for (const k of ['title', 'description', 'start_date', 'end_date', 'state', 'owner', 'order_index']) {
       if (k in patch && !(k === 'state' && patch.state === 'approved')) clean[k] = patch[k]
     }
     return ok(await supabase.from('blocks').update(clean).eq('id', id).select().single())
