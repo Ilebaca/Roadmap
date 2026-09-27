@@ -4,7 +4,7 @@ import { canCreate } from '../lib/permissions'
 import { Check, Lock, Plus, Trash } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
 import ProjectSwitcher from './ProjectSwitcher'
-import { useLongPress } from '../lib/useLongPress'
+import { useHoldDrag } from '../lib/useHoldDrag'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
@@ -31,47 +31,48 @@ export default function Sidebar() {
         <ProjectSwitcher />
       </div>
 
-      {/* A plus at the head of the run, before the phases themselves — the
-          same place on the strip whatever is in it, rather than a wide button
-          that moved as phases were added. */}
-      {admin &&
-        (adding ? (
-          <form className="add-phase" onSubmit={submit}>
-            <input
-              autoFocus
-              value={title}
-              placeholder="Phase name"
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={() => !title && setAdding(false)}
-            />
-            <button type="submit">Add</button>
-          </form>
-        ) : (
-          <button
-            className="add-phase-btn is-plus"
-            onClick={() => setAdding(true)}
-            title="New phase"
-            aria-label="New phase"
-          >
-            <Plus width="16" height="16" />
-          </button>
-        ))}
+      {/* The plus and the phases are one run: at the head of it, on the same
+          line, not a row of its own above them. */}
+      <div className="phase-strip">
+        {admin &&
+          (adding ? (
+            <form className="add-phase" onSubmit={submit}>
+              <input
+                autoFocus
+                value={title}
+                placeholder="Phase name"
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => !title && setAdding(false)}
+              />
+              <button type="submit">Add</button>
+            </form>
+          ) : (
+            <button
+              className="add-phase-btn is-plus"
+              onClick={() => setAdding(true)}
+              title="New phase"
+              aria-label="New phase"
+            >
+              <Plus width="16" height="16" />
+            </button>
+          ))}
 
-      <nav className="phase-list">
-        {phases.map((phase, i) => (
-          <PhaseTab
-            key={phase.id}
-            phase={phase}
-            index={i}
-            gate={gates[phase.id] ?? {}}
-            active={phase.id === activePhaseId}
-            live={phase.id === livePhaseId}
-            admin={admin}
-            onSelect={() => actions.selectPhase(phase.id)}
-            onAskDelete={() => setPending({ phase, blocks: gates[phase.id]?.total ?? 0 })}
-          />
-        ))}
-      </nav>
+        <nav className="phase-list">
+          {phases.map((phase, i) => (
+            <PhaseTab
+              key={phase.id}
+              phase={phase}
+              index={i}
+              gate={gates[phase.id] ?? {}}
+              active={phase.id === activePhaseId}
+              live={phase.id === livePhaseId}
+              admin={admin}
+              onSelect={() => actions.selectPhase(phase.id)}
+              onAskDelete={() => setPending({ phase, blocks: gates[phase.id]?.total ?? 0 })}
+            />
+          ))}
+        </nav>
+      </div>
 
       {pending && (
         <ConfirmDialog
@@ -107,13 +108,16 @@ export default function Sidebar() {
  * phase was added or removed.
  */
 function PhaseTab({ phase, index, gate, active, live, admin, onSelect, onAskDelete }) {
-  const hold = useLongPress(onAskDelete)
+  // Hold the pill to be asked about deleting it. Phases keep their order, so
+  // a hold that turns into a drag is a finger changing its mind: it picks the
+  // pill up, and letting go puts it back without asking anything.
+  const { holding, handlers } = useHoldDrag({ onRelease: (moved) => !moved && onAskDelete() })
 
   return (
     <div className="cat-row">
       <button
-        className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''}`}
-        {...(admin ? hold : null)}
+        className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''} ${holding ? 'is-holding' : ''}`}
+        {...(admin ? handlers : null)}
         onClick={() => gate.unlocked && onSelect()}
         disabled={!gate.unlocked}
         title={

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { useLongPress } from '../lib/useLongPress'
+import { useHoldDrag } from '../lib/useHoldDrag'
 import { BRAND_TEMPLATES } from '../lib/brandTemplates'
 import { canCreate } from '../lib/permissions'
 import { GripGlyph, Plus, Trash, X } from './Icons'
@@ -56,6 +56,31 @@ export default function BrandDelivery() {
     endDrag()
   }
 
+  /**
+   * Where a finger is during a hold-drag.
+   *
+   * A dragged mouse announces every row it crosses; a finger announces
+   * nothing, because the pointer was captured by the row it started on and
+   * every move still belongs to that row. So the row under the finger has to
+   * be looked up by hand, from the shadow root rather than the document —
+   * `document.elementFromPoint` stops at the host element.
+   */
+  const hitTest = (e) => {
+    const root = e.currentTarget.getRootNode()
+    const under = (root.elementFromPoint ? root : document).elementFromPoint(e.clientX, e.clientY)
+    const row = under?.closest?.('[data-cat-id]')
+    if (!row) return
+    const r = row.getBoundingClientRect()
+    // The list runs down the page on a desktop and across it on a phone. The
+    // neighbour says which, and so which half of the row to compare against.
+    const sib = row.nextElementSibling ?? row.previousElementSibling
+    const across = sib && Math.abs(sib.getBoundingClientRect().top - r.top) < 2
+    const where = across
+      ? e.clientX < r.left + r.width / 2 ? 'before' : 'after'
+      : e.clientY < r.top + r.height / 2 ? 'before' : 'after'
+    setOver({ id: row.dataset.catId, where })
+  }
+
   const used = new Set(brandSections.map((s) => s.template).filter(Boolean))
   const available = BRAND_TEMPLATES.filter((t) => !used.has(t.slug))
 
@@ -67,66 +92,70 @@ export default function BrandDelivery() {
           <h2>{project?.name ?? '—'}</h2>
         </div>
 
-        {/* A plus at the head of the run, like the phases. */}
-        {admin &&
-          (adding ? (
-            <TemplatePicker
-              available={available}
-              onPick={async (tpl) => {
-                setAdding(false)
-                const row = await actions.addBrandSection(
-                  tpl
-                    ? { slug: tpl.slug, title: tpl.title, blurb: tpl.blurb, template: tpl.slug }
-                    : { title: 'New category', blurb: '', template: null }
-                )
-                if (row) setActiveId(row.id)
-              }}
-              onCancel={() => setAdding(false)}
-            />
-          ) : (
-            <button
-              className="add-phase-btn is-plus"
-              onClick={() => setAdding(true)}
-              title="Add category"
-              aria-label="Add category"
-            >
-              <Plus width="16" height="16" />
-            </button>
-          ))}
+        {/* The plus and the categories are one run, on the same line. */}
+        <div className="phase-strip">
+          {admin &&
+            (adding ? (
+              <TemplatePicker
+                available={available}
+                onPick={async (tpl) => {
+                  setAdding(false)
+                  const row = await actions.addBrandSection(
+                    tpl
+                      ? { slug: tpl.slug, title: tpl.title, blurb: tpl.blurb, template: tpl.slug }
+                      : { title: 'New category', blurb: '', template: null }
+                  )
+                  if (row) setActiveId(row.id)
+                }}
+                onCancel={() => setAdding(false)}
+              />
+            ) : (
+              <button
+                className="add-phase-btn is-plus"
+                onClick={() => setAdding(true)}
+                title="Add category"
+                aria-label="Add category"
+              >
+                <Plus width="16" height="16" />
+              </button>
+            ))}
 
-
-        <nav className="phase-list">
-          {brandSections.map((s) => (
-            <CategoryTab
-              key={s.id}
-              section={s}
-              active={s.id === active?.id}
-              admin={admin}
-              count={store.topAssetsFor(s.id).length}
-              dragging={dragId === s.id}
-              dropHint={over?.id === s.id && dragId && dragId !== s.id ? over.where : null}
-              onSelect={() => setActiveId(s.id)}
-              onAskDelete={() => setPendingCat(s)}
-              onDragOver={(e) => {
-                if (!admin || !dragId) return
-                e.preventDefault()
-                const r = e.currentTarget.getBoundingClientRect()
-                setOver({ id: s.id, where: e.clientY < r.top + r.height / 2 ? 'before' : 'after' })
-              }}
-              onDrop={(e) => {
-                if (!admin) return
-                e.preventDefault()
-                dropIt()
-              }}
-              onDragStart={(e) => {
-                e.dataTransfer.effectAllowed = 'move'
-                e.dataTransfer.setData('text/plain', s.id)
-                setDragId(s.id)
-              }}
-              onDragEnd={endDrag}
-            />
-          ))}
-        </nav>
+          <nav className="phase-list">
+            {brandSections.map((s) => (
+              <CategoryTab
+                key={s.id}
+                section={s}
+                active={s.id === active?.id}
+                admin={admin}
+                count={store.topAssetsFor(s.id).length}
+                dragging={dragId === s.id}
+                dropHint={over?.id === s.id && dragId && dragId !== s.id ? over.where : null}
+                onSelect={() => setActiveId(s.id)}
+                onAskDelete={() => setPendingCat(s)}
+                onDragOver={(e) => {
+                  if (!admin || !dragId) return
+                  e.preventDefault()
+                  const r = e.currentTarget.getBoundingClientRect()
+                  setOver({ id: s.id, where: e.clientY < r.top + r.height / 2 ? 'before' : 'after' })
+                }}
+                onDrop={(e) => {
+                  if (!admin) return
+                  e.preventDefault()
+                  dropIt()
+                }}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', s.id)
+                  setDragId(s.id)
+                }}
+                onDragEnd={endDrag}
+                onHoldStart={() => admin && setDragId(s.id)}
+                onHoldMove={hitTest}
+                onHoldDrop={dropIt}
+              />
+            ))}
+          </nav>
+        </div>
 
         <p className="sidebar-foot">
           Every client starts from the same standard categories. Rename them, or add your own.
@@ -281,13 +310,22 @@ function AutoGrow({ value, onChange, onCommit, className, placeholder }) {
  */
 function CategoryTab({
   section, active, admin, count, dragging, dropHint,
-  onSelect, onAskDelete, onDragOver, onDrop, onDragStart, onDragEnd
+  onSelect, onAskDelete, onDragOver, onDrop, onDragStart, onDragEnd,
+  onHoldStart, onHoldMove, onHoldDrop
 }) {
-  const hold = useLongPress(onAskDelete)
+  // On a phone the grip and the bin are both gone, so one gesture stands in
+  // for both: hold to pick the category up, then drag it somewhere else to
+  // move it, or let go where it was to be asked about deleting it.
+  const { holding, handlers } = useHoldDrag({
+    onHoldStart,
+    onHoldMove,
+    onRelease: (moved) => (moved ? onHoldDrop() : onAskDelete())
+  })
 
   return (
     <div
-      className={`cat-row ${dragging ? 'is-dragging' : ''} ${dropHint ? `drop-${dropHint}` : ''}`}
+      data-cat-id={section.id}
+      className={`cat-row ${dragging ? 'is-dragging' : ''} ${holding ? 'is-holding' : ''} ${dropHint ? `drop-${dropHint}` : ''}`}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -303,8 +341,8 @@ function CategoryTab({
         </button>
       )}
       <button
-        className={`phase-tab ${active ? 'is-active' : ''}`}
-        {...(admin ? hold : null)}
+        className={`phase-tab ${active ? 'is-active' : ''} ${holding ? 'is-holding' : ''}`}
+        {...(admin ? handlers : null)}
         onClick={onSelect}
       >
         <span className="phase-body">
