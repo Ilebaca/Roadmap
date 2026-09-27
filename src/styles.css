@@ -4,24 +4,49 @@
    ========================================================================== */
 
 :host, :root {
-  /* Nothing here is pure white: a white image, logo or mockup dropped on a
-     panel still shows its edges. */
-  --bg: #ebedf1;
-  --card: #f9fafb;
-  --card-2: #f3f5f8;
-  --card-3: #edeff3;
-  --line: #e4e6ec;
-  --line-soft: #edeef2;
-  --ink: #14161a;
-  --text: #22252b;
-  --muted: #6d7482;
-  --muted-2: #9aa0ac;
+  /* DARK. Nothing here is pure black: a black logo or mockup dropped on a
+     panel still has to show its edges, same reason nothing was pure white. */
+  --bg: #0d0f13;          /* behind the panels */
+  --card: #15181d;        /* the panels themselves */
+  --card-2: #1b1f26;
+  --card-3: #222730;
+  --line: #2a2f39;        /* the border that separates surfaces */
+  --line-soft: #1f242c;   /* a divider inside one surface */
+  --line-2: #3a414e;      /* dashed placeholders, hover borders — must be seen */
+
+  --ink: #f0f2f6;         /* strongest text, and the fill of a solid button */
+  --ink-hover: #ffffff;
+  --on-ink: #101319;      /* what sits on top of that fill */
+  --text: #d5d9e1;
+  --muted: #9aa2b1;
+  --muted-2: #6d7583;
+
+  --hover: rgba(255, 255, 255, 0.06);
+  --hover-soft: rgba(255, 255, 255, 0.035);
+  --ring: rgba(255, 255, 255, 0.1);
+  --scrim: rgba(4, 5, 8, 0.6);
+  --scroll-thumb: #333a45;
+  --rail: #39404c;        /* a block's duration, drawn on the line */
+
+  --danger: #e5544a;
+  --danger-hover: #f0665c;
+  --on-danger: #1a0c0b;
+  --danger-bg: #2a1614;
+  --danger-br: #4d2420;
+  --danger-fg: #ff9a90;
+
+  --today: #ff6b5c;
+  --today-rule: rgba(255, 107, 92, 0.45);
+  --today-bg: #2d1613;
+  --today-br: #4f2621;
+  --today-fg: #ff9a90;
 
   /* Surfaces are flat — they separate with a border, not a shadow. Only true
-     overlays (menus, modals) lift off the page. */
+     overlays (menus, modals) lift off the page. On dark, a shadow reads as
+     nothing, so the lift comes from a lighter rim as well. */
   --shadow-sm: none;
   --shadow: none;
-  --shadow-lg: 0 2px 6px rgba(18, 22, 31, 0.06), 0 24px 56px rgba(18, 22, 31, 0.12);
+  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 56px rgba(0, 0, 0, 0.6);
 
   --radius-lg: 12px;
   --radius: 8px;
@@ -100,7 +125,7 @@ button, input, select, textarea {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.rail-btn:hover { color: var(--ink); background: rgba(255, 255, 255, 0.6); }
+.rail-btn:hover { color: var(--ink); background: var(--hover); }
 .rail-btn.is-on {
   background: var(--card);
   border-color: var(--line);
@@ -158,7 +183,7 @@ button, input, select, textarea {
   flex: none;
   width: 30px; height: 30px;
   border-radius: 6px;
-  background: var(--ink); color: #fff;
+  background: var(--ink); color: var(--on-ink);
   display: grid; place-items: center;
   font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
   object-fit: cover;
@@ -210,7 +235,7 @@ button, input, select, textarea {
 }
 .client-new-form input:focus { outline: none; border-color: var(--muted-2); }
 .client-new-form button {
-  background: var(--ink); color: #fff; border: 0;
+  background: var(--ink); color: var(--on-ink); border: 0;
   border-radius: 6px; padding: 7px 12px; font-size: 12.5px; cursor: pointer;
 }
 
@@ -219,7 +244,7 @@ button, input, select, textarea {
 .dev-switch {
   display: flex; align-items: center; gap: 10px;
   padding: 5px 8px 5px 12px;
-  border: 1px dashed #d6d9e0;
+  border: 1px dashed var(--line-2);
   border-radius: 999px;
   background: var(--card);
 }
@@ -242,15 +267,15 @@ button, input, select, textarea {
   color: var(--text); padding: 7px 13px; border-radius: 7px; cursor: pointer;
   font-size: 12.5px; box-shadow: var(--shadow-sm);
 }
-.ghost-btn:hover { background: var(--card-2); border-color: #d6d9e0; }
+.ghost-btn:hover { background: var(--card-2); border-color: var(--line-2); }
 .ghost-btn.subtle { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted-2); }
 .ghost-btn.subtle:hover { color: var(--ink); background: transparent; }
 
 .primary-btn {
-  background: var(--ink); color: #fff; border: 0;
+  background: var(--ink); color: var(--on-ink); border: 0;
   padding: 10px 16px; border-radius: 7px; font-weight: 550; cursor: pointer;
 }
-.primary-btn:hover { background: #2a2e36; }
+.primary-btn:hover { background: var(--ink-hover); }
 
 .workspace {
   flex: 1; min-height: 0;
@@ -311,7 +336,7 @@ button, input, select, textarea {
 
 .add-phase-btn {
   display: flex; align-items: center; gap: 8px; justify-content: center;
-  background: transparent; border: 1px dashed #d6d9e0; color: var(--muted);
+  background: transparent; border: 1px dashed var(--line-2); color: var(--muted);
   padding: 9px; border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
 }
 .add-phase-btn:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card-2); }
@@ -322,7 +347,7 @@ button, input, select, textarea {
   border-radius: 6px; padding: 8px 10px; font-size: 12.5px;
 }
 .add-phase input:focus { outline: none; border-color: var(--muted-2); }
-.add-phase button { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: 0 13px; cursor: pointer; font-size: 12.5px; }
+.add-phase button { background: var(--ink); color: var(--on-ink); border: 0; border-radius: 6px; padding: 0 13px; cursor: pointer; font-size: 12.5px; }
 
 .sidebar-foot { margin: auto 8px 0; font-size: 11px; line-height: 1.5; color: var(--muted-2); }
 
@@ -336,7 +361,7 @@ button, input, select, textarea {
   box-shadow: var(--shadow);
   padding: 34px 38px 38px;
   scrollbar-width: thin;
-  scrollbar-color: #d7dae1 transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }
 
 /* Text keeps a readable measure; images take the full width of the panel. */
@@ -370,7 +395,7 @@ button, input, select, textarea {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px; text-align: center;
   min-height: 260px;
-  border: 1.5px dashed #dcdfe6;
+  border: 1.5px dashed var(--line-2);
   border-radius: var(--radius-lg);
   background: var(--card-2);
   padding: 32px;
@@ -426,7 +451,7 @@ button, input, select, textarea {
   cursor: pointer;
 }
 .size-pick button:hover { color: var(--ink); background: var(--card-3); }
-.size-pick button.is-on { background: var(--ink); color: #fff; }
+.size-pick button.is-on { background: var(--ink); color: var(--on-ink); }
 
 .icon-btn.flip svg { transform: rotate(180deg); }
 .icon-btn:disabled { opacity: 0.28; cursor: default; }
@@ -539,7 +564,7 @@ button, input, select, textarea {
 .tile-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 7px; min-height: 132px; line-height: 1.4;
-  border: 1.5px dashed #d2d6de; border-radius: var(--radius);
+  border: 1.5px dashed var(--line-2); border-radius: var(--radius);
   color: var(--muted-2); cursor: pointer; font-size: 11.5px;
 }
 .tile-empty:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card-2); }
@@ -549,7 +574,7 @@ button, input, select, textarea {
 .asset-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
 .add-chip {
   display: inline-flex; align-items: center; gap: 7px;
-  background: transparent; border: 1px dashed #d2d6de; color: var(--muted);
+  background: transparent; border: 1px dashed var(--line-2); color: var(--muted);
   padding: 8px 13px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
 }
 .add-chip:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card-2); }
@@ -587,7 +612,7 @@ button, input, select, textarea {
 .dl-box:hover .dl-tools { opacity: 1; }
 
 .dl-box.is-new {
-  border-style: dashed; border-color: #d2d6de; background: transparent;
+  border-style: dashed; border-color: var(--line-2); background: transparent;
   color: var(--muted); cursor: pointer; justify-content: center; align-items: center;
   text-align: center; gap: 6px;
 }
@@ -641,7 +666,7 @@ button, input, select, textarea {
 .tpl-none { margin: 0; padding: 4px 9px 8px; font-size: 11.5px; color: var(--muted-2); }
 
 /* ---------- stage / timeline container ------------------------------------ */
-.stage { flex: 1; min-width: 0; }
+.stage { flex: 1; min-width: 0; min-height: 0; }
 
 .timeline-scroll {
   height: 100%;
@@ -652,10 +677,10 @@ button, input, select, textarea {
   background: var(--card);
   box-shadow: var(--shadow);
   scrollbar-width: thin;
-  scrollbar-color: #d7dae1 transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }
 .timeline-scroll::-webkit-scrollbar { width: 10px; }
-.timeline-scroll::-webkit-scrollbar-thumb { background: #dcdfe6; border-radius: 99px; border: 3px solid var(--card); }
+.timeline-scroll::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 99px; border: 3px solid var(--card); }
 
 .timeline-canvas { position: relative; width: 100%; min-height: 100%; }
 
@@ -693,9 +718,9 @@ button, input, select, textarea {
   box-shadow: 0 0 0 4px var(--card);
 }
 .dot-approved { background: var(--ink); border-color: var(--ink); }
-.dot-live { box-shadow: 0 0 0 4px var(--card), 0 0 0 8px rgba(20, 22, 26, 0.08); border-color: var(--ink); }
+.dot-live { box-shadow: 0 0 0 4px var(--card), 0 0 0 8px var(--ring); border-color: var(--ink); }
 
-.kind-slot .dot { border-style: dashed; border-color: #c9cdd6; }
+.kind-slot .dot { border-style: dashed; border-color: var(--line-2); }
 .kind-slot .date-label { opacity: 0.5; }
 
 /* ---------- phase markers on the line ------------------------------------- */
@@ -720,7 +745,7 @@ button, input, select, textarea {
   padding-left: 9px; margin-left: 2px; border-left: 1px solid var(--line);
 }
 
-.phase-marker.is-active .phase-marker-chip { color: var(--ink); border-color: #d6d9e0; box-shadow: var(--shadow-sm); }
+.phase-marker.is-active .phase-marker-chip { color: var(--ink); border-color: var(--line-2); box-shadow: var(--shadow-sm); }
 
 .locked-banner {
   position: absolute;
@@ -728,7 +753,7 @@ button, input, select, textarea {
   width: min(420px, 60vw);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px; text-align: center;
-  border: 1px dashed #dcdfe6;
+  border: 1px dashed var(--line-2);
   border-radius: var(--radius);
   background: var(--card-2);
   color: var(--muted-2);
@@ -753,7 +778,7 @@ button, input, select, textarea {
   width: 3px;
   transform: translateX(-50%);
   border-radius: 3px;
-  background: #ced3dd;
+  background: var(--rail);
   z-index: 2;
 }
 
@@ -767,7 +792,7 @@ button, input, select, textarea {
   z-index: 4;
   border-radius: 50%;
 }
-.extent-handle:hover { background: rgba(20, 22, 26, 0.06); }
+.extent-handle:hover { background: var(--hover); }
 
 .block {
   position: relative;
@@ -779,8 +804,8 @@ button, input, select, textarea {
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
-.block:hover { box-shadow: var(--shadow); border-color: #d9dce3; }
-.block.state-review { border-color: #cfd3db; box-shadow: 0 0 0 3px rgba(20, 22, 26, 0.035), var(--shadow-sm); }
+.block:hover { box-shadow: var(--shadow); border-color: var(--line-2); }
+.block.state-review { border-color: var(--line-2); box-shadow: 0 0 0 3px var(--hover-soft), var(--shadow-sm); }
 
 /* an approved block is locked: slightly grey and transparent, nothing editable */
 .block.is-locked { background: var(--card-2); opacity: 0.62; }
@@ -816,7 +841,7 @@ button, input, select, textarea {
   cursor: pointer; padding: 4px; border-radius: 5px; display: inline-flex;
 }
 .icon-btn:hover { color: var(--ink); background: var(--card-3); }
-.icon-btn.danger:hover { color: #b3261e; background: #fbeceb; }
+.icon-btn.danger:hover { color: var(--danger-fg); background: var(--danger-bg); }
 
 .block-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; }
 .block-title-input {
@@ -836,15 +861,15 @@ button, input, select, textarea {
 .block-desc-input:hover { border-color: var(--line); }
 .block-desc-input:focus { outline: none; border-color: var(--muted-2); background: var(--card-2); color: var(--text); }
 
-.block-link { color: var(--ink); text-decoration: none; border-bottom: 1px solid #c9cdd6; }
+.block-link { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line-2); }
 .block-link:hover { border-bottom-color: var(--ink); }
 
 /* ---------- states (the one place colour is used) -------------------------- */
-.tone-todo        { --tone-fg: #5a6475; --tone-bg: #eef0f4; --tone-dot: #9aa3b2; --tone-br: #dfe3ea; }
-.tone-in_progress { --tone-fg: #1a5fd0; --tone-bg: #e9f1fe; --tone-dot: #3b82f6; --tone-br: #cfe0fb; }
-.tone-on_hold     { --tone-fg: #97620f; --tone-bg: #fdf3e2; --tone-dot: #e0a23c; --tone-br: #f3ddba; }
-.tone-review      { --tone-fg: #6b3fc7; --tone-bg: #f1eafe; --tone-dot: #8b5cf6; --tone-br: #e2d6fb; }
-.tone-approved    { --tone-fg: #12764f; --tone-bg: #e4f6ed; --tone-dot: #22a06b; --tone-br: #c7e9d8; }
+.tone-todo        { --tone-fg: #a8b1c0; --tone-bg: #232830; --tone-dot: #79838f; --tone-br: #333a45; }
+.tone-in_progress { --tone-fg: #7db0ff; --tone-bg: #14203a; --tone-dot: #4a8ff7; --tone-br: #24365c; }
+.tone-on_hold     { --tone-fg: #f0b95c; --tone-bg: #2c2110; --tone-dot: #e0a23c; --tone-br: #4a3718; }
+.tone-review      { --tone-fg: #b79cff; --tone-bg: #1f1936; --tone-dot: #8b5cf6; --tone-br: #362b57; }
+.tone-approved    { --tone-fg: #5fd39b; --tone-bg: #10241c; --tone-dot: #22a06b; --tone-br: #1d3f30; }
 
 .state-row { display: flex; margin-top: 2px; }
 
@@ -884,8 +909,8 @@ button, input, select, textarea {
 /* approved mark, top-left, where the delete button sits while work is open */
 .approved-mark {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--tone-bg, #e4f6ed); color: #12764f;
-  border: 1px solid #c7e9d8;
+  background: var(--tone-bg, #10241c); color: var(--tone-fg, #5fd39b);
+  border: 1px solid var(--tone-br, #1d3f30);
   padding: 4px 10px; border-radius: 999px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
 }
@@ -899,7 +924,7 @@ button, input, select, textarea {
   margin-top: 4px;
   width: 100%;
   background: var(--card-2);
-  border: 1px solid #d9dce3;
+  border: 1px solid var(--line-2);
   border-radius: var(--radius);
   padding: 11px 13px;
   cursor: pointer;
@@ -916,7 +941,7 @@ button, input, select, textarea {
   color: transparent;
 }
 .approve-box:hover .approve-check { color: var(--muted-2); border-color: var(--ink); }
-.approve-check.done { background: var(--ink); border-color: var(--ink); color: #fff; }
+.approve-check.done { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
 
 .approve-copy { display: flex; flex-direction: column; gap: 2px; }
 .approve-copy strong { font-size: 13px; color: var(--ink); font-weight: 600; }
@@ -958,7 +983,7 @@ button, input, select, textarea {
 .link-add {
   align-self: flex-start;
   display: inline-flex; align-items: center; gap: 6px;
-  background: transparent; border: 1px dashed #d2d6de; color: var(--muted);
+  background: transparent; border: 1px dashed var(--line-2); color: var(--muted);
   padding: 5px 10px; border-radius: 999px; font-size: 11.5px; cursor: pointer;
 }
 .link-add:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card); }
@@ -971,7 +996,7 @@ button, input, select, textarea {
 }
 .link-form input:focus { outline: none; border-color: var(--muted-2); }
 .link-add-confirm {
-  background: var(--ink); color: #fff; border: 0; border-radius: 6px;
+  background: var(--ink); color: var(--on-ink); border: 0; border-radius: 6px;
   padding: 6px 12px; font-size: 12px; cursor: pointer;
 }
 
@@ -989,14 +1014,14 @@ button, input, select, textarea {
 .resize-handle::after {
   content: ''; position: absolute; left: 50%; transform: translateX(-50%);
   top: 4px; width: 42px; height: 3px; border-radius: 3px;
-  background: #dcdfe6; opacity: 0; transition: opacity 0.15s;
+  background: var(--line-2); opacity: 0; transition: opacity 0.15s;
 }
 .block:hover .resize-handle::after { opacity: 1; }
 .resize-handle:hover::after { background: var(--ink); opacity: 1; }
 
 .drag-readout {
   position: sticky; bottom: 16px; float: right; margin-right: 20px;
-  background: var(--ink); color: #fff; border: 0;
+  background: var(--ink); color: var(--on-ink); border: 0;
   padding: 7px 13px; border-radius: 999px; font-size: 12px;
   font-variant-numeric: tabular-nums; z-index: 5; box-shadow: var(--shadow);
 }
@@ -1010,7 +1035,7 @@ button, input, select, textarea {
 
 .now-rule {
   position: absolute; left: 18px; right: 18px; top: 0;
-  border-top: 1px dashed rgba(214, 69, 53, 0.45);
+  border-top: 1px dashed var(--today-rule);
 }
 
 /* the dot where today crosses the line — above the duration rails, while the
@@ -1018,7 +1043,7 @@ button, input, select, textarea {
 .now-dot {
   position: absolute; left: var(--line-x);
   width: 9px; height: 9px; border-radius: 50%;
-  background: #d64535;
+  background: var(--today);
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 3px var(--card);
   z-index: 3; pointer-events: none;
@@ -1030,7 +1055,7 @@ button, input, select, textarea {
   z-index: 1; /* sits on the rule, never under it */
   transform: translateY(-50%);
   display: inline-flex; align-items: baseline; gap: 7px;
-  background: #fdecea; border: 1px solid #f5cdc7; color: #b03a2b;
+  background: var(--today-bg); border: 1px solid var(--today-br); color: var(--today-fg);
   padding: 4px 11px; border-radius: 999px;
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
 }
@@ -1045,7 +1070,7 @@ button, input, select, textarea {
 .slot-btn {
   width: 44px; height: 44px;
   border-radius: 8px;
-  border: 1.5px dashed #d2d6de;
+  border: 1.5px dashed var(--line-2);
   background: transparent;
   color: var(--muted-2);
   display: grid; place-items: center;
@@ -1059,7 +1084,7 @@ button, input, select, textarea {
 
 /* ---------- modal ---------------------------------------------------------- */
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(24, 27, 33, 0.28);
+  position: fixed; inset: 0; background: var(--scrim);
   display: grid; place-items: center; z-index: 50; padding: 24px;
   backdrop-filter: blur(3px);
 }
@@ -1075,10 +1100,10 @@ button, input, select, textarea {
 .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
 .danger-btn {
-  background: #b3261e; color: #fff; border: 0;
+  background: var(--danger); color: var(--on-danger); border: 0;
   padding: 9px 16px; border-radius: 7px; font-weight: 550; cursor: pointer;
 }
-.danger-btn:hover { background: #9c211a; }
+.danger-btn:hover { background: var(--danger-hover); }
 
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .modal-head h3 { margin: 0 0 4px; font-size: 16px; }
@@ -1124,8 +1149,8 @@ button, input, select, textarea {
   border-radius: 6px; padding: 10px 12px;
 }
 .account-error {
-  margin: 0 0 4px; font-size: 12.5px; line-height: 1.5; color: #8f2018;
-  background: #fdeceb; border: 1px solid #f3c6c2; border-radius: 6px; padding: 9px 11px;
+  margin: 0 0 4px; font-size: 12.5px; line-height: 1.5; color: var(--danger-fg);
+  background: var(--danger-bg); border: 1px solid var(--danger-br); border-radius: 6px; padding: 9px 11px;
 }
 
 /* The accounts panel carries three columns of its own; the default modal is
@@ -1163,8 +1188,8 @@ button, input, select, textarea {
 }
 .signin-switch:hover { color: var(--ink); }
 .signin-error {
-  margin: 0; font-size: 12.5px; line-height: 1.5; color: #8f2018;
-  background: #fdeceb; border: 1px solid #f3c6c2; border-radius: 6px; padding: 9px 11px;
+  margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--danger-fg);
+  background: var(--danger-bg); border: 1px solid var(--danger-br); border-radius: 6px; padding: 9px 11px;
 }
 
 .who { display: flex; align-items: center; gap: 10px; }
@@ -1173,7 +1198,7 @@ button, input, select, textarea {
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
   max-width: min(560px, calc(100vw - 40px)); white-space: pre-line; text-align: left;
-  background: #fdeceb; border: 1px solid #f3c6c2; color: #8f2018;
+  background: var(--danger-bg); border: 1px solid var(--danger-br); color: var(--danger-fg);
   padding: 10px 16px; border-radius: 7px; font-size: 12.5px; z-index: 60;
   box-shadow: var(--shadow);
 }
@@ -1236,15 +1261,34 @@ button, input, select, textarea {
 .timeline-canvas.is-horizontal .dot { left: 0; top: 0; }
 
 .timeline-canvas.is-horizontal .phase-marker {
-  left: 0; top: var(--line-y);
+  left: 0; top: 0; bottom: 0;
   height: auto !important;
-  transform: translateY(-50%);
+  transform: none;
   /* the chip sits at the head of the phase's run, not centred on it */
   justify-content: flex-start;
+  align-items: flex-start;
+  overflow: visible;
 }
+
+/* Where a phase begins, carried the full depth of the panel. Across the page
+   the chip alone is easy to miss — it floats above a line that looks the same
+   either side of it — so the boundary itself is drawn. It sits under the cards
+   and takes no clicks. */
+.timeline-canvas.is-horizontal .phase-marker::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 24px; bottom: 16px;
+  border-left: 1.5px dashed var(--line-2);
+  z-index: 0;
+}
+.timeline-canvas.is-horizontal .phase-marker.is-active::before { border-left-color: var(--muted-2); }
+
 .timeline-canvas.is-horizontal .phase-marker-chip {
   /* clear of the date labels, which stand between the chip and the line */
-  transform: translateY(-96px);
+  position: absolute;
+  top: calc(var(--line-y) - 96px);
+  left: 12px;
+  white-space: nowrap; /* a two-word phase is still one line */
 }
 
 .timeline-canvas.is-horizontal .locked-banner {
@@ -1298,12 +1342,14 @@ button, input, select, textarea {
 }
 .timeline-canvas.is-horizontal .now-rule {
   left: 0; right: auto; top: 18px; bottom: 18px;
-  border-top: 0; border-left: 1px dashed rgba(214, 69, 53, 0.45);
+  border-top: 0; border-left: 1px dashed var(--today-rule);
 }
 .timeline-canvas.is-horizontal .now-dot { left: 0; top: var(--line-y); }
 .timeline-canvas.is-horizontal .now-label {
   left: 0; top: 18px;
   transform: translateX(-50%);
+  /* its parent is a zero-width marker, so without this it wraps every word */
+  white-space: nowrap;
 }
 
 .timeline-canvas.is-horizontal .drag-readout {
@@ -1322,3 +1368,99 @@ button, input, select, textarea {
 }
 .axis-toggle button:hover { color: var(--muted); }
 .axis-toggle button.is-on { background: var(--card); color: var(--ink); }
+
+
+/* ---------------------------------------------------------------------------
+   PHASES ACROSS THE TOP
+   Only when the date line runs horizontally. A column of phases down the left
+   would eat exactly the width that line needs, so the same list lies flat
+   above it and the timeline takes the whole panel.
+   ------------------------------------------------------------------------- */
+.workspace-main {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex;
+  gap: var(--stage-margin);
+}
+.workspace.is-stacked .workspace-main { flex-direction: column; }
+
+.workspace.is-stacked .sidebar {
+  width: auto;
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+/* The heading stops being a heading and becomes a label on the strip. */
+.workspace.is-stacked .sidebar-head {
+  flex: none;
+  padding: 0 4px 0 0;
+  display: flex; align-items: center; gap: 12px;
+  border-right: 1px solid var(--line-soft);
+  padding-right: 14px;
+}
+.workspace.is-stacked .sidebar-head .eyebrow { display: none; }
+.workspace.is-stacked .sidebar-head h2 { margin: 0; font-size: 14px; white-space: nowrap; }
+
+.workspace.is-stacked .phase-list {
+  flex: 1; min-width: 0;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+.workspace.is-stacked .cat-row { flex: none; position: relative; }
+
+/* Across the top a phase is a pill that hugs its name. The one being looked
+   at is filled in; the rest are outlines. The counts and the progress bar
+   belong to the column layout, where there is room for them under the name. */
+.workspace.is-stacked .phase-tab {
+  width: auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  white-space: nowrap;
+}
+.workspace.is-stacked .phase-tab:hover:not(:disabled) {
+  background: var(--card-3); border-color: var(--muted-2);
+}
+.workspace.is-stacked .phase-tab.is-active {
+  background: var(--ink); border-color: var(--ink); box-shadow: none;
+}
+.workspace.is-stacked .phase-tab.is-active .phase-title,
+.workspace.is-stacked .phase-tab.is-active .phase-index,
+.workspace.is-stacked .phase-tab.is-active .phase-status { color: var(--on-ink); }
+
+.workspace.is-stacked .phase-index { padding-top: 0; }
+.workspace.is-stacked .phase-status { padding-top: 0; }
+.workspace.is-stacked .phase-body {
+  min-width: 0; flex: none; flex-direction: row; align-items: center; gap: 0;
+}
+.workspace.is-stacked .phase-title { white-space: nowrap; }
+.workspace.is-stacked .phase-meta,
+.workspace.is-stacked .progress { display: none; }
+
+/* the delete button rides on the pill instead of sitting beside it */
+.workspace.is-stacked .cat-remove {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 50%;
+  width: 20px; height: 20px; padding: 0;
+}
+
+.workspace.is-stacked .add-phase,
+.workspace.is-stacked .add-phase-btn { flex: none; width: auto; white-space: nowrap; }
+
+/* Two lines of guidance would double the strip's height for something the
+   phases themselves already say. */
+.workspace.is-stacked .sidebar-foot { display: none; }
