@@ -143,6 +143,36 @@ Some details worth knowing:
 
 ---
 
+## Applying migrations without pasting them
+
+Two ways, and they solve different halves of the problem.
+
+**Supabase's GitHub integration** applies everything in `migrations/` on a push
+to the production branch, so nothing has to be pasted anywhere. It needs
+`config.toml` next to this file to recognise the folder as a Supabase project —
+that file was missing, which is why connecting the repository appeared to do
+nothing. Connect it under **Integrations → GitHub**, pointing at this branch,
+with `supabase` as the directory.
+
+Every migration here is written to be safe to run again, so it does not matter
+that parts 1-8 were applied by hand first: the integration re-runs them and
+they no-op. They also apply in filename order, which matters — part 8 replaces
+`approve_block()` from part 3, so it has to land last, and it does.
+
+**A direct connection** is the other half. The integration applies migrations
+but says nothing back, so a session here cannot check what actually happened,
+run `verify.sql`, or look at a row to work out why something behaves oddly.
+That needs two things in the environment's settings: the Supabase host allowed
+under network access, and the database password stored as an environment
+variable (`SUPABASE_DB_URL`, the pooler connection string from **Project
+Settings → Database**). With both, migrations can be applied and *verified*
+from here rather than posted as something to copy.
+
+Neither is required. Pasting into the SQL editor works and has been how every
+part so far was applied.
+
+---
+
 ## Clients, projects and phases
 
 Three levels, and the names in the database do not all match the names on

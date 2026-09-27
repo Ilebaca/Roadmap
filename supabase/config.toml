@@ -1,0 +1,8 @@
+# Which Supabase project this folder belongs to.
+#
+# Deliberately just this line. A config.toml can also carry auth, storage and
+# API settings, and with the GitHub integration connected those get pushed to
+# the live project — so anything written here would quietly overwrite what is
+# set in the dashboard. Only the link belongs in the repository; the settings
+# stay where they were made.
+project_id = "qcpqgehchbnntbkxpwhb"
