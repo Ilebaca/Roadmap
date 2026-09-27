@@ -3,7 +3,7 @@ import { StoreProvider, useStore } from './state/store'
 import Sidebar from './components/Sidebar'
 import Timeline from './components/Timeline'
 import AccountsModal from './components/AccountsModal'
-import AppRail from './components/AppRail'
+import AppRail, { APPS } from './components/AppRail'
 import BrandDelivery from './components/BrandDelivery'
 import ClientSwitcher from './components/ClientSwitcher'
 import SignIn from './components/SignIn'
@@ -18,10 +18,34 @@ export default function App() {
   )
 }
 
+const RAIL_KEY = 'mimant.rail'
+
+/** The rail we left off on, or the roadmap if it is missing or nonsense. */
+function readRail() {
+  try {
+    const saved = localStorage.getItem(RAIL_KEY)
+    if (APPS.some((a) => a.id === saved)) return saved
+  } catch {
+    /* storage can be blocked outright; the default is fine */
+  }
+  return 'roadmap'
+}
+
 function Shell() {
   const { session, accounts, loading, error, authReady, isLive, actions } = useStore()
   const [accountsOpen, setAccountsOpen] = useState(false)
-  const [app, setApp] = useState('roadmap') // which icon on the rail is lit
+  // Which icon on the rail is lit, remembered across a reload: you were
+  // reading the brand when the page went away, so that is where you come
+  // back. Kept in the browser rather than the URL — the app is embedded in a
+  // Webflow page whose address is not ours to write to.
+  const [app, setApp] = useState(readRail)
+  useEffect(() => {
+    try {
+      localStorage.setItem(RAIL_KEY, app)
+    } catch {
+      /* private browsing: it simply will not be remembered */
+    }
+  }, [app])
 
   // On a phone there is no room for a list down one side and content beside
   // it — Visual Identity's categories squeeze its text to a word a line. Both
