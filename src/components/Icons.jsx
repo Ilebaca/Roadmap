@@ -150,3 +150,22 @@ export const GripGlyph = (p) => (
     <circle cx="15" cy="18" r="1.6" />
   </svg>
 )
+
+/** The date line running down the page, and across it. */
+export const AxisVertical = (p) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" {...p}>
+    <path d="M5 2v12" />
+    <circle cx="5" cy="5" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="5" cy="11" r="1.4" fill="currentColor" stroke="none" />
+    <path d="M8.5 5h5M8.5 11h5" />
+  </svg>
+)
+
+export const AxisHorizontal = (p) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" {...p}>
+    <path d="M2 5h12" />
+    <circle cx="5" cy="5" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="11" cy="5" r="1.4" fill="currentColor" stroke="none" />
+    <path d="M5 8.5v5M11 8.5v5" />
+  </svg>
+)

@@ -274,7 +274,13 @@ button, input, select, textarea {
   overflow-y: auto;
 }
 
-.sidebar-head { padding: 0 8px; }
+.sidebar-head {
+  padding: 0 8px;
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px;
+}
+.sidebar-head .eyebrow { grid-column: 1; }
+.sidebar-head h2 { grid-column: 1; }
+.sidebar-head .axis-toggle { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 .eyebrow { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-2); }
 .sidebar-head h2 { margin: 6px 0 0; font-size: 16px; font-weight: 600; line-height: 1.3; }
 
@@ -1186,3 +1192,133 @@ button, input, select, textarea {
   .brand-panel { padding: 22px; }
   .img-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* ===========================================================================
+   HORIZONTAL DATE LINE
+   The same geometry turned a quarter turn: the line runs across instead of
+   down, date labels sit above it rather than to its left, and blocks hang
+   below instead of to the right. Only what is genuinely direction-dependent
+   is restated here — everything inside a block card is untouched.
+   ========================================================================= */
+
+.timeline-scroll.is-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.timeline-scroll.is-horizontal::-webkit-scrollbar { height: 10px; width: auto; }
+
+.timeline-canvas.is-horizontal {
+  /* the canvas is as long as the run of dates; its height is the viewport */
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  /* how far down the panel the line sits: labels above it, blocks below */
+  --line-y: 168px;
+}
+
+.timeline-canvas.is-horizontal .timeline-rule {
+  top: var(--line-y); bottom: auto; left: 0; right: 0;
+  width: auto; height: 1.5px;
+  transform: translateY(-50%);
+  background: linear-gradient(to right, transparent, var(--line) 40px, var(--line) calc(100% - 120px), transparent);
+}
+
+.timeline-canvas.is-horizontal .dot-row {
+  left: 0; top: var(--line-y);
+}
+.timeline-canvas.is-horizontal .date-label {
+  right: auto; left: 0; bottom: 16px;
+  transform: translateX(-50%);
+  text-align: center;
+  align-items: center;
+}
+.timeline-canvas.is-horizontal .dot { left: 0; top: 0; }
+
+.timeline-canvas.is-horizontal .phase-marker {
+  left: 0; top: var(--line-y);
+  height: auto !important;
+  transform: translateY(-50%);
+  /* the chip sits at the head of the phase's run, not centred on it */
+  justify-content: flex-start;
+}
+.timeline-canvas.is-horizontal .phase-marker-chip {
+  /* clear of the date labels, which stand between the chip and the line */
+  transform: translateY(-96px);
+}
+
+.timeline-canvas.is-horizontal .locked-banner {
+  top: calc(var(--line-y) + var(--dot-gap));
+  height: auto;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.timeline-canvas.is-horizontal .block-slot {
+  left: 0;
+  top: calc(var(--line-y) + var(--dot-gap));
+  width: auto;
+  /* the card starts at its dot and runs to the next one */
+  padding-right: 16px;
+}
+/* Across the page the card's length is its width, so its height is free.
+   Cap it at the panel and let a long one scroll inside itself rather than
+   pushing past the bottom edge. */
+.timeline-canvas.is-horizontal .block {
+  height: auto;
+  max-height: calc(100% - var(--line-y) - var(--dot-gap) - 24px);
+  overflow-y: auto;
+}
+
+.timeline-canvas.is-horizontal .block-extent {
+  top: var(--line-y); left: 0;
+  width: auto; height: 3px;
+  transform: translateY(-50%);
+}
+
+.timeline-canvas.is-horizontal .extent-handle {
+  top: var(--line-y); left: 0;
+  cursor: ew-resize;
+}
+/* the two edges that move a date are the left and right ones now */
+.timeline-canvas.is-horizontal .resize-handle {
+  cursor: ew-resize;
+  top: 0; bottom: 0; height: auto; width: 10px;
+}
+.timeline-canvas.is-horizontal .resize-handle.top { left: 0; right: auto; }
+
+.timeline-canvas.is-horizontal .slot {
+  left: 0;
+  top: calc(var(--line-y) + var(--dot-gap));
+}
+
+.timeline-canvas.is-horizontal .now-marker {
+  left: 0; right: auto; top: 0; bottom: 0;
+  width: 0; height: auto;
+}
+.timeline-canvas.is-horizontal .now-rule {
+  left: 0; right: auto; top: 18px; bottom: 18px;
+  border-top: 0; border-left: 1px dashed rgba(214, 69, 53, 0.45);
+}
+.timeline-canvas.is-horizontal .now-dot { left: 0; top: var(--line-y); }
+.timeline-canvas.is-horizontal .now-label {
+  left: 0; top: 18px;
+  transform: translateX(-50%);
+}
+
+.timeline-canvas.is-horizontal .drag-readout {
+  position: fixed; bottom: 28px; right: 28px; float: none; margin: 0;
+}
+
+/* ---------- the switch between the two ------------------------------------ */
+.axis-toggle {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--card-2); border: 1px solid var(--line); border-radius: 7px;
+}
+.axis-toggle button {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 4px 9px; border-radius: 5px;
+  color: var(--muted-2); display: grid; place-items: center;
+}
+.axis-toggle button:hover { color: var(--muted); }
+.axis-toggle button.is-on { background: var(--card); color: var(--ink); }

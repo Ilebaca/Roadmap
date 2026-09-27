@@ -5,14 +5,18 @@ import StateSelect from './StateSelect'
 import ConfirmDialog from './ConfirmDialog'
 
 /**
- * A single content block sitting on the right of the date line.
- * Its top-left corner hangs off the start dot; its bottom edge reaches the end
- * dot. Height is handed down by the layout; the natural height of the content is
- * measured and reported back up so the layout can push the two dots apart.
+ * A single content block hanging off the date line.
+ *
+ * Down the page it is as tall as the layout says, and it measures its own
+ * content and reports back so the layout can push its two dots apart. Across
+ * the page that reverses: the layout fixes its width, its height is whatever
+ * the content needs, and there is nothing to report — so it does not measure,
+ * which also stops it feeding a height into a layout that would ignore it.
  */
 export default function BlockCard({
   block,
-  height,
+  extent,
+  horizontal = false,
   minStart,
   canEdit,
   canSetState,
@@ -43,22 +47,23 @@ export default function BlockCard({
   useEffect(() => setDescription(block.description), [block.description])
 
   // Report the content's natural height so the layout can size this block.
+  // Only down the page — across it, width is set and height is free.
   useLayoutEffect(() => {
     const el = innerRef.current
-    if (!el) return
+    if (!el || horizontal) return
     const report = () => onMeasure(block.id, el.offsetHeight)
     report()
     const ro = new ResizeObserver(report)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [block.id, onMeasure])
+  }, [block.id, onMeasure, horizontal])
 
   const locked = block.locked
 
   return (
     <article
       className={`block state-${block.state} ${locked ? 'is-locked' : ''} ${dragging ? 'is-dragging' : ''}`}
-      style={{ height }}
+      style={horizontal ? undefined : { height: extent }}
     >
       {canEdit && <div className="resize-handle top" onPointerDown={(e) => onResizeStart(e, 'top')} title="Drag to change the start date" />}
 

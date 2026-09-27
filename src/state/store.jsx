@@ -26,6 +26,23 @@ export function StoreProvider({ children }) {
   const [brandSections, setBrandSections] = useState([])
   const [brandAssets, setBrandAssets] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
+  // Which way the date line runs. A per-viewer preference, so it belongs in
+  // this browser rather than in anybody's row.
+  const [orientation, setOrientationState] = useState(() => {
+    try {
+      return localStorage.getItem('roadmap.orientation') === 'horizontal' ? 'horizontal' : 'vertical'
+    } catch {
+      return 'vertical' // private mode, blocked storage
+    }
+  })
+  const setOrientation = useCallback((next) => {
+    setOrientationState(next)
+    try {
+      localStorage.setItem('roadmap.orientation', next)
+    } catch {
+      /* not worth failing a click over */
+    }
+  }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   // Live: whether we have asked the backend who is signed in yet. Without it
@@ -370,6 +387,8 @@ export function StoreProvider({ children }) {
     session,
     accounts,
     invites,
+    orientation,
+    setOrientation,
     authReady,
     isLive,
     project,

@@ -3,34 +3,65 @@ import { addDays, daysBetween, todayISO } from './dates'
 /**
  * Timeline geometry.
  * ---------------------------------------------------------------------------
- * One continuous vertical line carries every phase, top to bottom. A block hangs
- * off its start dot by its top-left corner and reaches down to its end dot.
+ * One continuous line carries every phase, start to finish. A block hangs off
+ * its start dot and reaches to its end dot.
+ *
+ * Everything here is laid out along ONE axis and says nothing about which way
+ * that axis points: a row has a position (`at`) and a length (`len`), and the
+ * component decides whether those become top/height or left/width. That is the
+ * whole of the difference between the vertical roadmap and the horizontal one.
  *
  * The line is a SEQUENCE of dates, not a proportional scale: how far apart two
- * dots sit has nothing to do with how many days lie between them. Spacing comes
- * from content alone — a block with more in it is taller, so its two dates sit
- * further apart. Two days or two years between them looks exactly the same; the
- * length of a job is read off the numbers, not off the line.
+ * dots sit has nothing to do with how many days lie between them. Two days or
+ * two years between them looks exactly the same; the length of a job is read
+ * off the numbers, not off the line.
  */
+
+/**
+ * The two axes differ only in these numbers.
+ *
+ * Down the page, a block is as long as its content is tall, so a block with
+ * more in it pushes its two dates further apart. Across the page it cannot be:
+ * length is width there, and content grows downwards, so every card is the
+ * same width and the spacing is even. `fromContent` is that difference.
+ */
+export const VERTICAL = {
+  MIN_BLOCK: 132,
+  GAP_AFTER_BLOCK: 72, // end dot -> next start dot
+  PHASE_HEADER: 78,
+  LOCKED_BANNER: 150,
+  SLOT: 116,
+  PHASE_GAP: 44,
+  LEAD_PAD: 24,
+  TAIL_PAD: 120,
+  fromContent: true
+}
+
+export const HORIZONTAL = {
+  MIN_BLOCK: 320,
+  GAP_AFTER_BLOCK: 56,
+  PHASE_HEADER: 108,
+  LOCKED_BANNER: 300,
+  SLOT: 140,
+  PHASE_GAP: 36,
+  LEAD_PAD: 40,
+  TAIL_PAD: 220,
+  fromContent: false
+}
+
+export const METRICS = { vertical: VERTICAL, horizontal: HORIZONTAL }
 
 /** Drag sensitivity only — pixels dragged per day of date change. It is a
  *  feel-of-the-gesture constant, NOT a scale the line is drawn to. */
 export const DRAG_PX_PER_DAY = 6
-export const MIN_BLOCK_H = 132
-export const GAP_AFTER_BLOCK = 72 // end dot -> next start dot
-export const PHASE_HEADER_H = 78
-export const LOCKED_BANNER_H = 150
-export const SLOT_H = 116
-export const PHASE_GAP = 44
-export const TOP_PAD = 24
-export const BOTTOM_PAD = 120
-/** Where today sits on an empty roadmap, with the first slot below it. */
-export const EMPTY_NOW_Y = 96
-export const EMPTY_SLOT_Y = 168
 
-/** A block is as tall as its content. Its dates never change its height. */
-export function blockHeight(block, contentHeight = 0) {
-  return Math.round(Math.max(MIN_BLOCK_H, contentHeight))
+/** Where today sits on an empty roadmap, with the first slot after it. */
+export const EMPTY_NOW_AT = 96
+export const EMPTY_SLOT_AT = 168
+
+/** How far along the line a block reaches. Its dates never change this. */
+export function blockExtent(measured, m) {
+  return m.fromContent ? Math.round(Math.max(m.MIN_BLOCK, measured)) : m.MIN_BLOCK
 }
 
 /**
@@ -39,15 +70,17 @@ export function blockHeight(block, contentHeight = 0) {
  * @param phases   ordered phase rows
  * @param blocks   every block row for the project
  * @param gates    from computePhaseGates()
- * @param heights  { [blockId]: measured content height in px }
+ * @param heights  { [blockId]: measured content length in px }
  * @param drag     optional live preview: { blockId, start_date, end_date }
  * @param canCreate whether to draw the dashed "+" slots (admin only)
+ * @param metrics  VERTICAL or HORIZONTAL — the only thing that differs
  */
-export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, canCreate = false }) {
+export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, canCreate = false, metrics = VERTICAL }) {
+  const m = metrics
   const rows = []
   const dots = []
   const phaseOffsets = {}
-  let y = TOP_PAD
+  let at = m.LEAD_PAD
   // The deadline of the block in front of the one being laid out. A block can
   // never start before it, which is what the drag and the date picker clamp to.
   let chainFloor = null
@@ -56,16 +89,16 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
 
   for (const phase of ordered) {
     const gate = gates[phase.id] ?? { unlocked: false, complete: false }
-    const top = y
+    const start = at
 
-    rows.push({ key: `ph-${phase.id}`, type: 'phase', phase, gate, y, h: PHASE_HEADER_H })
-    y += PHASE_HEADER_H
+    rows.push({ key: `ph-${phase.id}`, type: 'phase', phase, gate, at, len: m.PHASE_HEADER })
+    at += m.PHASE_HEADER
 
     if (!gate.unlocked) {
       // Locked phases keep the line running but show nothing of their contents.
-      rows.push({ key: `lk-${phase.id}`, type: 'locked', phase, y, h: LOCKED_BANNER_H })
-      y += LOCKED_BANNER_H + PHASE_GAP
-      phaseOffsets[phase.id] = { top, bottom: y }
+      rows.push({ key: `lk-${phase.id}`, type: 'locked', phase, at, len: m.LOCKED_BANNER })
+      at += m.LOCKED_BANNER + m.PHASE_GAP
+      phaseOffsets[phase.id] = { start, end: at }
       continue
     }
 
@@ -75,12 +108,12 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
       .sort((a, b) => a.start_date.localeCompare(b.start_date) || a.order_index - b.order_index)
 
     for (const block of mine) {
-      const h = blockHeight(block, heights[block.id] || 0)
-      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, y, h, minStart: chainFloor })
+      const len = blockExtent(heights[block.id] || 0, m)
+      rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, at, len, minStart: chainFloor })
       chainFloor = block.end_date
-      dots.push({ key: `d-${block.id}-s`, y, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
-      dots.push({ key: `d-${block.id}-e`, y: y + h, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
-      y += h + GAP_AFTER_BLOCK
+      dots.push({ key: `d-${block.id}-s`, at, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
+      dots.push({ key: `d-${block.id}-e`, at: at + len, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
+      at += len + m.GAP_AFTER_BLOCK
     }
 
     if (canCreate) {
@@ -91,20 +124,20 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
         key: `sl-${phase.id}`,
         type: 'slot',
         phase,
-        y,
-        h: SLOT_H,
+        at,
+        len: m.SLOT,
         start_date: start,
         end_date: addDays(start, 7)
       })
-      dots.push({ key: `d-slot-${phase.id}`, y, date: start, kind: 'slot' })
-      y += SLOT_H
+      dots.push({ key: `d-slot-${phase.id}`, at, date: start, kind: 'slot' })
+      at += m.SLOT
     }
 
-    y += PHASE_GAP
-    phaseOffsets[phase.id] = { top, bottom: y }
+    at += m.PHASE_GAP
+    phaseOffsets[phase.id] = { start, end: at }
   }
 
-  return { rows, dots, phaseOffsets, totalHeight: y + BOTTOM_PAD }
+  return { rows, dots, phaseOffsets, total: at + m.TAIL_PAD }
 }
 
 function phaseStartGuess(ordered, phase, blocks, chainFloor) {
@@ -116,24 +149,24 @@ function phaseStartGuess(ordered, phase, blocks, chainFloor) {
 }
 
 /**
- * Where "today" falls on the line. Dots carry dates and y positions, so the
+ * Where "today" falls on the line. Dots carry dates and positions, so the
  * marker interpolates between the two dots it sits between. Since the line is
  * not a proportional scale there is nothing to extrapolate along past the ends:
  * before the first date or after the last it simply parks at that end, dimmed.
  */
-export function nowMarker(dots, totalHeight, today = todayISO()) {
+export function nowMarker(dots, total, today = todayISO()) {
   // An empty roadmap still shows the line and today on it — there is simply
   // nothing else to place it between.
-  if (!dots.length) return { y: EMPTY_NOW_Y, date: today, clamped: false }
-  const sorted = [...dots].sort((a, b) => a.y - b.y)
+  if (!dots.length) return { at: EMPTY_NOW_AT, date: today, clamped: false }
+  const sorted = [...dots].sort((a, b) => a.at - b.at)
   const first = sorted[0]
   const last = sorted.at(-1)
 
   if (daysBetween(today, first.date) > 0) {
-    return { y: Math.max(8, first.y - 26), date: today, clamped: true }
+    return { at: Math.max(8, first.at - 26), date: today, clamped: true }
   }
   if (daysBetween(last.date, today) > 0) {
-    return { y: Math.min(totalHeight - 8, last.y + 26), date: today, clamped: true }
+    return { at: Math.min(total - 8, last.at + 26), date: today, clamped: true }
   }
 
   for (let i = 1; i < sorted.length; i++) {
@@ -142,9 +175,9 @@ export function nowMarker(dots, totalHeight, today = todayISO()) {
     if (daysBetween(a.date, today) < 0 || daysBetween(today, b.date) < 0) continue
     const span = daysBetween(a.date, b.date)
     const t = span === 0 ? 0 : daysBetween(a.date, today) / span
-    return { y: a.y + (b.y - a.y) * t, date: today, clamped: false }
+    return { at: a.at + (b.at - a.at) * t, date: today, clamped: false }
   }
-  return { y: last.y, date: today, clamped: false }
+  return { at: last.at, date: today, clamped: false }
 }
 
 /**

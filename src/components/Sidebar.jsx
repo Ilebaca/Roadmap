@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
 import { canCreate } from '../lib/permissions'
-import { Check, Lock, Plus, Trash } from './Icons'
+import { AxisHorizontal, AxisVertical, Check, Lock, Plus, Trash } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
-  const { session, phases, gates, activePhaseId, actions } = useStore()
+  const { session, phases, gates, activePhaseId, actions, orientation, setOrientation } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [pending, setPending] = useState(null) // phase waiting on a confirm
@@ -26,6 +26,25 @@ export default function Sidebar() {
       <div className="sidebar-head">
         <span className="eyebrow">Roadmap</span>
         <h2>Phases</h2>
+        {/* Which way the date line runs. Remembered per browser. */}
+        <div className="axis-toggle" role="group" aria-label="Date line direction">
+          <button
+            className={orientation === 'vertical' ? 'is-on' : ''}
+            onClick={() => setOrientation('vertical')}
+            title="Date line down the page"
+            aria-pressed={orientation === 'vertical'}
+          >
+            <AxisVertical width="15" height="15" />
+          </button>
+          <button
+            className={orientation === 'horizontal' ? 'is-on' : ''}
+            onClick={() => setOrientation('horizontal')}
+            title="Date line across the page"
+            aria-pressed={orientation === 'horizontal'}
+          >
+            <AxisHorizontal width="15" height="15" />
+          </button>
+        </div>
       </div>
 
       <nav className="phase-list">

@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { buildLayout, dateFromDrag, EMPTY_SLOT_Y, nowMarker } from '../lib/layout'
+import { buildLayout, dateFromDrag, EMPTY_SLOT_AT, METRICS, nowMarker } from '../lib/layout'
 import { addDays, daysBetween, formatDot, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
 import { Lock, Plus } from './Icons'
 
 /**
- * The date line. One continuous vertical rule splits this section down the
- * middle; dates sit on it as dots, labels to the left, blocks to the right.
+ * The date line. One continuous rule runs through this section; dates sit on
+ * it as dots, with their labels on one side and the blocks on the other.
+ *
+ * Down the page it splits the section and blocks hang to its right. Across the
+ * page it runs through the middle, labels above, blocks below. The geometry is
+ * the same either way — buildLayout returns a position and a length along one
+ * axis, and `place()` below is the only thing that knows which axis that is.
  */
 export default function Timeline() {
   const store = useStore()
-  const { session, phases, blocks, gates, activePhaseId, actions } = store
+  const { session, phases, blocks, gates, activePhaseId, actions, orientation } = store
   const scrollRef = useRef(null)
   const [heights, setHeights] = useState({})
   const [drag, setDrag] = useState(null)
@@ -32,9 +37,21 @@ export default function Timeline() {
     setHeights((prev) => (prev[id] === h ? prev : { ...prev, [id]: h }))
   }, [])
 
+  const horizontal = orientation === 'horizontal'
+  const metrics = METRICS[orientation] ?? METRICS.vertical
+
   const layout = useMemo(
-    () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin }),
-    [phases, blocks, gates, heights, drag, admin]
+    () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin, metrics }),
+    [phases, blocks, gates, heights, drag, admin, metrics]
+  )
+
+  /** A position and a length on the line -> the CSS for whichever way it runs. */
+  const place = useCallback(
+    (at, len) =>
+      horizontal
+        ? { left: at, ...(len == null ? null : { width: len }) }
+        : { top: at, ...(len == null ? null : { height: len }) },
+    [horizontal]
   )
 
   // Selecting a tab scrolls that phase's stretch of the line into view.
@@ -42,7 +59,8 @@ export default function Timeline() {
     const el = scrollRef.current
     const off = layout.phaseOffsets[activePhaseId]
     if (!el || !off) return
-    el.scrollTo({ top: Math.max(0, off.top - 16), behavior: 'smooth' })
+    const to = Math.max(0, off.start - 16)
+    el.scrollTo({ [horizontal ? 'left' : 'top']: to, behavior: 'smooth' })
     // Only when the active phase changes — not on every relayout.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePhaseId])
@@ -56,7 +74,7 @@ export default function Timeline() {
       dragRef.current = {
         blockId: block.id,
         edge,
-        originY: e.clientY,
+        origin: horizontal ? e.clientX : e.clientY,
         start_date: block.start_date,
         end_date: block.end_date,
         minStart,
@@ -67,7 +85,7 @@ export default function Timeline() {
       const move = (ev) => {
         const d = dragRef.current
         if (!d) return
-        const delta = ev.clientY - d.originY
+        const delta = (horizontal ? ev.clientX : ev.clientY) - d.origin
         let start_date = d.start_date
         let end_date = d.end_date
         if (d.edge === 'bottom') {
@@ -102,7 +120,7 @@ export default function Timeline() {
       window.addEventListener('pointermove', move)
       window.addEventListener('pointerup', up)
     },
-    [layout.dots, actions]
+    [layout.dots, actions, horizontal]
   )
 
   const handleCreate = (row) => {
@@ -116,15 +134,18 @@ export default function Timeline() {
   }
 
   return (
-    <div className="timeline-scroll" ref={scrollRef}>
-      <div className="timeline-canvas" style={{ height: layout.totalHeight }}>
+    <div className={`timeline-scroll ${horizontal ? 'is-horizontal' : ''}`} ref={scrollRef}>
+      <div
+        className={`timeline-canvas ${horizontal ? 'is-horizontal' : ''}`}
+        style={horizontal ? { width: layout.total } : { height: layout.total }}
+      >
         <div className="timeline-rule" />
 
         {/* An empty roadmap still carries the line and today's date, with the
             first block started from here. */}
         {!phases.length && (
           <>
-            <div className="dot-row kind-slot" style={{ top: EMPTY_SLOT_Y }}>
+            <div className="dot-row kind-slot" style={place(EMPTY_SLOT_AT)}>
               <div className="date-label">
                 <span className="date-day">
                   {formatDot(today).day} {formatDot(today).month}
@@ -134,14 +155,14 @@ export default function Timeline() {
               <span className="dot" />
             </div>
             {admin ? (
-              <div className="slot" style={{ top: EMPTY_SLOT_Y }}>
+              <div className="slot" style={place(EMPTY_SLOT_AT)}>
                 <button className="slot-btn" onClick={actions.createFirstBlock} title="Add the first block">
                   <Plus width="20" height="20" />
                 </button>
                 <span className="slot-hint">New block</span>
               </div>
             ) : (
-              <div className="slot" style={{ top: EMPTY_SLOT_Y }}>
+              <div className="slot" style={place(EMPTY_SLOT_AT)}>
                 <span className="slot-hint empty">Nothing scheduled yet.</span>
               </div>
             )}
@@ -152,7 +173,7 @@ export default function Timeline() {
         {layout.dots.map((dot) => {
           const { day, month, year } = formatDot(dot.date)
           return (
-            <div key={dot.key} className={`dot-row kind-${dot.kind}`} style={{ top: dot.y }}>
+            <div key={dot.key} className={`dot-row kind-${dot.kind}`} style={place(dot.at)}>
               <div className="date-label">
                 <span className="date-day">
                   {day} {month}
@@ -167,7 +188,7 @@ export default function Timeline() {
         {layout.rows.map((row) => {
           if (row.type === 'phase') {
             return (
-              <div key={row.key} className={`phase-marker ${row.phase.id === activePhaseId ? 'is-active' : ''}`} style={{ top: row.y, height: row.h }}>
+              <div key={row.key} className={`phase-marker ${row.phase.id === activePhaseId ? 'is-active' : ''}`} style={place(row.at, row.len)}>
                 <span className="phase-marker-chip">
                   {!row.gate.unlocked && <Lock width="12" height="12" />}
                   {row.phase.title}
@@ -180,7 +201,7 @@ export default function Timeline() {
 
           if (row.type === 'locked') {
             return (
-              <div key={row.key} className="locked-banner" style={{ top: row.y, height: row.h }}>
+              <div key={row.key} className="locked-banner" style={place(row.at, row.len)}>
                 <Lock width="18" height="18" />
                 <strong>{row.phase.title} is locked</strong>
                 <span>Every block in the previous phase has to be approved first.</span>
@@ -190,7 +211,7 @@ export default function Timeline() {
 
           if (row.type === 'slot') {
             return (
-              <div key={row.key} className="slot" style={{ top: row.y, height: row.h }}>
+              <div key={row.key} className="slot" style={place(row.at, row.len)}>
                 {/* Empty date slot — admin only. Clicking creates a block here. */}
                 <button className="slot-btn" onClick={() => handleCreate(row)} title="Add a block">
                   <Plus width="20" height="20" />
@@ -205,19 +226,20 @@ export default function Timeline() {
           return (
             <div key={row.key} className="block-row">
               {/* The rail on the line ties the block's start dot to its end dot. */}
-              <div className="block-extent" style={{ top: row.y, height: row.h }} />
+              <div className="block-extent" style={place(row.at, row.len)} />
               {editable && (
                 <div
                   className="extent-handle"
-                  style={{ top: row.y + row.h }}
+                  style={place(row.at + row.len)}
                   onPointerDown={(e) => onResizeStart(e, 'bottom', block, row.minStart)}
                   title="Drag to move the deadline"
                 />
               )}
-              <div className="block-slot" style={{ top: row.y, height: row.h }}>
+              <div className="block-slot" style={place(row.at, row.len)}>
               <BlockCard
                 block={block}
-                height={row.h}
+                extent={row.len}
+                horizontal={horizontal}
                 minStart={row.minStart}
                 canEdit={editable}
                 canSetState={canSetState(session, block)}
@@ -244,12 +266,12 @@ export default function Timeline() {
 
         {/* Where today falls on the line, live. */}
         {(() => {
-          const now = nowMarker(layout.dots, layout.totalHeight, today)
+          const now = nowMarker(layout.dots, layout.total, today)
           if (!now) return null
           return (
             <>
-            <span className={`now-dot ${now.clamped ? 'is-clamped' : ''}`} style={{ top: now.y }} />
-            <div className={`now-marker ${now.clamped ? 'is-clamped' : ''}`} style={{ top: now.y }}>
+            <span className={`now-dot ${now.clamped ? 'is-clamped' : ''}`} style={place(now.at)} />
+            <div className={`now-marker ${now.clamped ? 'is-clamped' : ''}`} style={place(now.at)}>
               {/* rule first, label second: the label paints over it */}
               <span className="now-rule" />
               <span className="now-label">
