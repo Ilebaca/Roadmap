@@ -1297,18 +1297,6 @@ button, input, select, textarea {
   overflow: visible;
 }
 
-/* Where a phase begins, carried the full depth of the panel. Across the page
-   the chip alone is easy to miss — it floats above a line that looks the same
-   either side of it — so the boundary itself is drawn. It sits under the cards
-   and takes no clicks. */
-.timeline-canvas.is-horizontal .phase-marker::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 24px; bottom: 16px;
-  border-left: 1.5px dashed var(--line-2);
-  z-index: 0;
-}
-.timeline-canvas.is-horizontal .phase-marker.is-active::before { border-left-color: var(--muted-2); }
 
 .timeline-canvas.is-horizontal .phase-marker-chip {
   /* clear of the date labels, which stand between the chip and the line */
