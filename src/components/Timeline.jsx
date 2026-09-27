@@ -15,6 +15,14 @@ import { Lock, Plus } from './Icons'
  * the same either way — buildLayout returns a position and a length along one
  * axis, and `place()` below is the only thing that knows which axis that is.
  */
+/** How much of the panel one task takes up. */
+const BLOCK_SHARE = 0.8
+
+/** The gap the stylesheet leaves between a card and its own end dot
+ *  (`.timeline-canvas.is-horizontal .block-slot { padding-right }`). Added
+ *  back on so the share above is the width of the card you actually see. */
+const SLOT_PAD = 16
+
 export default function Timeline() {
   const store = useStore()
   const { session, phases, blocks, gates, blockGates, activePhaseId, actions } = store
@@ -42,9 +50,9 @@ export default function Timeline() {
   // spread back through the geometry.
   const horizontal = true
 
-  // On a phone the card has to be narrower than it is on a desk, and the
-  // spacing with it. Measured rather than guessed from a media query, because
-  // the layout arithmetic needs the number, not just the stylesheet.
+  // On a phone the spacing around a card is tighter than it is on a desk.
+  // Measured rather than guessed from a media query, because the layout
+  // arithmetic needs the number, not just the stylesheet.
   const [narrow, setNarrow] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 640
   )
@@ -53,7 +61,28 @@ export default function Timeline() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  const metrics = narrow ? METRICS.horizontalNarrow : METRICS.horizontal
+
+  // How wide a task is: a share of the panel it is read in, not a fixed
+  // number. One task at a time is the whole point of the roadmap, so it gets
+  // most of the width — enough for a real description, its links and its
+  // overdue note — with the rest left over so the next card shows at the edge
+  // and the line is visibly going somewhere.
+  const [panelW, setPanelW] = useState(0)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([entry]) => setPanelW(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const metrics = useMemo(() => {
+    const base = narrow ? METRICS.horizontalNarrow : METRICS.horizontal
+    // Before the first measurement there is nothing to take a share of, so the
+    // fixed width stands in for one frame.
+    if (!panelW) return base
+    return { ...base, MIN_BLOCK: Math.round(panelW * BLOCK_SHARE) + SLOT_PAD }
+  }, [narrow, panelW])
 
   const layout = useMemo(
     () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin, metrics }),
