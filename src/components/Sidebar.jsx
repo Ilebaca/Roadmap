@@ -4,6 +4,7 @@ import { canCreate } from '../lib/permissions'
 import { Check, Lock, Plus, Trash } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
 import ProjectSwitcher from './ProjectSwitcher'
+import { useLongPress } from '../lib/useLongPress'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
@@ -30,74 +31,9 @@ export default function Sidebar() {
         <ProjectSwitcher />
       </div>
 
-      <nav className="phase-list">
-        {phases.map((phase, i) => {
-          const gate = gates[phase.id] ?? {}
-          const active = phase.id === activePhaseId
-          return (
-            <div key={phase.id} className="cat-row">
-            <button
-              className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''}`}
-              onClick={() => gate.unlocked && actions.selectPhase(phase.id)}
-              disabled={!gate.unlocked}
-              title={
-                gate.unlocked
-                  ? gate.gated
-                    ? `${phase.title} — hidden from the client until the previous phase is approved`
-                    : phase.title
-                  : 'Locked until the previous phase is fully approved'
-              }
-            >
-              {/* Where the work is now. The filled pill says which phase you
-                  are looking at; this says which one is live, and they are
-                  often not the same. */}
-              {phase.id === livePhaseId && (
-                <span className="phase-live" title="The work is here now" aria-label="Current phase" />
-              )}
-              <span className="phase-index">{String(i + 1).padStart(2, '0')}</span>
-              <span className="phase-body">
-                <span className="phase-title">{phase.title}</span>
-                <span className="phase-meta">
-                  {!gate.unlocked
-                    ? 'Locked'
-                    : gate.total
-                      ? `${gate.approvedCount}/${gate.total} approved${gate.gated ? ' · not released' : ''}`
-                      : `No blocks yet${gate.gated ? ' · not released' : ''}`}
-                </span>
-                {/* Always drawn, even for a phase with nothing in it yet: the
-                    row of bars read together is the shape of the whole job,
-                    and a gap in it would read as a phase with no progress
-                    rather than one with no work planned. */}
-                <span className="progress">
-                  <span
-                    style={{
-                      width: gate.total ? `${(gate.approvedCount / gate.total) * 100}%` : 0
-                    }}
-                  />
-                </span>
-              </span>
-              <span className="phase-status">
-                {!gate.unlocked && <Lock width="14" height="14" />}
-                {gate.unlocked && gate.gated && <Lock width="13" height="13" className="gate-hint" />}
-                {gate.unlocked && gate.complete && <Check width="14" height="14" />}
-              </span>
-            </button>
-            {/* Same as a Visual Identity category: hover, trash, gone — along
-                with every block inside it. */}
-            {admin && (
-              <button
-                className="icon-btn danger cat-remove"
-                onClick={() => setPending({ phase, blocks: gate.total ?? 0 })}
-                title={`Delete ${phase.title}${gate.total ? ` and its ${gate.total} block${gate.total > 1 ? 's' : ''}` : ''}`}
-              >
-                <Trash width="13" height="13" />
-              </button>
-            )}
-            </div>
-          )
-        })}
-      </nav>
-
+      {/* A plus at the head of the run, before the phases themselves — the
+          same place on the strip whatever is in it, rather than a wide button
+          that moved as phases were added. */}
       {admin &&
         (adding ? (
           <form className="add-phase" onSubmit={submit}>
@@ -111,10 +47,31 @@ export default function Sidebar() {
             <button type="submit">Add</button>
           </form>
         ) : (
-          <button className="add-phase-btn" onClick={() => setAdding(true)}>
-            <Plus width="14" height="14" /> New phase
+          <button
+            className="add-phase-btn is-plus"
+            onClick={() => setAdding(true)}
+            title="New phase"
+            aria-label="New phase"
+          >
+            <Plus width="16" height="16" />
           </button>
         ))}
+
+      <nav className="phase-list">
+        {phases.map((phase, i) => (
+          <PhaseTab
+            key={phase.id}
+            phase={phase}
+            index={i}
+            gate={gates[phase.id] ?? {}}
+            active={phase.id === activePhaseId}
+            live={phase.id === livePhaseId}
+            admin={admin}
+            onSelect={() => actions.selectPhase(phase.id)}
+            onAskDelete={() => setPending({ phase, blocks: gates[phase.id]?.total ?? 0 })}
+          />
+        ))}
+      </nav>
 
       {pending && (
         <ConfirmDialog
@@ -139,5 +96,75 @@ export default function Sidebar() {
           : 'A phase unlocks only when every block in the phase before it is approved.'}
       </p>
     </aside>
+  )
+}
+
+/**
+ * One phase on the strip.
+ *
+ * Its own component so the hold-to-delete hook has somewhere stable to live:
+ * called inside the map it would be a different number of hooks every time a
+ * phase was added or removed.
+ */
+function PhaseTab({ phase, index, gate, active, live, admin, onSelect, onAskDelete }) {
+  const hold = useLongPress(onAskDelete)
+
+  return (
+    <div className="cat-row">
+      <button
+        className={`phase-tab ${active ? 'is-active' : ''} ${gate.unlocked ? '' : 'is-locked'} ${gate.complete ? 'is-complete' : ''}`}
+        {...(admin ? hold : null)}
+        onClick={() => gate.unlocked && onSelect()}
+        disabled={!gate.unlocked}
+        title={
+          gate.unlocked
+            ? gate.gated
+              ? `${phase.title} — hidden from the client until the previous phase is approved`
+              : phase.title
+            : 'Locked until the previous phase is fully approved'
+        }
+      >
+        {/* Where the work is now. The filled pill says which phase you are
+            looking at; this says which one is live, and they are often not
+            the same. */}
+        {live && <span className="phase-live" title="The work is here now" aria-label="Current phase" />}
+        <span className="phase-index">{String(index + 1).padStart(2, '0')}</span>
+        <span className="phase-body">
+          <span className="phase-title">{phase.title}</span>
+          <span className="phase-meta">
+            {!gate.unlocked
+              ? 'Locked'
+              : gate.total
+                ? `${gate.approvedCount}/${gate.total} approved${gate.gated ? ' · not released' : ''}`
+                : `No blocks yet${gate.gated ? ' · not released' : ''}`}
+          </span>
+          {/* Always drawn, even for a phase with nothing in it yet: the row of
+              bars read together is the shape of the whole job, and a gap in it
+              would read as a phase with no progress rather than one with no
+              work planned. */}
+          <span className="progress">
+            <span style={{ width: gate.total ? `${(gate.approvedCount / gate.total) * 100}%` : 0 }} />
+          </span>
+        </span>
+        <span className="phase-status">
+          {!gate.unlocked && <Lock width="14" height="14" />}
+          {gate.unlocked && gate.gated && <Lock width="13" height="13" className="gate-hint" />}
+          {gate.unlocked && gate.complete && <Check width="14" height="14" />}
+        </span>
+      </button>
+
+      {/* On a pointer, the bin. On touch it is hidden and the same question
+          comes from holding the pill instead — there is no room beside a
+          label for a button that can never be revealed. */}
+      {admin && (
+        <button
+          className="icon-btn danger cat-remove"
+          onClick={onAskDelete}
+          title={`Delete ${phase.title}${gate.total ? ` and its ${gate.total} block${gate.total > 1 ? 's' : ''}` : ''}`}
+        >
+          <Trash width="13" height="13" />
+        </button>
+      )}
+    </div>
   )
 }

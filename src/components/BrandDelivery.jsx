@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store'
+import { useLongPress } from '../lib/useLongPress'
 import { BRAND_TEMPLATES } from '../lib/brandTemplates'
 import { canCreate } from '../lib/permissions'
 import { GripGlyph, Plus, Trash, X } from './Icons'
@@ -66,62 +67,7 @@ export default function BrandDelivery() {
           <h2>{project?.name ?? '—'}</h2>
         </div>
 
-        <nav className="phase-list">
-          {brandSections.map((s) => (
-            <div
-              key={s.id}
-              className={`cat-row ${dragId === s.id ? 'is-dragging' : ''} ${
-                over?.id === s.id && dragId && dragId !== s.id ? `drop-${over.where}` : ''
-              }`}
-              onDragOver={(e) => {
-                if (!admin || !dragId) return
-                e.preventDefault()
-                const r = e.currentTarget.getBoundingClientRect()
-                setOver({ id: s.id, where: e.clientY < r.top + r.height / 2 ? 'before' : 'after' })
-              }}
-              onDrop={(e) => {
-                if (!admin) return
-                e.preventDefault()
-                dropIt()
-              }}
-            >
-              {admin && (
-                <button
-                  className="icon-btn tiny grip cat-grip"
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = 'move'
-                    e.dataTransfer.setData('text/plain', s.id)
-                    setDragId(s.id)
-                  }}
-                  onDragEnd={endDrag}
-                  title="Drag to reorder"
-                >
-                  <GripGlyph width="12" height="12" />
-                </button>
-              )}
-              <button
-                className={`phase-tab ${s.id === active?.id ? 'is-active' : ''}`}
-                onClick={() => setActiveId(s.id)}
-              >
-                <span className="phase-body">
-                  <span className="phase-title">{s.title}</span>
-                  <span className="phase-meta">{countLabel(store.topAssetsFor(s.id).length)}</span>
-                </span>
-              </button>
-              {admin && (
-                <button
-                  className="icon-btn danger cat-remove"
-                  onClick={() => setPendingCat(s)}
-                  title={`Remove ${s.title}`}
-                >
-                  <Trash width="13" height="13" />
-                </button>
-              )}
-            </div>
-          ))}
-        </nav>
-
+        {/* A plus at the head of the run, like the phases. */}
         {admin &&
           (adding ? (
             <TemplatePicker
@@ -138,10 +84,49 @@ export default function BrandDelivery() {
               onCancel={() => setAdding(false)}
             />
           ) : (
-            <button className="add-phase-btn" onClick={() => setAdding(true)}>
-              <Plus width="14" height="14" /> Add category
+            <button
+              className="add-phase-btn is-plus"
+              onClick={() => setAdding(true)}
+              title="Add category"
+              aria-label="Add category"
+            >
+              <Plus width="16" height="16" />
             </button>
           ))}
+
+
+        <nav className="phase-list">
+          {brandSections.map((s) => (
+            <CategoryTab
+              key={s.id}
+              section={s}
+              active={s.id === active?.id}
+              admin={admin}
+              count={store.topAssetsFor(s.id).length}
+              dragging={dragId === s.id}
+              dropHint={over?.id === s.id && dragId && dragId !== s.id ? over.where : null}
+              onSelect={() => setActiveId(s.id)}
+              onAskDelete={() => setPendingCat(s)}
+              onDragOver={(e) => {
+                if (!admin || !dragId) return
+                e.preventDefault()
+                const r = e.currentTarget.getBoundingClientRect()
+                setOver({ id: s.id, where: e.clientY < r.top + r.height / 2 ? 'before' : 'after' })
+              }}
+              onDrop={(e) => {
+                if (!admin) return
+                e.preventDefault()
+                dropIt()
+              }}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/plain', s.id)
+                setDragId(s.id)
+              }}
+              onDragEnd={endDrag}
+            />
+          ))}
+        </nav>
 
         <p className="sidebar-foot">
           Every client starts from the same standard categories. Rename them, or add your own.
@@ -287,5 +272,57 @@ function AutoGrow({ value, onChange, onCommit, className, placeholder }) {
       onChange={(e) => onChange(e.target.value)}
       onBlur={onCommit}
     />
+  )
+}
+
+/**
+ * One category on the strip. Its own component for the same reason PhaseTab
+ * is: a hook called inside the map would come and go with the list.
+ */
+function CategoryTab({
+  section, active, admin, count, dragging, dropHint,
+  onSelect, onAskDelete, onDragOver, onDrop, onDragStart, onDragEnd
+}) {
+  const hold = useLongPress(onAskDelete)
+
+  return (
+    <div
+      className={`cat-row ${dragging ? 'is-dragging' : ''} ${dropHint ? `drop-${dropHint}` : ''}`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {admin && (
+        <button
+          className="icon-btn tiny grip cat-grip"
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          title="Drag to reorder"
+        >
+          <GripGlyph width="12" height="12" />
+        </button>
+      )}
+      <button
+        className={`phase-tab ${active ? 'is-active' : ''}`}
+        {...(admin ? hold : null)}
+        onClick={onSelect}
+      >
+        <span className="phase-body">
+          <span className="phase-title">{section.title}</span>
+          <span className="phase-meta">{countLabel(count)}</span>
+        </span>
+      </button>
+      {/* On a pointer, the bin. On touch it is hidden and holding the pill
+          asks the same question. */}
+      {admin && (
+        <button
+          className="icon-btn danger cat-remove"
+          onClick={onAskDelete}
+          title={`Remove ${section.title}`}
+        >
+          <Trash width="13" height="13" />
+        </button>
+      )}
+    </div>
   )
 }

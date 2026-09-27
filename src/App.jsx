@@ -84,8 +84,16 @@ function Shell() {
 
         <div className="topbar-right">
           {canManageAccounts(session) && (
-            <button className="ghost-btn" onClick={() => setAccountsOpen(true)}>
-              <Users width="15" height="15" /> Accounts
+            <button
+              className="ghost-btn accounts-btn"
+              onClick={() => setAccountsOpen(true)}
+              title="Accounts"
+              aria-label="Accounts"
+            >
+              <Users width="15" height="15" />
+              {/* Wrapped so a narrow screen can drop the word and keep the
+                  icon, rather than the button wrapping to its own line. */}
+              <span className="btn-label">Accounts</span>
             </button>
           )}
 

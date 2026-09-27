@@ -349,6 +349,13 @@ button, input, select, textarea {
   background: transparent; border: 1px dashed var(--line-2); color: var(--muted);
   padding: 9px; border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
 }
+/* At the head of the strip it is a plus and nothing else: a labelled button
+   there would be wider than some of the phases it introduces. */
+.add-phase-btn.is-plus {
+  flex: none;
+  width: 38px; height: 38px;
+  padding: 0; gap: 0;
+}
 .add-phase-btn:hover { color: var(--ink); border-color: var(--muted-2); background: var(--card-2); }
 
 .add-phase { display: flex; gap: 6px; }
@@ -1535,6 +1542,9 @@ button, input, select, textarea {
 
 .workspace.is-stacked .add-phase,
 .workspace.is-stacked .add-phase-btn { flex: none; width: auto; white-space: nowrap; }
+/* The plus keeps its square: the rule above sizes a labelled button to its
+   text, and an icon-only one collapses to the icon. */
+.workspace.is-stacked .add-phase-btn.is-plus { width: 38px; height: 38px; padding: 0; }
 
 /* Two lines of guidance would double the strip's height for something the
    phases themselves already say. */
@@ -1734,15 +1744,15 @@ button, input, select, textarea {
   .asset-tools, .dl-tools { top: 4px; }
   .asset-heading + .asset { padding-top: 38px; }
 
-  /* Same for the delete badge on a category or phase: it rides the pill's
-     edge, and with nothing to reveal it, it simply covers the last letter.
-     The badge and the room made for it are set together — sizing one without
-     the other is what put it back over the text. */
-  .workspace.is-stacked .cat-remove {
-    min-width: 30px; min-height: 30px;
-    width: 30px; height: 30px;
-    right: -10px;
-  }
+  /* The bin goes entirely. It rode the pill's edge, and with no hover to
+     reveal it there was nowhere for it to sit that was not over the label.
+     Holding the pill asks the same question and needs no room at all. */
+  /* Matching the specificity of the stacked rule that sets display: grid —
+     a plain .cat-remove loses to it however far down the file it sits. */
+  .cat-remove,
+  .workspace.is-stacked .cat-remove { display: none; }
+  /* iOS offers to select or copy on a long press otherwise, which fights it. */
+  .phase-tab { -webkit-touch-callout: none; user-select: none; }
 
   /* A finger is not a cursor. The primary actions get a proper target; the
      icon buttons stay smaller, since they sit in dense rows and are the
@@ -1781,21 +1791,48 @@ button, input, select, textarea {
   /* The top bar carries a client name, a menu, Accounts and whoever is signed
      in. Across a phone that is one row too many, so it wraps and the parts
      that are merely informative step back. */
+  /* One row, still: the client menu, Accounts and Sign out belong together,
+     and wrapping them onto separate lines spent a third of the screen on a
+     header. What gives instead is the width of each part — Accounts keeps its
+     icon and drops its word. */
   .topbar {
-    flex-wrap: wrap;
     gap: 8px;
     padding: 8px var(--stage-margin);
-    height: auto;
   }
-  .topbar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
-  .client-name-input, .client-name { max-width: 46vw; }
+  /* Who the client is comes first: the name keeps a floor and the buttons
+     give way, rather than the row balancing itself down to a logo and a
+     chevron. */
+  .client-id-wrap, .client-id { flex: 1 1 auto; min-width: 104px; }
+  .client-name-input, .client-name {
+    min-width: 0; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .topbar-right { gap: 6px; flex: 0 1 auto; min-width: 0; }
+  .accounts-btn .btn-label { display: none; }
+  .accounts-btn { padding: 9px 11px; flex: none; }
   /* The address is in the account menu; on a phone it is just a long string
      between two buttons. */
   .dev-email { display: none; }
-  .dev-switch { gap: 8px; }
+  .dev-switch { gap: 6px; min-width: 0; }
+  .dev-tag { display: none; }
 
-  .app-rail { width: 38px; }
-  .rail-btn { width: 38px; height: 38px; }
+  /* The rail lies flat above the content instead of standing down the side.
+     Vertical it cost 38px of width on a 390px screen for two icons; on its
+     side it costs a row it shares with nothing else. */
+  .workspace { flex-direction: column; }
+  .app-rail {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .rail-btn { width: 40px; height: 40px; }
+
+  /* Dev-only, and the widest thing in the bar. The role toggle is the part
+     worth keeping on a phone; wiping the data is not something to do by
+     accident with a thumb. */
+  .dev-switch .ghost-btn.subtle { display: none; }
 
   /* The strip stacks: the project on one line, the phases scrolling under it,
      which is the only way the pills keep a usable width. */
@@ -1811,11 +1848,7 @@ button, input, select, textarea {
     padding: 0 0 8px;
   }
   .workspace.is-stacked .phase-list { padding: 2px 10px 2px 2px; }
-  /* The right side is roomier than the left on purpose: the delete badge
-     rides that edge, and on touch it is always visible. Written as one
-     shorthand because a separate padding-right rule elsewhere is exactly
-     what this overrode last time. */
-  .workspace.is-stacked .phase-tab { padding: 7px 34px 12px 12px; }
+  .workspace.is-stacked .phase-tab { padding: 7px 12px 12px; }
   .add-phase-btn { padding: 7px 12px; }
 
   /* Menus that hang off their trigger have to stay on the screen. */
