@@ -168,6 +168,14 @@ export function StoreProvider({ children }) {
   // the work's own shape, not a thing shown to one side and not the other.
   const blockGates = useMemo(() => computeBlockGates(phases, blocks), [phases, blocks])
 
+  // Which phase the work is actually in, as opposed to the one being looked
+  // at. They are different things: you can open Discovery to read it back
+  // while the live block sits in Production.
+  const livePhaseId = useMemo(() => {
+    const liveId = Object.keys(blockGates).find((id) => blockGates[id] === 'active')
+    return blocks.find((b) => b.id === liveId)?.phase_id ?? null
+  }, [blockGates, blocks])
+
   // Keep the active tab valid: open on the phase the work is actually in, and
   // bounce off any tab that has become locked again.
   //
@@ -436,6 +444,7 @@ export function StoreProvider({ children }) {
     brandAssets,
     gates,
     blockGates,
+    livePhaseId,
     activePhaseId,
     loading,
     error,

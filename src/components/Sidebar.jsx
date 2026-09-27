@@ -7,7 +7,7 @@ import ProjectSwitcher from './ProjectSwitcher'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
-  const { session, phases, gates, activePhaseId, actions } = useStore()
+  const { session, phases, gates, activePhaseId, livePhaseId, actions } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [pending, setPending] = useState(null) // phase waiting on a confirm
@@ -48,6 +48,12 @@ export default function Sidebar() {
                   : 'Locked until the previous phase is fully approved'
               }
             >
+              {/* Where the work is now. The filled pill says which phase you
+                  are looking at; this says which one is live, and they are
+                  often not the same. */}
+              {phase.id === livePhaseId && (
+                <span className="phase-live" title="The work is here now" aria-label="Current phase" />
+              )}
               <span className="phase-index">{String(i + 1).padStart(2, '0')}</span>
               <span className="phase-body">
                 <span className="phase-title">{phase.title}</span>
@@ -58,11 +64,17 @@ export default function Sidebar() {
                       ? `${gate.approvedCount}/${gate.total} approved${gate.gated ? ' · not released' : ''}`
                       : `No blocks yet${gate.gated ? ' · not released' : ''}`}
                 </span>
-                {gate.unlocked && gate.total > 0 && (
-                  <span className="progress">
-                    <span style={{ width: `${(gate.approvedCount / gate.total) * 100}%` }} />
-                  </span>
-                )}
+                {/* Always drawn, even for a phase with nothing in it yet: the
+                    row of bars read together is the shape of the whole job,
+                    and a gap in it would read as a phase with no progress
+                    rather than one with no work planned. */}
+                <span className="progress">
+                  <span
+                    style={{
+                      width: gate.total ? `${(gate.approvedCount / gate.total) * 100}%` : 0
+                    }}
+                  />
+                </span>
               </span>
               <span className="phase-status">
                 {!gate.unlocked && <Lock width="14" height="14" />}

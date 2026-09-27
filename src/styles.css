@@ -1425,7 +1425,8 @@ button, input, select, textarea {
   flex-direction: row;
   align-items: center;
   gap: 14px;
-  padding: 10px 14px;
+  /* One inset all the way round. */
+  padding: 12px;
   /* Not scrollable itself: an overflow here clips the project menu that drops
      out of its own head. The run of phase pills does its own scrolling. */
   overflow: visible;
@@ -1450,7 +1451,9 @@ button, input, select, textarea {
   gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 8px 2px 4px;
+  /* Even top and bottom; the extra on the right is room for the delete badge
+     on the last pill, which sits just past its edge. */
+  padding: 2px 12px 2px 2px;
   scrollbar-width: thin;
 }
 .workspace.is-stacked .cat-row { flex: none; position: relative; }
@@ -1462,20 +1465,18 @@ button, input, select, textarea {
   width: auto;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 8px 14px 13px;
   border-radius: var(--radius);
   border: 1px solid var(--line);
   background: var(--card-2);
   white-space: nowrap;
+  position: relative;
 }
 .workspace.is-stacked .phase-tab:hover:not(:disabled) {
   background: var(--card-3); border-color: var(--muted-2);
 }
 .workspace.is-stacked .phase-tab.is-active {
-  position: relative;
   background: var(--ink); border-color: var(--ink); box-shadow: none;
-  /* room under the title for the progress line */
-  padding-bottom: 11px;
 }
 /* The one you are on does not react to hover: it is already where you are,
    and lighting it up on the way past reads as though it were a target. */
@@ -1493,20 +1494,31 @@ button, input, select, textarea {
 }
 .workspace.is-stacked .phase-title { white-space: nowrap; }
 .workspace.is-stacked .phase-meta { display: none; }
-.workspace.is-stacked .progress { display: none; }
 
-/* How far through the phase you are actually in. Only on that one: on all of
-   them at once it is a row of bars nobody reads, and the point is the one in
-   hand. It sits along the bottom edge of the pill, which is filled, so the
-   track and the fill both invert. */
-.workspace.is-stacked .phase-tab.is-active .progress {
+/* How far through each phase the work is, on every pill: the row of them read
+   together is the shape of the whole job. It runs along the bottom edge, so
+   the pills need room under the title for it. */
+.workspace.is-stacked .progress {
   display: block;
   position: absolute;
   left: 14px; right: 14px; bottom: 5px;
   height: 2px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--line-2);
 }
+/* The pill you are on is filled, so its track and fill both invert. */
+.workspace.is-stacked .phase-tab.is-active .progress { background: rgba(0, 0, 0, 0.25); }
 .workspace.is-stacked .phase-tab.is-active .progress > span { background: var(--on-ink); }
+
+/* Which phase the work is in, which is not the same as the one you are
+   looking at. A dot rather than another fill: the fill already means
+   "selected", and two fills would compete. */
+.phase-live {
+  flex: none;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--today);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--today) 22%, transparent);
+}
+.workspace.is-stacked .phase-tab.is-active .phase-live { box-shadow: none; }
 
 /* The delete button sits on the pill's top-right corner, tucked in rather
    than hanging off it, and centres its icon. */
