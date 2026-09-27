@@ -57,6 +57,40 @@ export default function Timeline() {
     [horizontal]
   )
 
+  // A mouse wheel only reports vertical movement, and the line runs sideways,
+  // so a plain scroll would do nothing at all. Turning deltaY into scrollLeft
+  // is what makes the timeline feel like a page.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const onWheel = (e) => {
+      // A trackpad already sends deltaX for a sideways swipe; leave that be.
+      if (!e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+
+      // A tall block scrolls inside itself. If the pointer is over one that
+      // still has somewhere to go in this direction, the wheel is its.
+      const inner = e.composedPath().find((n) => {
+        if (!(n instanceof HTMLElement) || n === el) return false
+        const style = getComputedStyle(n)
+        if (!/auto|scroll/.test(style.overflowY)) return false
+        if (n.scrollHeight <= n.clientHeight) return false
+        const room = e.deltaY > 0
+          ? n.scrollTop < n.scrollHeight - n.clientHeight - 1
+          : n.scrollTop > 0
+        return room
+      })
+      if (inner) return
+
+      el.scrollLeft += e.deltaY
+      e.preventDefault()
+    }
+
+    // preventDefault needs a non-passive listener.
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
   // Selecting a tab scrolls that phase's stretch of the line into view.
   useEffect(() => {
     const el = scrollRef.current

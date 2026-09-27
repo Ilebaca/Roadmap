@@ -83,11 +83,14 @@
   height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: 'ClashDisplay', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Switzer', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
-  /* ClashDisplay's word space is narrow; without this, small text reads as one
-     long word. */
-  word-spacing: 0.06em;
+  /* Switzer's word space is 19% of its em where a grotesk usually sits nearer
+     25%. It reads fine in body copy and welds shut in the 10-11px labels,
+     where the difference is under a pixel and rounds the wrong way. This puts
+     it back to a normal width at every size rather than patching the small
+     ones. */
+  word-spacing: 0.05em;
   -webkit-font-smoothing: antialiased;
   text-align: left;
   line-height: normal;
@@ -96,7 +99,8 @@
 }
 
 /* The browser's own stylesheet resets word- and letter-spacing on form
-   controls, which would undo the tracking above inside every button. */
+   controls, cutting them off from whatever the app sets above. Inheriting
+   both keeps a button's text spaced like the text around it. */
 button, input, select, textarea {
   font: inherit; color: inherit;
   word-spacing: inherit; letter-spacing: inherit;
@@ -1257,8 +1261,11 @@ button, input, select, textarea {
 .timeline-scroll.is-horizontal {
   overflow-x: auto;
   overflow-y: hidden;
+  /* No bar. It spans the whole panel and reads as a rule under the work
+     rather than as a control; the wheel and the phase tabs move the line. */
+  scrollbar-width: none;
 }
-.timeline-scroll.is-horizontal::-webkit-scrollbar { height: 10px; width: auto; }
+.timeline-scroll.is-horizontal::-webkit-scrollbar { display: none; }
 
 .timeline-canvas.is-horizontal {
   /* the canvas is as long as the run of dates; its height is the viewport */
@@ -1316,6 +1323,11 @@ button, input, select, textarea {
 .timeline-canvas.is-horizontal .block-slot {
   left: 0;
   top: calc(var(--line-y) + var(--dot-gap));
+  /* Pinned top AND bottom on purpose: that is what gives this box a real
+     height, which is what the card's max-height below is a percentage of.
+     Left to `auto` the percentage resolves to nothing and a long card runs
+     off the bottom of the panel, clipped, with no way to reach its end. */
+  bottom: 14px;
   width: auto;
   /* the card starts at its dot and runs to the next one */
   padding-right: 16px;
@@ -1325,7 +1337,7 @@ button, input, select, textarea {
    pushing past the bottom edge. */
 .timeline-canvas.is-horizontal .block {
   height: auto;
-  max-height: calc(100% - var(--line-y) - var(--dot-gap) - 24px);
+  max-height: 100%;
   overflow-y: auto;
 }
 
@@ -1340,11 +1352,20 @@ button, input, select, textarea {
   cursor: ew-resize;
 }
 /* the two edges that move a date are the left and right ones now */
+/* Across the page a block's dates are its left and right edges, so the grips
+   move to the sides and the bar they draw stands upright. Both show on hover:
+   the left one moves the start date, the right one the deadline. */
 .timeline-canvas.is-horizontal .resize-handle {
   cursor: ew-resize;
-  top: 0; bottom: 0; height: auto; width: 10px;
+  top: 0; bottom: 0; height: auto; width: 12px;
 }
-.timeline-canvas.is-horizontal .resize-handle.top { left: 0; right: auto; }
+.timeline-canvas.is-horizontal .resize-handle.top    { left: -1px; right: auto; }
+.timeline-canvas.is-horizontal .resize-handle.bottom { right: -1px; left: auto; }
+.timeline-canvas.is-horizontal .resize-handle::after {
+  top: 50%; left: 50%; right: auto;
+  transform: translate(-50%, -50%);
+  width: 3px; height: 40px;
+}
 
 .timeline-canvas.is-horizontal .slot {
   left: 0;

@@ -1,13 +1,15 @@
 /* Injected into the host page's <head>, not the shadow root: @font-face is
    ignored inside a shadow tree, and a font declaration cannot affect the
    page around it. */
-/* ClashDisplay, one variable file covering 200-700, so the odd in-between
-   weights below (550, 650) render as written instead of snapping. */
+/* Switzer, one variable file covering 100-900, so every weight the sheet uses
+   — including the in-between 550 and 650 — renders as written rather than
+   snapping to the nearest cut. The italic file is not shipped: the app sets
+   font-style: normal everywhere it uses <em>, so it would never be drawn. */
 @font-face {
-  font-family: 'ClashDisplay';
-  src: url('./fonts/ClashDisplay-Variable.woff2') format('woff2-variations'),
-       url('./fonts/ClashDisplay-Variable.woff2') format('woff2');
-  font-weight: 200 700;
+  font-family: 'Switzer';
+  src: url('./fonts/Switzer-Variable.woff2') format('woff2-variations'),
+       url('./fonts/Switzer-Variable.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
