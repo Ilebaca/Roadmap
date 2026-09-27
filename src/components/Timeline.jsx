@@ -41,7 +41,19 @@ export default function Timeline() {
   // abstract dimension, so this stays a single constant rather than being
   // spread back through the geometry.
   const horizontal = true
-  const metrics = METRICS.horizontal
+
+  // On a phone the card has to be narrower than it is on a desk, and the
+  // spacing with it. Measured rather than guessed from a media query, because
+  // the layout arithmetic needs the number, not just the stylesheet.
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 640
+  )
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 640)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const metrics = narrow ? METRICS.horizontalNarrow : METRICS.horizontal
 
   const layout = useMemo(
     () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin, metrics }),

@@ -1236,11 +1236,11 @@ button, input, select, textarea {
 
 /* ---------- narrow embeds -------------------------------------------------- */
 @media (max-width: 1240px) {
-  :root { --block-w: 440px; }
+  :host, :root { --block-w: 440px; }
 }
 
 @media (max-width: 1000px) {
-  :root { --block-w: 360px; --dot-gap: 22px; --label-ext: 60px; }
+  :host, :root { --block-w: 360px; --dot-gap: 22px; --label-ext: 60px; }
   .sidebar { width: 196px; }
   .date-label { right: 18px; }
   .app-rail { width: 42px; }
@@ -1703,4 +1703,142 @@ button, input, select, textarea {
 .overdue-reason-input:hover { border-color: var(--today-br); }
 .overdue-reason-input:focus {
   outline: none; border-color: var(--today); background: var(--card);
+}
+
+/* ===========================================================================
+   TOUCH
+   Everything that appears on hover is unreachable on a touch screen: there is
+   no hovering, so a delete button that fades in is a delete button that does
+   not exist. Where there is no hover at all, they are simply always there.
+   ========================================================================= */
+@media (hover: none) {
+  .asset-tools,
+  .tile-tools,
+  .dl-tools,
+  .img-download,
+  .cat-grip,
+  .cat-remove,
+  .account-row .icon-btn,
+  .project-option-row .icon-btn,
+  .client-option-row .icon-btn {
+    opacity: 1;
+    transform: none;
+  }
+  .block .resize-handle::after { opacity: 1; }
+
+  /* These float over their content, which is fine while they only appear
+     under the cursor — the words underneath are readable the rest of the
+     time. Always on, they have to be given a strip of their own instead of
+     sitting across the text. */
+  .asset, .dl-box { padding-top: 38px; }
+  .asset-tools, .dl-tools { top: 4px; }
+  .asset-heading + .asset { padding-top: 38px; }
+
+  /* Same for the delete badge on a category or phase: it rides the pill's
+     edge, and with nothing to reveal it, it simply covers the last letter.
+     The badge and the room made for it are set together — sizing one without
+     the other is what put it back over the text. */
+  .workspace.is-stacked .cat-remove {
+    min-width: 30px; min-height: 30px;
+    width: 30px; height: 30px;
+    right: -10px;
+  }
+
+  /* A finger is not a cursor. The primary actions get a proper target; the
+     icon buttons stay smaller, since they sit in dense rows and are the
+     admin's tools rather than the client's. */
+  .primary-btn, .danger-btn, .ghost-btn, .add-phase-btn, .slot-btn, .approve-box {
+    min-height: 44px;
+  }
+  .icon-btn { min-width: 34px; min-height: 34px; }
+}
+
+@media (max-width: 640px) {
+  /* iOS zooms the page in when it focuses a field under 16px, and then leaves
+     it zoomed. Every box you can type into is 16px here for that one reason —
+     it is not a readability choice. */
+  input[type='text'], input[type='email'], input[type='password'],
+  input[type='date'], input[type='search'], textarea, select {
+    font-size: 16px;
+  }
+  .signin input, .account-form input, .account-form select { min-height: 44px; }
+  .signin .primary-btn, .signin .ghost-btn { min-height: 44px; }
+}
+
+/* ===========================================================================
+   PHONE
+   The rail, the strip and a 320px card do not all fit across 390px. Each
+   gives up something: the rail its label width, the strip its single row,
+   the card its width — and the timeline's own geometry shrinks with them,
+   which happens in layout.js because the arithmetic needs the number.
+   ========================================================================= */
+@media (max-width: 640px) {
+  :host, :root {
+    --stage-margin: 8px;
+    --dot-gap: 18px;
+  }
+
+  /* The top bar carries a client name, a menu, Accounts and whoever is signed
+     in. Across a phone that is one row too many, so it wraps and the parts
+     that are merely informative step back. */
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px var(--stage-margin);
+    height: auto;
+  }
+  .topbar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+  .client-name-input, .client-name { max-width: 46vw; }
+  /* The address is in the account menu; on a phone it is just a long string
+     between two buttons. */
+  .dev-email { display: none; }
+  .dev-switch { gap: 8px; }
+
+  .app-rail { width: 38px; }
+  .rail-btn { width: 38px; height: 38px; }
+
+  /* The strip stacks: the project on one line, the phases scrolling under it,
+     which is the only way the pills keep a usable width. */
+  .workspace.is-stacked .sidebar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+  }
+  .workspace.is-stacked .sidebar-head {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+    padding: 0 0 8px;
+  }
+  .workspace.is-stacked .phase-list { padding: 2px 10px 2px 2px; }
+  /* The right side is roomier than the left on purpose: the delete badge
+     rides that edge, and on touch it is always visible. Written as one
+     shorthand because a separate padding-right rule elsewhere is exactly
+     what this overrode last time. */
+  .workspace.is-stacked .phase-tab { padding: 7px 34px 12px 12px; }
+  .add-phase-btn { padding: 7px 12px; }
+
+  /* Menus that hang off their trigger have to stay on the screen. */
+  .project-menu { min-width: 0; width: calc(100vw - 2 * var(--stage-margin) - 60px); }
+  .client-menu { max-width: calc(100vw - 2 * var(--stage-margin)); }
+
+  /* A dialog on a phone is the screen, not a box floating in it. */
+  .modal, .modal-wide {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+  }
+  .account-form { grid-template-columns: 1fr; }
+
+  .timeline-canvas.is-horizontal { --line-y: 134px; }
+  .timeline-canvas.is-horizontal .phase-marker-chip {
+    /* clear of the two-line date label that stands between it and the line */
+    top: calc(var(--line-y) - 88px);
+    left: 8px;
+    font-size: 9px;
+    padding: 4px 9px;
+  }
+
+  .brand-panel { padding: 16px; }
+  .img-grid.cols-2, .img-grid.cols-3 { grid-template-columns: 1fr; }
 }

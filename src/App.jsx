@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StoreProvider, useStore } from './state/store'
 import Sidebar from './components/Sidebar'
 import Timeline from './components/Timeline'
@@ -22,6 +22,19 @@ function Shell() {
   const { session, accounts, loading, error, authReady, isLive, actions } = useStore()
   const [accountsOpen, setAccountsOpen] = useState(false)
   const [app, setApp] = useState('roadmap') // which icon on the rail is lit
+
+  // On a phone there is no room for a list down one side and content beside
+  // it — Visual Identity's categories squeeze its text to a word a line. Both
+  // apps stack there, which is the layout the roadmap already uses, so they
+  // share it rather than growing a second one.
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 640
+  )
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 640)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   // With a real backend behind it, no session means nobody is signed in.
   if (isLive && authReady && !session) {
@@ -116,7 +129,7 @@ function Shell() {
       {/* The date line runs across the page, so a column of phases down the
           left would eat the width it needs: they go on top instead and the
           line gets the whole panel. */}
-      <div className={`workspace ${app === 'roadmap' ? 'is-stacked' : ''}`}>
+      <div className={`workspace ${app === 'roadmap' || narrow ? 'is-stacked' : ''}`}>
         <AppRail active={app} onSelect={setApp} />
         {app === 'roadmap' ? (
           <div className="workspace-main">
@@ -126,7 +139,9 @@ function Shell() {
             </main>
           </div>
         ) : (
-          <BrandDelivery />
+          <div className="workspace-main">
+            <BrandDelivery />
+          </div>
         )}
       </div>
 

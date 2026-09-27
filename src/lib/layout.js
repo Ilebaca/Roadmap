@@ -49,7 +49,27 @@ export const HORIZONTAL = {
   fromContent: false
 }
 
-export const METRICS = { vertical: VERTICAL, horizontal: HORIZONTAL }
+/* A phone is about 390px wide and the rail and margins take some of that, so
+   a 320px card is wider than the screen it has to fit on. Everything shrinks
+   together — a narrower card with less air around it — rather than the card
+   alone, which would leave the gaps looking enormous beside it. */
+export const HORIZONTAL_NARROW = {
+  ...HORIZONTAL,
+  MIN_BLOCK: 252,
+  GAP_AFTER_BLOCK: 34,
+  PHASE_HEADER: 72,
+  LOCKED_BANNER: 220,
+  SLOT: 104,
+  PHASE_GAP: 24,
+  LEAD_PAD: 20,
+  TAIL_PAD: 120
+}
+
+export const METRICS = {
+  vertical: VERTICAL,
+  horizontal: HORIZONTAL,
+  horizontalNarrow: HORIZONTAL_NARROW
+}
 
 /** Drag sensitivity only — pixels dragged per day of date change. It is a
  *  feel-of-the-gesture constant, NOT a scale the line is drawn to. */
