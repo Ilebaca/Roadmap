@@ -1481,8 +1481,12 @@ button, input, select, textarea {
   /* Even top and bottom; the extra on the right is room for the delete badge
      on the last pill, which sits just past its edge. */
   padding: 2px 12px 2px 2px;
-  scrollbar-width: thin;
+  /* No bar. It sat under the pills as a second line inside a strip that is
+     already one line tall, and the pills themselves say there is more to the
+     side: the run simply carries on past the edge. */
+  scrollbar-width: none;
 }
+.workspace.is-stacked .phase-list::-webkit-scrollbar { display: none; }
 .workspace.is-stacked .cat-row { flex: none; position: relative; }
 
 /* Across the top a phase is a pill that hugs its name. The one being looked
