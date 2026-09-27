@@ -80,4 +80,14 @@ select 'approve in order',
          select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
           where n.nspname='public' and p.proname='approve_block'
             and pg_get_functiondef(p.oid) like '%comes first%'
-       ) then 'ok' else 'run part 8 again' end;
+       ) then 'ok' else 'run part 8 again' end
+union all
+select 'overdue reason column',
+       case when exists (
+         select 1 from information_schema.columns
+          where table_schema='public' and table_name='blocks' and column_name='overdue_reason'
+       ) then '1 of 1' else '0 of 1' end,
+       case when exists (
+         select 1 from information_schema.columns
+          where table_schema='public' and table_name='blocks' and column_name='overdue_reason'
+       ) then 'ok' else 'run part 9 again' end;

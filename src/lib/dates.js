@@ -58,3 +58,28 @@ export const formatShort = (iso) => {
   const d = parse(iso)
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`
 }
+
+/**
+ * A block that has run past its deadline.
+ *
+ * The deadline itself is never rewritten. `end_date` keeps meaning the date
+ * that was agreed — which is the thing worth still being able to see once it
+ * has gone by — and the date the block actually reaches on the line is worked
+ * out here instead. That way it is right the moment the day turns, with no job
+ * running at midnight to move anything and nothing that can be left stale.
+ *
+ * Approved work is never overdue, whenever it was signed off: it is finished,
+ * and a finished job that ran late is a fact about the past, not an open one.
+ *
+ * Returns { days, since, effectiveEnd } — days is 0 when it is not overdue.
+ */
+export function overdue(block, today = todayISO()) {
+  const late = block.state !== 'approved' && daysBetween(block.end_date, today) > 0
+  return {
+    days: late ? daysBetween(block.end_date, today) : 0,
+    since: block.end_date,
+    // While it runs late the block keeps pace with today, so its end dot walks
+    // forward a day at a time instead of sitting in the past.
+    effectiveEnd: late ? today : block.end_date
+  }
+}

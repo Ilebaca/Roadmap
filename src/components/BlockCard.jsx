@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { formatRange, formatStamp } from '../lib/dates'
-import { Check, Link as LinkIcon, Pen, Plus, Trash, X, Lock } from './Icons'
+import { formatRange, formatStamp, formatShort, overdue } from '../lib/dates'
+import { Check, Clock, Link as LinkIcon, Pen, Plus, Trash, X, Lock } from './Icons'
 import StateSelect from './StateSelect'
 import OwnerSwitch from './OwnerSwitch'
 import ConfirmDialog from './ConfirmDialog'
@@ -43,10 +43,12 @@ export default function BlockCard({
   const [description, setDescription] = useState(block.description)
   const [editingDates, setEditingDates] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [reason, setReason] = useState(block.overdue_reason ?? '')
 
   // Keep local edit buffers in sync when the row changes underneath us.
   useEffect(() => setTitle(block.title), [block.title])
   useEffect(() => setDescription(block.description), [block.description])
+  useEffect(() => setReason(block.overdue_reason ?? ''), [block.overdue_reason])
 
   // Report the content's natural height so the layout can size this block.
   // Only down the page — across it, width is set and height is free.
@@ -72,6 +74,10 @@ export default function BlockCard({
   // The stored state is left alone, so it picks up where it left off when its
   // turn comes round again.
   const shownState = waiting ? 'todo' : block.state
+
+  // Past its deadline and not signed off. Worked out here rather than stored,
+  // so it becomes true on its own the day it becomes true.
+  const late = overdue(block)
 
   return (
     <article
@@ -123,7 +129,16 @@ export default function BlockCard({
               </>
             ) : (
               <>
-                <span className="block-span">{formatRange(block.start_date, block.end_date)}</span>
+                <span className={`block-span ${late.days ? 'is-late' : ''}`}>
+                  {formatRange(block.start_date, late.effectiveEnd)}
+                </span>
+                {/* The agreed deadline stays on screen once it has gone by —
+                    it is the thing the slip is measured against. */}
+                {late.days > 0 && (
+                  <span className="block-was-due" title="The deadline that was agreed">
+                    was {formatShort(late.since)}
+                  </span>
+                )}
                 {canEdit && (
                   <button className="icon-btn" onClick={() => setEditingDates(true)} title="Edit dates">
                     <Pen width="13" height="13" />
@@ -158,6 +173,35 @@ export default function BlockCard({
           <p className="block-desc">
             <Linkify text={block.description} />
           </p>
+        )}
+
+        {/* Running late: how far past, and why. The box is always there once it
+            is overdue — an unexplained slip is the thing a client is left
+            guessing about. */}
+        {late.days > 0 && (
+          <div className="overdue-box">
+            <p className="overdue-count">
+              <Clock width="12" height="12" aria-hidden="true" />
+              {late.days} day{late.days === 1 ? '' : 's'} overdue
+            </p>
+            {canEdit ? (
+              <textarea
+                className="overdue-reason-input"
+                value={reason}
+                placeholder="What is holding it up?"
+                rows={2}
+                onChange={(e) => setReason(e.target.value)}
+                onBlur={() =>
+                  reason !== (block.overdue_reason ?? '') &&
+                  onPatch(block.id, { overdue_reason: reason })
+                }
+              />
+            ) : reason ? (
+              <p className="overdue-reason">{reason}</p>
+            ) : (
+              <p className="overdue-reason is-empty">No explanation given yet.</p>
+            )}
+          </div>
         )}
 
         {/* State sits under the description: a dropdown for an admin, the same

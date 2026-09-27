@@ -1,4 +1,4 @@
-import { addDays, daysBetween, todayISO } from './dates'
+import { addDays, daysBetween, overdue, todayISO } from './dates'
 
 /**
  * Timeline geometry.
@@ -112,7 +112,17 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
       rows.push({ key: `bk-${block.id}`, type: 'block', block, phase, at, len, minStart: chainFloor })
       chainFloor = block.end_date
       dots.push({ key: `d-${block.id}-s`, at, date: block.start_date, kind: 'start', blockId: block.id, state: block.state })
-      dots.push({ key: `d-${block.id}-e`, at: at + len, date: block.end_date, kind: 'end', blockId: block.id, state: block.state })
+      // While a block runs past its deadline its end dot walks forward with
+      // today, so the line shows where the work has actually got to. The row
+      // itself still holds the date that was agreed.
+      dots.push({
+        key: `d-${block.id}-e`,
+        at: at + len,
+        date: overdue(block).effectiveEnd,
+        kind: 'end',
+        blockId: block.id,
+        state: block.state
+      })
       at += len + m.GAP_AFTER_BLOCK
     }
 

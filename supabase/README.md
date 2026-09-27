@@ -241,6 +241,29 @@ the *progress* of the work that is one-at-a-time.
 
 ---
 
+## When a block runs late
+
+Nothing about this is stored. Whether a block is overdue is today's date
+against `end_date`, worked out as the app draws — so it becomes true on its own
+the day it becomes true, with no job running at midnight to notice and no
+column that can be left stale.
+
+`end_date` therefore keeps meaning **the deadline that was agreed**, which is
+exactly the thing worth still being able to see once it has passed. What moves
+is the date the block reaches on the line: while it runs late its end dot walks
+forward with today, so the timeline shows where the work has actually got to,
+with the original struck through beside it and the days counted.
+
+Approved work is never overdue, however late it was signed off. It is
+finished, and a finished job that ran late is a fact about the past.
+
+The one thing that cannot be derived is *why*, so that is the single column
+part 9 adds: `blocks.overdue_reason`. The box appears on the card as soon as a
+block is late, empty and asking — an unexplained slip is the thing a client is
+left guessing about.
+
+---
+
 ## Whose job a block is
 
 Every block carries `owner`, either `studio` or `client`, defaulting to the

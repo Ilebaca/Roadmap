@@ -1472,7 +1472,15 @@ button, input, select, textarea {
   background: var(--card-3); border-color: var(--muted-2);
 }
 .workspace.is-stacked .phase-tab.is-active {
+  position: relative;
   background: var(--ink); border-color: var(--ink); box-shadow: none;
+  /* room under the title for the progress line */
+  padding-bottom: 11px;
+}
+/* The one you are on does not react to hover: it is already where you are,
+   and lighting it up on the way past reads as though it were a target. */
+.workspace.is-stacked .phase-tab.is-active:hover {
+  background: var(--ink); border-color: var(--ink);
 }
 .workspace.is-stacked .phase-tab.is-active .phase-title,
 .workspace.is-stacked .phase-tab.is-active .phase-index,
@@ -1484,15 +1492,34 @@ button, input, select, textarea {
   min-width: 0; flex: none; flex-direction: row; align-items: center; gap: 0;
 }
 .workspace.is-stacked .phase-title { white-space: nowrap; }
-.workspace.is-stacked .phase-meta,
+.workspace.is-stacked .phase-meta { display: none; }
 .workspace.is-stacked .progress { display: none; }
 
-/* the delete button rides on the pill instead of sitting beside it */
-.workspace.is-stacked .cat-remove {
-  position: absolute; top: -6px; right: -6px;
-  background: var(--card); border: 1px solid var(--line); border-radius: 50%;
-  width: 20px; height: 20px; padding: 0;
+/* How far through the phase you are actually in. Only on that one: on all of
+   them at once it is a row of bars nobody reads, and the point is the one in
+   hand. It sits along the bottom edge of the pill, which is filled, so the
+   track and the fill both invert. */
+.workspace.is-stacked .phase-tab.is-active .progress {
+  display: block;
+  position: absolute;
+  left: 14px; right: 14px; bottom: 5px;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.2);
 }
+.workspace.is-stacked .phase-tab.is-active .progress > span { background: var(--on-ink); }
+
+/* The delete button sits on the pill's top-right corner, tucked in rather
+   than hanging off it, and centres its icon. */
+.workspace.is-stacked .cat-remove {
+  position: absolute; top: 50%; right: -9px;
+  transform: translateY(-50%);
+  width: 20px; height: 20px; padding: 0;
+  display: grid; place-items: center; line-height: 0;
+  background: var(--card-3); border: 1px solid var(--line-2); border-radius: 50%;
+  color: var(--muted);
+}
+.workspace.is-stacked .cat-remove:hover { color: var(--danger); border-color: var(--danger); }
+.workspace.is-stacked .cat-remove svg { display: block; }
 
 .workspace.is-stacked .add-phase,
 .workspace.is-stacked .add-phase-btn { flex: none; width: auto; white-space: nowrap; }
@@ -1625,4 +1652,43 @@ button, input, select, textarea {
 .waiting-note {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 10.5px; color: var(--muted-2);
+}
+
+/* ---------- running late -------------------------------------------------- */
+/* The span reads to where the work has actually got to; the agreed deadline
+   sits beside it, because the slip only means something against it. */
+.block-span.is-late { color: var(--today-fg); }
+.block-was-due {
+  font-size: 10.5px; color: var(--muted-2);
+  text-decoration: line-through;
+  text-decoration-color: var(--line-2);
+  white-space: nowrap;
+}
+
+.overdue-box {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 9px 11px;
+  background: var(--today-bg);
+  border: 1px solid var(--today-br);
+  border-radius: var(--radius-sm);
+}
+.overdue-count {
+  margin: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: var(--today-fg);
+}
+.overdue-reason, .overdue-reason-input {
+  margin: 0; font-size: 12px; line-height: 1.5; color: var(--text);
+}
+.overdue-reason.is-empty { color: var(--muted-2); font-style: italic; }
+.overdue-reason-input {
+  width: 100%; resize: vertical; min-height: 34px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: var(--radius-xs); padding: 4px 6px; margin: 0 -6px;
+  font-family: inherit;
+}
+.overdue-reason-input::placeholder { color: var(--muted-2); }
+.overdue-reason-input:hover { border-color: var(--today-br); }
+.overdue-reason-input:focus {
+  outline: none; border-color: var(--today); background: var(--card);
 }

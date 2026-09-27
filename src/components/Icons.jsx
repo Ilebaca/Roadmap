@@ -150,3 +150,11 @@ export const GripGlyph = (p) => (
     <circle cx="15" cy="18" r="1.6" />
   </svg>
 )
+
+/** Time has passed — used where a block has run beyond its deadline. */
+export const Clock = (p) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M8 4.8V8l2.2 1.4" />
+  </svg>
+)

@@ -571,7 +571,7 @@ export const mockApi = {
     if (!row) throw new Error('Block not found')
     if (row.locked) throw new ForbiddenError('This block is approved and locked.')
     const project_id = projectOfPhase(row.phase_id)
-    const allowed = ['title', 'description', 'start_date', 'end_date', 'state', 'owner', 'order_index']
+    const allowed = ['title', 'description', 'start_date', 'end_date', 'state', 'owner', 'overdue_reason', 'order_index']
 
     withChain(project_id, () => {
       for (const k of Object.keys(patch)) {
