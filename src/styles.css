@@ -900,7 +900,11 @@ button, input, select, textarea {
 
 .icon-btn {
   background: transparent; border: 0; color: var(--muted-2);
-  cursor: pointer; padding: 4px; border-radius: var(--radius-xs); display: inline-flex;
+  cursor: pointer; padding: 4px; border-radius: var(--radius-xs);
+  /* Centred, not just laid out: on a touch screen these are given a 34px tap
+     target, and a glyph with a fixed height does not stretch to fill it — left
+     to itself it sits at the top of the box, riding above the text beside it. */
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .icon-btn:hover { color: var(--ink); background: var(--card-3); }
 .icon-btn.danger:hover { color: var(--danger-fg); background: var(--danger-bg); }
