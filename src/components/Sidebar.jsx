@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
 import { canCreate } from '../lib/permissions'
-import { AxisHorizontal, AxisVertical, Check, Lock, Plus, Trash } from './Icons'
+import { Check, Lock, Plus, Trash } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
+import ProjectSwitcher from './ProjectSwitcher'
 
 /** Left rail: one tab per phase, dependency-gated. */
 export default function Sidebar() {
-  const { session, phases, gates, activePhaseId, actions, orientation, setOrientation } = useStore()
+  const { session, phases, gates, activePhaseId, actions } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [pending, setPending] = useState(null) // phase waiting on a confirm
@@ -24,27 +25,9 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
-        <span className="eyebrow">Roadmap</span>
-        <h2>Phases</h2>
-        {/* Which way the date line runs. Remembered per browser. */}
-        <div className="axis-toggle" role="group" aria-label="Date line direction">
-          <button
-            className={orientation === 'vertical' ? 'is-on' : ''}
-            onClick={() => setOrientation('vertical')}
-            title="Date line down the page"
-            aria-pressed={orientation === 'vertical'}
-          >
-            <AxisVertical width="15" height="15" />
-          </button>
-          <button
-            className={orientation === 'horizontal' ? 'is-on' : ''}
-            onClick={() => setOrientation('horizontal')}
-            title="Date line across the page"
-            aria-pressed={orientation === 'horizontal'}
-          >
-            <AxisHorizontal width="15" height="15" />
-          </button>
-        </div>
+        {/* The head of the strip names the roadmap on screen, not "Phases" —
+            the phases are the pills beside it. */}
+        <ProjectSwitcher />
       </div>
 
       <nav className="phase-list">

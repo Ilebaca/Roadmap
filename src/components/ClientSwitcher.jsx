@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store'
+import ConfirmDialog from './ConfirmDialog'
 import { isAdmin } from '../lib/permissions'
-import { Chevron, Plus } from './Icons'
+import { Chevron, Plus, Trash } from './Icons'
 import { eventInside } from '../lib/dom'
 
 /** Initials fallback until a real logo is uploaded. */
@@ -37,6 +38,7 @@ export default function ClientSwitcher() {
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('') // the client name being typed over
+  const [pending, setPending] = useState(null) // client waiting on a confirm
   const wrapRef = useRef(null)
 
   // An admin can always open the menu — it is also where a new client starts.
@@ -117,19 +119,30 @@ export default function ClientSwitcher() {
         <div className="client-menu" role="listbox">
           <span className="client-menu-label">Clients</span>
           {projects.map((p) => (
-            <button
-              key={p.id}
-              role="option"
-              aria-selected={p.id === activeProjectId}
-              className={`client-option ${p.id === activeProjectId ? 'is-current' : ''}`}
-              onClick={() => {
-                setOpen(false)
-                actions.selectProject(p.id)
-              }}
-            >
-              <Logo project={p} size={26} />
-              <span>{p.name}</span>
-            </button>
+            <div key={p.id} className="client-option-row">
+              <button
+                role="option"
+                aria-selected={p.id === activeProjectId}
+                className={`client-option ${p.id === activeProjectId ? 'is-current' : ''}`}
+                onClick={() => {
+                  setOpen(false)
+                  actions.selectProject(p.id)
+                }}
+              >
+                <Logo project={p} size={26} />
+                <span>{p.name}</span>
+              </button>
+              {/* The last client cannot go — there would be nothing to open. */}
+              {projects.length > 1 && (
+                <button
+                  className="icon-btn danger"
+                  title={`Delete ${p.name} and everything belonging to them`}
+                  onClick={() => setPending(p)}
+                >
+                  <Trash width="13" height="13" />
+                </button>
+              )}
+            </div>
           ))}
 
           {creating ? (
@@ -149,6 +162,24 @@ export default function ClientSwitcher() {
             </button>
           )}
         </div>
+      )}
+      {pending && (
+        <ConfirmDialog
+          title={`Delete “${pending.name}”?`}
+          body={
+            'Every project of theirs, all the phases and blocks inside them, and their whole ' +
+            'Visual Identity go with it. Anyone signed in as this client loses their access. ' +
+            'This cannot be undone.'
+          }
+          confirmLabel="Delete client"
+          onCancel={() => setPending(null)}
+          onConfirm={async () => {
+            const id = pending.id
+            setPending(null)
+            setOpen(false)
+            await actions.deleteClient(id)
+          }}
+        />
       )}
     </div>
   )

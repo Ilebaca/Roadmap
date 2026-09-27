@@ -168,20 +168,67 @@ export const liveApi = {
   // PHASES
   // ===========================================================================
 
-  async listPhases(session, project_id) {
+  async listPhases(session, roadmap_id) {
+    if (!roadmap_id) return []
     return ok(
-      await supabase.from('phases').select('*').eq('project_id', project_id).order('order_index')
+      await supabase.from('phases').select('*').eq('roadmap_id', roadmap_id).order('order_index')
     )
   },
 
-  async createPhase(session, { project_id, title }) {
+  /** project_id is left out on purpose: a trigger fills it from the roadmap. */
+  async createPhase(session, { roadmap_id, title }) {
     const siblings = ok(
-      await supabase.from('phases').select('order_index').eq('project_id', project_id)
+      await supabase.from('phases').select('order_index').eq('roadmap_id', roadmap_id)
     )
     const order_index = siblings.length ? Math.max(...siblings.map((p) => p.order_index)) + 1 : 0
     return ok(
-      await supabase.from('phases').insert({ project_id, title, order_index }).select().single()
+      await supabase.from('phases').insert({ roadmap_id, title, order_index }).select().single()
     )
+  },
+
+  // ===========================================================================
+  // ROADMAPS — a client runs several at once
+  // ===========================================================================
+
+  async listRoadmaps(session, project_id) {
+    if (!project_id) return []
+    return ok(
+      await supabase.from('roadmaps').select('*').eq('project_id', project_id).order('order_index')
+    )
+  },
+
+  async createRoadmap(session, { project_id, name }) {
+    const siblings = ok(
+      await supabase.from('roadmaps').select('order_index').eq('project_id', project_id)
+    )
+    const order_index = siblings.length ? Math.max(...siblings.map((r) => r.order_index)) + 1 : 0
+    return ok(
+      await supabase
+        .from('roadmaps')
+        .insert({ project_id, name: name?.trim() || 'Untitled project', order_index })
+        .select()
+        .single()
+    )
+  },
+
+  async renameRoadmap(session, id, name) {
+    return ok(await supabase.from('roadmaps').update({ name: name.trim() }).eq('id', id).select().single())
+  },
+
+  /** Its phases, their blocks and everything under those go with it. */
+  async deleteRoadmap(session, id) {
+    const { error } = await supabase.rpc('delete_roadmap', { p_roadmap_id: id })
+    if (error) throw new Error(error.message)
+  },
+
+  /**
+   * Removes a client outright — roadmaps, everything in them, and its Visual
+   * Identity. Files already in Storage are orphaned rather than deleted:
+   * Postgres cannot reach into the bucket.
+   */
+  async deleteClient(session, project_id) {
+    const { error } = await supabase.rpc('delete_client', { p_project_id: project_id })
+    if (error) throw new Error(error.message)
   },
 
   async updatePhase(session, id, patch) {

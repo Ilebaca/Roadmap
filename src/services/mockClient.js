@@ -310,6 +310,9 @@ export const mockApi = {
         order_index: i
       })
     })
+    // A client with nowhere to put a phase is useless, so it comes with one.
+    // The database does this with a trigger, for the same reason.
+    db.roadmaps.push({ id: uid('rm'), project_id: row.id, name: 'Roadmap', order_index: 0 })
     persist()
     return wait(clone(row))
   },
@@ -343,28 +346,121 @@ export const mockApi = {
    *   supabase.from('phases').select('*').eq('project_id', project_id)
    *     .order('order_index')
    */
-  async listPhases(session, project_id) {
-    assertProject(session, project_id)
+  async listPhases(session, roadmap_id) {
+    const roadmap = db.roadmaps.find((r) => r.id === roadmap_id)
+    if (!roadmap) return wait([])
+    assertProject(session, roadmap.project_id)
     const rows = db.phases
-      .filter((p) => p.project_id === project_id)
+      .filter((p) => p.roadmap_id === roadmap_id)
       .sort((a, b) => a.order_index - b.order_index)
     return wait(clone(rows))
   },
 
   /** BACKEND: supabase.from('phases').insert({...}).select().single() */
-  async createPhase(session, { project_id, title }) {
+  async createPhase(session, { roadmap_id, title }) {
     assertAdmin(session)
-    assertProject(session, project_id)
-    const siblings = db.phases.filter((p) => p.project_id === project_id)
+    const roadmap = db.roadmaps.find((r) => r.id === roadmap_id)
+    if (!roadmap) throw new Error('That project no longer exists.')
+    assertProject(session, roadmap.project_id)
+    const siblings = db.phases.filter((p) => p.roadmap_id === roadmap_id)
     const row = {
       id: uid('ph'),
-      project_id,
+      roadmap_id,
+      // carried alongside, the way the database's trigger carries it
+      project_id: roadmap.project_id,
       title,
       order_index: siblings.length ? Math.max(...siblings.map((p) => p.order_index)) + 1 : 0
     }
     db.phases.push(row)
     persist()
     return wait(clone(row))
+  },
+
+  // ===========================================================================
+  // ROADMAPS — a client runs several at once
+  // ===========================================================================
+
+  /** BACKEND: supabase.from('roadmaps').select('*').eq('project_id', …) */
+  async listRoadmaps(session, project_id) {
+    assertProject(session, project_id)
+    const rows = db.roadmaps
+      .filter((r) => r.project_id === project_id)
+      .sort((a, b) => a.order_index - b.order_index)
+    return wait(clone(rows))
+  },
+
+  /** BACKEND: supabase.from('roadmaps').insert({...}).select().single() */
+  async createRoadmap(session, { project_id, name }) {
+    assertAdmin(session)
+    assertProject(session, project_id)
+    const siblings = db.roadmaps.filter((r) => r.project_id === project_id)
+    const row = {
+      id: uid('rm'),
+      project_id,
+      name: name?.trim() || 'Untitled project',
+      order_index: siblings.length ? Math.max(...siblings.map((r) => r.order_index)) + 1 : 0
+    }
+    db.roadmaps.push(row)
+    persist()
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('roadmaps').update({ name }).eq('id', id) */
+  async renameRoadmap(session, id, name) {
+    assertAdmin(session)
+    const row = db.roadmaps.find((r) => r.id === id)
+    if (!row) throw new Error('That project no longer exists.')
+    row.name = name.trim() || row.name
+    persist()
+    return wait(clone(row))
+  },
+
+  /**
+   * Takes its phases, their blocks and everything hanging off those with it.
+   * BACKEND: rpc('delete_roadmap') — one statement, so it cannot half-apply.
+   */
+  async deleteRoadmap(session, id) {
+    assertAdmin(session)
+    const phaseIds = db.phases.filter((p) => p.roadmap_id === id).map((p) => p.id)
+    const blockIds = db.blocks.filter((b) => phaseIds.includes(b.phase_id)).map((b) => b.id)
+    db.approvals = db.approvals.filter((a) => !blockIds.includes(a.block_id))
+    db.block_links = db.block_links.filter((l) => !blockIds.includes(l.block_id))
+    db.blocks = db.blocks.filter((b) => !phaseIds.includes(b.phase_id))
+    db.phases = db.phases.filter((p) => p.roadmap_id !== id)
+    db.roadmaps = db.roadmaps.filter((r) => r.id !== id)
+    persist()
+    return wait(null)
+  },
+
+  /**
+   * Removes a client outright: its roadmaps, everything in them, and its
+   * Visual Identity. The last one standing cannot go — there would be nothing
+   * left to look at.
+   * BACKEND: rpc('delete_client')
+   */
+  async deleteClient(session, project_id) {
+    assertAdmin(session)
+    if (db.projects.length <= 1) {
+      throw new Error('This is your only client. Make another one before removing it.')
+    }
+    const roadmapIds = db.roadmaps.filter((r) => r.project_id === project_id).map((r) => r.id)
+    for (const id of roadmapIds) {
+      const phaseIds = db.phases.filter((p) => p.roadmap_id === id).map((p) => p.id)
+      const blockIds = db.blocks.filter((b) => phaseIds.includes(b.phase_id)).map((b) => b.id)
+      db.approvals = db.approvals.filter((a) => !blockIds.includes(a.block_id))
+      db.block_links = db.block_links.filter((l) => !blockIds.includes(l.block_id))
+      db.blocks = db.blocks.filter((b) => !phaseIds.includes(b.phase_id))
+      db.phases = db.phases.filter((p) => p.roadmap_id !== id)
+    }
+    const sectionIds = db.brand_sections.filter((b) => b.project_id === project_id).map((b) => b.id)
+    db.brand_assets = db.brand_assets.filter((a) => !sectionIds.includes(a.section_id))
+    db.brand_sections = db.brand_sections.filter((b) => b.project_id !== project_id)
+    db.roadmaps = db.roadmaps.filter((r) => r.project_id !== project_id)
+    db.users = db.users.map((u) => (u.project_id === project_id ? { ...u, project_id: null } : u))
+    db.invites = db.invites.filter((i) => i.project_id !== project_id)
+    db.projects = db.projects.filter((p) => p.id !== project_id)
+    persist()
+    return wait(null)
   },
 
   /**

@@ -66,17 +66,34 @@ export const seed = () => ({
   ],
 
   // TABLE: phases  (order_index drives sidebar order AND the dependency chain)
+  // TABLE: roadmaps
+  // One client runs several jobs at once, each with its own run of phases.
+  // `project_id` is the CLIENT — see the note in part 6 of the migrations about
+  // why that column keeps its name.
+  roadmaps: [
+    { id: 'rm_1', project_id: 'prj_1', name: 'Rebrand', order_index: 0 },
+    // A second roadmap for the same client, which is the whole point.
+    { id: 'rm_2', project_id: 'prj_1', name: 'Website relaunch', order_index: 1 },
+    { id: 'rm_3', project_id: 'prj_2', name: 'Roadmap', order_index: 0 },
+    { id: 'rm_4', project_id: 'prj_3', name: 'Roadmap', order_index: 0 }
+  ],
+
+  // TABLE: phases
+  // A phase belongs to a roadmap. It carries project_id too, exactly as the
+  // database does, so every read that scopes by client keeps working.
   phases: [
-    { id: 'ph_1', project_id: 'prj_1', title: 'Discovery', order_index: 0 },
-    { id: 'ph_2', project_id: 'prj_1', title: 'Concept & Design', order_index: 1 },
-    { id: 'ph_3', project_id: 'prj_1', title: 'Production', order_index: 2 },
-    { id: 'ph_4', project_id: 'prj_1', title: 'Launch', order_index: 3 },
+    { id: 'ph_1', roadmap_id: 'rm_1', project_id: 'prj_1', title: 'Discovery', order_index: 0 },
+    { id: 'ph_2', roadmap_id: 'rm_1', project_id: 'prj_1', title: 'Concept & Design', order_index: 1 },
+    { id: 'ph_3', roadmap_id: 'rm_1', project_id: 'prj_1', title: 'Production', order_index: 2 },
+    { id: 'ph_4', roadmap_id: 'rm_1', project_id: 'prj_1', title: 'Launch', order_index: 3 },
+    // The same client's other job, empty until somebody plans it.
+    { id: 'ph_9', roadmap_id: 'rm_2', project_id: 'prj_1', title: 'Scoping', order_index: 0 },
     // A second client, so the admin's client switcher has somewhere to go.
-    { id: 'ph_5', project_id: 'prj_2', title: 'Kickoff', order_index: 0 },
-    { id: 'ph_6', project_id: 'prj_2', title: 'Site Design', order_index: 1 },
-    { id: 'ph_7', project_id: 'prj_2', title: 'Build', order_index: 2 },
+    { id: 'ph_5', roadmap_id: 'rm_3', project_id: 'prj_2', title: 'Kickoff', order_index: 0 },
+    { id: 'ph_6', roadmap_id: 'rm_3', project_id: 'prj_2', title: 'Site Design', order_index: 1 },
+    { id: 'ph_7', roadmap_id: 'rm_3', project_id: 'prj_2', title: 'Build', order_index: 2 },
     // A third client with nothing started yet.
-    { id: 'ph_8', project_id: 'prj_3', title: 'Discovery', order_index: 0 }
+    { id: 'ph_8', roadmap_id: 'rm_4', project_id: 'prj_3', title: 'Discovery', order_index: 0 }
   ],
 
   // TABLE: blocks

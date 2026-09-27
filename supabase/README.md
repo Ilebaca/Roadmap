@@ -143,6 +143,45 @@ Some details worth knowing:
 
 ---
 
+## Clients, projects and phases
+
+Three levels, and the names in the database do not all match the names on
+screen:
+
+| On screen | In the database | Belongs to |
+|---|---|---|
+| Client | `projects` | — |
+| Project (a roadmap) | `roadmaps` | a client |
+| Phase | `phases` | a project |
+| Block | `blocks` | a phase |
+
+`public.projects` has meant the client since the very first migration — every
+policy, the Storage paths and `users.project_id` all key off it — so it keeps
+its name rather than a rename rippling through all of them. Part 6 adds
+`roadmaps` underneath it.
+
+A phase names its roadmap and nothing else; a trigger fills in which client
+that is, so the two can never drift apart. A new client gets its first roadmap
+from another trigger, so there is never a client with nowhere to put a phase.
+
+Visual Identity stays with the **client**, not the project: a brand belongs to
+the client rather than to one job.
+
+**Deleting** cascades all the way down. Removing a project takes its phases,
+their blocks, and those blocks' links and approvals. Removing a client takes
+its projects, everything in them, and its whole Visual Identity, and unbinds
+anyone signed in as that client — their login still works, they just land on
+the "no access" page until an admin adds them somewhere. The last client cannot
+be removed; there would be nothing left to open.
+
+One thing deleting does **not** reach: files already in Storage. Postgres
+cannot see into the bucket, so images and downloads belonging to a deleted
+client are orphaned rather than removed. They are unreachable through the app
+and cost a little space until somebody clears them out under **Storage** in the
+dashboard.
+
+---
+
 ## Putting it on a Webflow page
 
 The app lives at `mimant.studio/thequest`, which is a normal Webflow page. It

@@ -17,7 +17,7 @@ import { Lock, Plus } from './Icons'
  */
 export default function Timeline() {
   const store = useStore()
-  const { session, phases, blocks, gates, activePhaseId, actions, orientation } = store
+  const { session, phases, blocks, gates, activePhaseId, actions } = store
   const scrollRef = useRef(null)
   const [heights, setHeights] = useState({})
   const [drag, setDrag] = useState(null)
@@ -37,8 +37,11 @@ export default function Timeline() {
     setHeights((prev) => (prev[id] === h ? prev : { ...prev, [id]: h }))
   }, [])
 
-  const horizontal = orientation === 'horizontal'
-  const metrics = METRICS[orientation] ?? METRICS.vertical
+  // The line only runs across the page now. The layout still works in one
+  // abstract dimension, so this stays a single constant rather than being
+  // spread back through the geometry.
+  const horizontal = true
+  const metrics = METRICS.horizontal
 
   const layout = useMemo(
     () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin, metrics }),

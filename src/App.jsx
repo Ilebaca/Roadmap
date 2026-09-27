@@ -19,7 +19,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { session, accounts, loading, error, authReady, isLive, actions, orientation } = useStore()
+  const { session, accounts, loading, error, authReady, isLive, actions } = useStore()
   const [accountsOpen, setAccountsOpen] = useState(false)
   const [app, setApp] = useState('roadmap') // which icon on the rail is lit
 
@@ -113,10 +113,10 @@ function Shell() {
 
       {/* The icon rail sits with the left-hand list, not out at the window
           edge — same top, same bottom, one unit. */}
-      {/* With the date line running across the page, a column of phases down
-          the left eats the width the line needs, so the phases go on top and
-          the line gets the whole panel. */}
-      <div className={`workspace ${app === 'roadmap' && orientation === 'horizontal' ? 'is-stacked' : ''}`}>
+      {/* The date line runs across the page, so a column of phases down the
+          left would eat the width it needs: they go on top instead and the
+          line gets the whole panel. */}
+      <div className={`workspace ${app === 'roadmap' ? 'is-stacked' : ''}`}>
         <AppRail active={app} onSelect={setApp} />
         {app === 'roadmap' ? (
           <div className="workspace-main">

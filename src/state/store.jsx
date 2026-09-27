@@ -19,6 +19,10 @@ export function StoreProvider({ children }) {
   const [project, setProject] = useState(null)
   const [projects, setProjects] = useState([]) // every client this account can open
   const [activeProjectId, setActiveProjectId] = useState(null)
+  // A client runs several roadmaps; this is the one on screen. The UI calls a
+  // roadmap a "project", while `projects` above are the clients.
+  const [roadmaps, setRoadmaps] = useState([])
+  const [activeRoadmapId, setActiveRoadmapId] = useState(null)
   const [phases, setPhases] = useState([])
   const [blocks, setBlocks] = useState([])
   const [approvals, setApprovals] = useState([])
@@ -26,23 +30,6 @@ export function StoreProvider({ children }) {
   const [brandSections, setBrandSections] = useState([])
   const [brandAssets, setBrandAssets] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
-  // Which way the date line runs. A per-viewer preference, so it belongs in
-  // this browser rather than in anybody's row.
-  const [orientation, setOrientationState] = useState(() => {
-    try {
-      return localStorage.getItem('roadmap.orientation') === 'horizontal' ? 'horizontal' : 'vertical'
-    } catch {
-      return 'vertical' // private mode, blocked storage
-    }
-  })
-  const setOrientation = useCallback((next) => {
-    setOrientationState(next)
-    try {
-      localStorage.setItem('roadmap.orientation', next)
-    } catch {
-      /* not worth failing a click over */
-    }
-  }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   // Live: whether we have asked the backend who is signed in yet. Without it
@@ -117,15 +104,23 @@ export function StoreProvider({ children }) {
   }, [session])
 
   // --- load everything scoped to the active project --------------------------
-  const refresh = useCallback(async (who = session, projectId = activeProjectId) => {
+  const refresh = useCallback(
+    async (who = session, projectId = activeProjectId, roadmapId = activeRoadmapId) => {
     if (!who || !projectId) return
     setError(null)
-    // Every read is scoped to the project on screen. For a viewer that is the
-    // one project their user row is bound to; RLS enforces it for real later.
+    // Every read is scoped to the client on screen. For a viewer that is the
+    // one client their user row is bound to; RLS enforces it for real.
     try {
+      // Which roadmaps exist has to be settled before the phases can be asked
+      // for: a client that has just been switched to has none of ours.
+      const rms = await api.listRoadmaps(who, projectId)
+      const current = rms.some((r) => r.id === roadmapId) ? roadmapId : rms[0]?.id ?? null
+      setRoadmaps(rms)
+      setActiveRoadmapId(current)
+
       const [proj, ph, bl, ap, lk, bs, ba] = await Promise.all([
         api.getProject(who, projectId),
-        api.listPhases(who, projectId),
+        api.listPhases(who, current),
         api.listBlocks(who, projectId),
         api.listApprovals(who, projectId),
         api.listLinks(who, projectId),
@@ -133,8 +128,10 @@ export function StoreProvider({ children }) {
         api.listBrandAssets(who, projectId)
       ])
       setProject(proj)
+      // Blocks come back for the whole client; only this roadmap's are ours.
+      const mine = new Set(ph.map((x) => x.id))
+      setBlocks(bl.filter((b) => mine.has(b.phase_id)))
       setPhases(ph)
-      setBlocks(bl)
       setApprovals(ap)
       setLinks(lk)
       setBrandSections(bs)
@@ -147,7 +144,7 @@ export function StoreProvider({ children }) {
       setTimeout(() => setError(null), 4000)
       return null
     }
-  }, [session, activeProjectId])
+  }, [session, activeProjectId, activeRoadmapId])
 
   useEffect(() => {
     if (session?.pending) setLoading(false)
@@ -157,8 +154,8 @@ export function StoreProvider({ children }) {
     // above corrects it.
     if (session.role !== 'admin' && session.project_id !== activeProjectId) return
     setLoading(true)
-    refresh(session, activeProjectId)
-  }, [session, activeProjectId, refresh])
+    refresh(session, activeProjectId, activeRoadmapId)
+  }, [session, activeProjectId, activeRoadmapId, refresh])
 
   // Admins plan the whole project, so no phase is ever closed to them; the gate
   // is what releases work to the client.
@@ -249,7 +246,40 @@ export function StoreProvider({ children }) {
       selectProject(projectId) {
         if (projectId === activeProjectId) return
         setActivePhaseId(null)
+        // The new client's own roadmaps decide this; refresh picks the first.
+        setActiveRoadmapId(null)
         setActiveProjectId(projectId)
+      },
+
+      /** Switch between the roadmaps of the client already on screen. */
+      selectRoadmap(roadmapId) {
+        if (roadmapId === activeRoadmapId) return
+        setActivePhaseId(null)
+        setActiveRoadmapId(roadmapId)
+      },
+      async createRoadmap(name) {
+        const row = await api.createRoadmap(session, { project_id: activeProjectId, name })
+        setActivePhaseId(null)
+        setActiveRoadmapId(row.id)
+        return row
+      },
+      renameRoadmap(id, name) {
+        return run(() => api.renameRoadmap(session, id, name))
+      },
+      async deleteRoadmap(id) {
+        await api.deleteRoadmap(session, id)
+        setActivePhaseId(null)
+        // Whatever is left decides what to show; refresh falls back to the first.
+        setActiveRoadmapId(null)
+        await refresh(session, activeProjectId, null)
+      },
+      async deleteClient(projectId) {
+        await api.deleteClient(session, projectId)
+        const rest = await api.listProjects(session)
+        setProjects(rest)
+        setActivePhaseId(null)
+        setActiveRoadmapId(null)
+        setActiveProjectId(rest[0]?.id ?? null)
       },
       createBlock(input) {
         return run(() => api.createBlock(session, input))
@@ -261,7 +291,7 @@ export function StoreProvider({ children }) {
       createFirstBlock() {
         return run(async () => {
           const phase =
-            phases[0] ?? (await api.createPhase(session, { project_id: activeProjectId, title: 'Phase 1' }))
+            phases[0] ?? (await api.createPhase(session, { roadmap_id: activeRoadmapId, title: 'Phase 1' }))
           const start = todayISO()
           return api.createBlock(session, {
             phase_id: phase.id,
@@ -299,7 +329,7 @@ export function StoreProvider({ children }) {
         return run(() => api.deletePhase(session, id))
       },
       createPhase(title) {
-        return run(() => api.createPhase(session, { project_id: activeProjectId, title }))
+        return run(() => api.createPhase(session, { roadmap_id: activeRoadmapId, title }))
       },
       addBrandSection(input) {
         return run(() => api.createBrandSection(session, { project_id: activeProjectId, ...input }))
@@ -379,7 +409,7 @@ export function StoreProvider({ children }) {
       }
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [run, session, refresh, activeProjectId, phases]
+    [run, session, refresh, activeProjectId, activeRoadmapId, phases]
   )
   const actions = actionsRef
 
@@ -387,13 +417,13 @@ export function StoreProvider({ children }) {
     session,
     accounts,
     invites,
-    orientation,
-    setOrientation,
     authReady,
     isLive,
     project,
     projects,
     activeProjectId,
+    roadmaps,
+    activeRoadmapId,
     phases,
     blocks,
     approvals,
