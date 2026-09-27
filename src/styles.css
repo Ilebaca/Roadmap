@@ -734,13 +734,18 @@ button, input, select, textarea {
 .dot-row { position: absolute; left: var(--line-x); width: 0; height: 0; z-index: 3; }
 
 .date-label {
+  /* Placed on the canvas beside the line rather than inside a dot, since one
+     label can stand for two dots that are too close to write out separately. */
   position: absolute;
-  right: 24px;
-  transform: translateY(-50%);
+  left: var(--line-x);
+  margin-left: -24px;
+  transform: translate(-100%, -50%);
   text-align: right;
   display: flex; flex-direction: column; gap: 1px;
   white-space: nowrap;
+  z-index: 3;
 }
+.date-label.is-slot { opacity: 0.5; }
 .date-day { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .date-year { font-size: 10.5px; color: var(--muted-2); }
 
@@ -758,7 +763,6 @@ button, input, select, textarea {
 .dot-live { box-shadow: 0 0 0 4px var(--card), 0 0 0 8px var(--ring); border-color: var(--ink); }
 
 .kind-slot .dot { border-style: dashed; border-color: var(--line-2); }
-.kind-slot .date-label { opacity: 0.5; }
 
 /* ---------- phase markers on the line ------------------------------------- */
 .phase-marker {
@@ -1269,7 +1273,7 @@ button, input, select, textarea {
 @media (max-width: 1000px) {
   :host, :root { --block-w: 360px; --dot-gap: 22px; --label-ext: 60px; }
   .sidebar { width: 196px; }
-  .date-label { right: 18px; }
+  .date-label { margin-left: -18px; }
   .app-rail { width: 42px; }
   .rail-btn { width: 42px; height: 42px; }
   .brand-panel { padding: 22px; }
@@ -1314,8 +1318,9 @@ button, input, select, textarea {
   left: 0; top: var(--line-y);
 }
 .timeline-canvas.is-horizontal .date-label {
-  right: auto; left: 0; bottom: 16px;
-  transform: translateX(-50%);
+  left: 0; margin-left: 0;
+  top: calc(var(--line-y) - 16px);
+  transform: translate(-50%, -100%);
   text-align: center;
   align-items: center;
 }
@@ -1903,14 +1908,25 @@ button, input, select, textarea {
   }
   .account-form { grid-template-columns: 1fr; }
 
-  .timeline-canvas.is-horizontal { --line-y: 134px; }
+  /* Only the dates stand above the line here — the phase's name is on it —
+     so the band above is a two-line label and the today pill, and no more.
+     The space that band was wasting goes to the cards below. */
+  .timeline-canvas.is-horizontal { --line-y: 82px; }
+
+  /* The name sits ON the line, at the point the phase begins: an opaque chip
+     breaking the rule rather than a label floating in the space above it.
+     The layout leaves a stretch of line clear for it — measured, so a long
+     name pushes the phase's first date along instead of covering it. */
   .timeline-canvas.is-horizontal .phase-marker-chip {
-    /* clear of the two-line date label that stands between it and the line */
-    top: calc(var(--line-y) - 88px);
-    left: 8px;
+    top: var(--line-y);
+    left: 0;
+    transform: translateY(-50%);
     font-size: 9px;
     padding: 4px 9px;
   }
+  .timeline-canvas.is-horizontal .now-rule { top: 8px; }
+  .timeline-canvas.is-horizontal .now-label { top: 6px; }
+  .date-day { font-size: 11.5px; }
 
   .brand-panel { padding: 16px; }
   .img-grid.cols-2, .img-grid.cols-3 { grid-template-columns: 1fr; }

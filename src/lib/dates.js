@@ -26,6 +26,23 @@ export const formatDot = (iso) => {
   return { day: String(d.getUTCDate()).padStart(2, '0'), month: MONTHS[d.getUTCMonth()], year: d.getUTCFullYear() }
 }
 
+/**
+ * The text of one label on the date line. Dots close enough together to
+ * collide share a label, so it sometimes has to stand for more than one day:
+ * "30 Oct", "30 - 31 Oct", "30 Oct - 2 Nov".
+ */
+export const formatDotGroup = (isos) => {
+  const sorted = [...new Set(isos)].sort()
+  const a = formatDot(sorted[0])
+  if (sorted.length === 1) return { day: `${a.day} ${a.month}`, year: String(a.year) }
+  const b = formatDot(sorted.at(-1))
+  const sameMonth = a.month === b.month && a.year === b.year
+  return {
+    day: sameMonth ? `${a.day} \u2013 ${b.day} ${b.month}` : `${a.day} ${a.month} \u2013 ${b.day} ${b.month}`,
+    year: a.year === b.year ? String(a.year) : `${a.year} \u2013 ${b.year}`
+  }
+}
+
 export const formatLong = (iso) => {
   const d = parse(iso)
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`

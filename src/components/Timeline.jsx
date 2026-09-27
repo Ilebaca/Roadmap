@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
-import { buildLayout, dateFromDrag, EMPTY_SLOT_AT, METRICS, nowMarker } from '../lib/layout'
-import { addDays, daysBetween, formatDot, formatShort, todayISO } from '../lib/dates'
+import { buildLayout, dateFromDrag, dateLabels, EMPTY_SLOT_AT, METRICS, nowMarker } from '../lib/layout'
+import { addDays, daysBetween, formatDotGroup, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
 import { Lock, Plus } from './Icons'
@@ -15,7 +15,9 @@ import { Lock, Plus } from './Icons'
  * the same either way — buildLayout returns a position and a length along one
  * axis, and `place()` below is the only thing that knows which axis that is.
  */
-/** How much of the panel one task takes up. */
+/** How much of the panel one task takes up on a phone. On a desk the card
+ *  keeps its fixed width: a share of a wide window is a card wider than
+ *  anything in it, with a line of description running the whole way across. */
 const BLOCK_SHARE = 0.8
 
 /** The gap the stylesheet leaves between a card and its own end dot
@@ -76,17 +78,58 @@ export default function Timeline() {
     return () => ro.disconnect()
   }, [])
 
+  // The phase's name sits on the line, so the layout has to know how much line
+  // it takes up — and a phase can be called anything. Each chip reports its own
+  // width, which also covers a font loading in late and changing it.
+  const [heads, setHeads] = useState({})
+  const chipRO = useRef(null)
+  useEffect(() => () => chipRO.current?.disconnect(), [])
+
+  // Built on the first chip rather than in an effect: refs are attached before
+  // effects run, so an observer created in one would miss the chips already on
+  // screen and the first layout would use the fallback width for good.
+  const chipRef = useCallback((node) => {
+    if (typeof ResizeObserver === 'undefined') return
+    if (!chipRO.current) {
+      chipRO.current = new ResizeObserver((entries) => {
+        setHeads((prev) => {
+          let next = prev
+          for (const e of entries) {
+            const id = e.target.dataset.phase
+            // offsetWidth, not contentRect: the chip's padding and border are
+            // line it covers too, and leaving them out puts its own phase's
+            // first dot under its right-hand edge.
+            const w = e.target.offsetWidth
+            if (next[id] !== w) next = { ...next, [id]: w }
+          }
+          return next
+        })
+      })
+    }
+    const ro = chipRO.current
+    ro.observe(node)
+    return () => ro.unobserve(node)
+  }, [])
+
   const metrics = useMemo(() => {
-    const base = narrow ? METRICS.horizontalNarrow : METRICS.horizontal
+    if (!narrow) return METRICS.horizontal
     // Before the first measurement there is nothing to take a share of, so the
     // fixed width stands in for one frame.
-    if (!panelW) return base
-    return { ...base, MIN_BLOCK: Math.round(panelW * BLOCK_SHARE) + SLOT_PAD }
+    if (!panelW) return METRICS.horizontalNarrow
+    return { ...METRICS.horizontalNarrow, MIN_BLOCK: Math.round(panelW * BLOCK_SHARE) + SLOT_PAD }
   }, [narrow, panelW])
 
   const layout = useMemo(
-    () => buildLayout({ phases, blocks, gates, heights, drag, canCreate: admin, metrics }),
-    [phases, blocks, gates, heights, drag, admin, metrics]
+    () => buildLayout({ phases, blocks, gates, heights, phaseHeads: heads, drag, canCreate: admin, metrics }),
+    [phases, blocks, gates, heights, heads, drag, admin, metrics]
+  )
+
+  // Two dates a gap apart cannot both be written out, so the ones that would
+  // collide share a label. The width to keep clear is roughly how wide such a
+  // label gets — a range is longer than a single date.
+  const labels = useMemo(
+    () => dateLabels(layout.dots, narrow ? 88 : 104),
+    [layout.dots, narrow]
   )
 
   /** A position and a length on the line -> the CSS for whichever way it runs. */
@@ -247,18 +290,24 @@ export default function Timeline() {
           </>
         )}
 
-        {/* dots + their date labels (label left of the dot) */}
-        {layout.dots.map((dot) => {
-          const { day, month, year } = formatDot(dot.date)
+        {/* The dots sit on the line; their labels are placed apart from them,
+            because a label can stand for more than one dot. */}
+        {layout.dots.map((dot) => (
+          <div key={dot.key} className={`dot-row kind-${dot.kind}`} style={place(dot.at)}>
+            <span className={`dot ${dot.state ? `dot-${dot.state}` : ''} ${drag?.blockId === dot.blockId ? 'dot-live' : ''}`} />
+          </div>
+        ))}
+
+        {labels.map((label) => {
+          const { day, year } = formatDotGroup(label.dates)
           return (
-            <div key={dot.key} className={`dot-row kind-${dot.kind}`} style={place(dot.at)}>
-              <div className="date-label">
-                <span className="date-day">
-                  {day} {month}
-                </span>
-                <span className="date-year">{year}</span>
-              </div>
-              <span className={`dot ${dot.state ? `dot-${dot.state}` : ''} ${drag?.blockId === dot.blockId ? 'dot-live' : ''}`} />
+            <div
+              key={label.key}
+              className={`date-label ${label.slot ? 'is-slot' : ''}`}
+              style={place(label.at)}
+            >
+              <span className="date-day">{day}</span>
+              <span className="date-year">{year}</span>
             </div>
           )
         })}
@@ -267,7 +316,7 @@ export default function Timeline() {
           if (row.type === 'phase') {
             return (
               <div key={row.key} className={`phase-marker ${row.phase.id === activePhaseId ? 'is-active' : ''}`} style={place(row.at, row.len)}>
-                <span className="phase-marker-chip">
+                <span className="phase-marker-chip" ref={chipRef} data-phase={row.phase.id}>
                   {!row.gate.unlocked && <Lock width="12" height="12" />}
                   {row.phase.title}
                   {/* Open to the admin, but not released to the client yet. */}

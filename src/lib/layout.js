@@ -58,6 +58,12 @@ export const HORIZONTAL_NARROW = {
   MIN_BLOCK: 252,
   GAP_AFTER_BLOCK: 34,
   PHASE_HEADER: 72,
+  /* On a phone the phase's name sits ON the line, so the stretch of line
+     before its first date has to be long enough to hold the chip and still
+     leave a gap before that dot. The chip is measured, since a phase can be
+     called anything; this is only what is added to whatever it turns out to
+     be. On a desk the name stands above the line and needs no room here. */
+  PHASE_HEAD_PAD: 22,
   LOCKED_BANNER: 220,
   SLOT: 104,
   PHASE_GAP: 24,
@@ -93,9 +99,10 @@ export function blockExtent(measured, m) {
  * @param heights  { [blockId]: measured content length in px }
  * @param drag     optional live preview: { blockId, start_date, end_date }
  * @param canCreate whether to draw the dashed "+" slots (admin only)
+ * @param phaseHeads { [phaseId]: measured width of the phase's name chip }
  * @param metrics  VERTICAL or HORIZONTAL — the only thing that differs
  */
-export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, canCreate = false, metrics = VERTICAL }) {
+export function buildLayout({ phases, blocks, gates, heights = {}, phaseHeads = {}, drag = null, canCreate = false, metrics = VERTICAL }) {
   const m = metrics
   const rows = []
   const dots = []
@@ -111,8 +118,12 @@ export function buildLayout({ phases, blocks, gates, heights = {}, drag = null, 
     const gate = gates[phase.id] ?? { unlocked: false, complete: false }
     const start = at
 
-    rows.push({ key: `ph-${phase.id}`, type: 'phase', phase, gate, at, len: m.PHASE_HEADER })
-    at += m.PHASE_HEADER
+    // Long enough for the name to sit on the line without reaching the first
+    // dot of the phase. Until the chip has been measured the fixed minimum
+    // stands in, which is also all the vertical layout ever needed.
+    const head = Math.max(m.PHASE_HEADER, (phaseHeads[phase.id] ?? 0) + (m.PHASE_HEAD_PAD ?? 0))
+    rows.push({ key: `ph-${phase.id}`, type: 'phase', phase, gate, at, len: head })
+    at += head
 
     if (!gate.unlocked) {
       // Locked phases keep the line running but show nothing of their contents.
@@ -176,6 +187,39 @@ function phaseStartGuess(ordered, phase, blocks, chainFloor) {
   const earlier = ordered.filter((p) => p.order_index < phase.order_index).map((p) => p.id)
   const ends = blocks.filter((b) => earlier.includes(b.phase_id)).map((b) => b.end_date).sort()
   return ends.length ? addDays(ends.at(-1), 1) : todayISO()
+}
+
+/**
+ * The labels to draw for a run of dots, with the clashes merged.
+ *
+ * Dots come in pairs — a block's start and its end — and only a gap separates
+ * one block's end from the next one's start, so two labels there will always
+ * be on top of each other. Rather than dropping one and losing the date, dots
+ * too close to label separately share a label spanning them: one date if they
+ * fall on the same day, a range if they do not.
+ *
+ * Grouping is measured from the first dot of a group, never the last, so a
+ * long run of near dots cannot chain into one label wider than the gap.
+ */
+export function dateLabels(dots, minGap) {
+  const groups = []
+  for (const dot of [...dots].sort((a, b) => a.at - b.at)) {
+    const last = groups.at(-1)
+    if (last && dot.at - last.from <= minGap) {
+      last.to = dot.at
+      last.dates.push(dot.date)
+      // A group is only the faint "nothing scheduled" grey if every dot in it is.
+      last.slot = last.slot && dot.kind === 'slot'
+    } else {
+      groups.push({ from: dot.at, to: dot.at, dates: [dot.date], slot: dot.kind === 'slot' })
+    }
+  }
+  return groups.map((g) => ({
+    key: `lb-${g.from}-${g.dates[0]}`,
+    at: (g.from + g.to) / 2,
+    dates: g.dates,
+    slot: g.slot
+  }))
 }
 
 /**
