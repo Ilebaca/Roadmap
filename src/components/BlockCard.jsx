@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatRange, formatStamp } from '../lib/dates'
-import { Check, Link as LinkIcon, Pen, Plus, Trash, X } from './Icons'
+import { Check, Link as LinkIcon, Pen, Plus, Trash, X, Lock } from './Icons'
 import StateSelect from './StateSelect'
 import OwnerSwitch from './OwnerSwitch'
 import ConfirmDialog from './ConfirmDialog'
@@ -16,6 +16,7 @@ import ConfirmDialog from './ConfirmDialog'
  */
 export default function BlockCard({
   block,
+  standing = 'active',
   extent,
   horizontal = false,
   minStart,
@@ -60,10 +61,21 @@ export default function BlockCard({
   }, [block.id, onMeasure, horizontal])
 
   const locked = block.locked
+  // Not started because its turn has not come. Distinct from `locked`, which
+  // means signed off and closed.
+  const waiting = standing === 'future'
+
+  // Work that has not started reads as To Do whatever the row happens to say.
+  // A block can be pushed back into the queue — by a new block landing in
+  // front of it, or by an earlier approval being withdrawn — and it would
+  // otherwise sit there claiming to be In Progress while nobody can touch it.
+  // The stored state is left alone, so it picks up where it left off when its
+  // turn comes round again.
+  const shownState = waiting ? 'todo' : block.state
 
   return (
     <article
-      className={`block state-${block.state} ${locked ? 'is-locked' : ''} ${dragging ? 'is-dragging' : ''}`}
+      className={`block state-${shownState} ${locked ? 'is-locked' : ''} ${waiting ? 'is-waiting' : ''} ${dragging ? 'is-dragging' : ''}`}
       style={horizontal ? undefined : { height: extent }}
     >
       {canEdit && <div className="resize-handle top" onPointerDown={(e) => onResizeStart(e, 'top')} title="Drag to change the start date" />}
@@ -152,7 +164,7 @@ export default function BlockCard({
             chip read-only for a viewer. */}
         <div className="state-row">
           <StateSelect
-            value={block.state}
+            value={shownState}
             editable={canSetState}
             onChange={(next) => onState(block.id, next)}
           />
@@ -164,6 +176,13 @@ export default function BlockCard({
             editable={canEdit}
             onChange={(next) => onPatch(block.id, { owner: next })}
           />
+          {/* Why the state cannot be moved: it is not this block's turn. */}
+          {waiting && !locked && (
+            <span className="waiting-note">
+              <Lock width="11" height="11" />
+              Starts when the one before it is approved
+            </span>
+          )}
         </div>
 
         {(links.length > 0 || canEdit) && (

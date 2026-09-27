@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { api, isLive } from '../services/dataClient'
-import { computePhaseGates, isAdmin } from '../lib/permissions'
+import { computeBlockGates, computePhaseGates, isAdmin } from '../lib/permissions'
 import { addDays, todayISO } from '../lib/dates'
 
 /**
@@ -163,6 +163,10 @@ export function StoreProvider({ children }) {
     () => computePhaseGates(phases, blocks, { unlockAll: isAdmin(session) }),
     [phases, blocks, session]
   )
+
+  // Past, active or future for each block. The same for everyone: the queue is
+  // the work's own shape, not a thing shown to one side and not the other.
+  const blockGates = useMemo(() => computeBlockGates(phases, blocks), [phases, blocks])
 
   // Keep the active tab valid: open on the phase the work is actually in, and
   // bounce off any tab that has become locked again.
@@ -431,6 +435,7 @@ export function StoreProvider({ children }) {
     brandSections,
     brandAssets,
     gates,
+    blockGates,
     activePhaseId,
     loading,
     error,

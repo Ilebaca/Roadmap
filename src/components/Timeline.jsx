@@ -17,7 +17,7 @@ import { Lock, Plus } from './Icons'
  */
 export default function Timeline() {
   const store = useStore()
-  const { session, phases, blocks, gates, activePhaseId, actions } = store
+  const { session, phases, blocks, gates, blockGates, activePhaseId, actions } = store
   const scrollRef = useRef(null)
   const [heights, setHeights] = useState({})
   const [drag, setDrag] = useState(null)
@@ -226,8 +226,10 @@ export default function Timeline() {
 
           const block = row.block
           const editable = canEditBlock(session, block)
+          // Where this block sits in the queue: past, active, or still to come.
+          const standing = blockGates[block.id] ?? 'active'
           return (
-            <div key={row.key} className="block-row">
+            <div key={row.key} className={`block-row is-${standing}`}>
               {/* The rail on the line ties the block's start dot to its end dot. */}
               <div className="block-extent" style={place(row.at, row.len)} />
               {editable && (
@@ -245,8 +247,9 @@ export default function Timeline() {
                 horizontal={horizontal}
                 minStart={row.minStart}
                 canEdit={editable}
-                canSetState={canSetState(session, block)}
-                canApprove={canApprove(session, block)}
+                standing={standing}
+                canSetState={canSetState(session, block, standing)}
+                canApprove={canApprove(session, block, standing)}
                 canUnapprove={canUnapprove(session, block)}
                 approval={store.approvalFor(block.id)}
                 approverEmail={store.userById(store.approvalFor(block.id)?.approved_by)?.email}

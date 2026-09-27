@@ -182,6 +182,35 @@ dashboard.
 
 ---
 
+## One block at a time
+
+A roadmap is a queue, not a board. The work runs in order, one job is live, and
+finishing it is what starts the next:
+
+- **past** — approved, and behind the live one. Faded, but its links stay
+  bright and clickable: a signed-off block is exactly the one whose files
+  people go back to.
+- **active** — the first block that is not approved. The only one whose state
+  moves, and the only one that can be approved.
+- **future** — everything after it. Dashed and held back until its turn.
+
+Nothing is stored for this. It falls out of which blocks are approved, so it
+cannot drift from the truth or need repairing, and approving the live block
+makes the next one live by arithmetic alone.
+
+The app hides the controls on anything but the live block, but that is only a
+drawing. `approve_block()` is a function that anyone signed in can call with
+any id, so part 8 puts the same rule inside it: put a later block into Review
+and its client still cannot sign it off while the work in front is open. Both
+use the order the timeline draws in — phase, then start date, then position —
+so what the queue looks like and what it enforces cannot diverge.
+
+Editing content is a separate question. An admin plans the whole roadmap, so
+titles, dates, descriptions and links stay editable on any block. It is only
+the *progress* of the work that is one-at-a-time.
+
+---
+
 ## Whose job a block is
 
 Every block carries `owner`, either `studio` or `client`, defaulting to the

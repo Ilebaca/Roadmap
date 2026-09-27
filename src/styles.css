@@ -1592,3 +1592,28 @@ button, input, select, textarea {
   background: var(--card-2); border: 1px solid var(--line); color: var(--muted);
 }
 .owner-chip.is-client { color: var(--ink); border-color: var(--line-2); }
+
+/* ---------- the queue: past, active, future ------------------------------- */
+/* A block whose turn has not come. Not faded like a finished one — that would
+   say "done"; held back instead, so the live block is the only lit thing on
+   the line. Its links stay readable: a brief written now is worth reading
+   before the work starts. */
+.block.is-waiting {
+  background: var(--card);
+  border-style: dashed;
+  border-color: var(--line);
+  box-shadow: none;
+}
+.block.is-waiting .block-inner > * { opacity: 0.55; transition: opacity 0.15s; }
+.block.is-waiting .block-inner > .link-shelf { opacity: 1; }
+.block.is-waiting:hover .block-inner > * { opacity: 0.9; }
+.block.is-waiting:hover .block-inner > .link-shelf { opacity: 1; }
+
+/* The rail on the line, and the dot, say the same thing at a glance. */
+.block-row.is-future .block-extent { opacity: 0.4; }
+.block-row.is-past .block-extent { opacity: 0.55; }
+
+.waiting-note {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; color: var(--muted-2);
+}

@@ -68,4 +68,16 @@ select 'block owner column',
        case when exists (
          select 1 from information_schema.columns
           where table_schema='public' and table_name='blocks' and column_name='owner'
-       ) then 'ok' else 'run part 7 again' end;
+       ) then 'ok' else 'run part 7 again' end
+union all
+select 'approve in order',
+       case when exists (
+         select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname='public' and p.proname='approve_block'
+            and pg_get_functiondef(p.oid) like '%comes first%'
+       ) then '1 of 1' else '0 of 1' end,
+       case when exists (
+         select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname='public' and p.proname='approve_block'
+            and pg_get_functiondef(p.oid) like '%comes first%'
+       ) then 'ok' else 'run part 8 again' end;
