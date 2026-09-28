@@ -41,6 +41,11 @@ export const HORIZONTAL = {
   MIN_BLOCK: 320,
   GAP_AFTER_BLOCK: 56,
   PHASE_HEADER: 108,
+  /* The phase's name sits ON the line, so the stretch of line before its first
+     date has to be long enough to hold the chip and still leave a gap before
+     that dot. The chip is measured, since a phase can be called anything;
+     this is only what is added to whatever it turns out to be. */
+  PHASE_HEAD_PAD: 30,
   LOCKED_BANNER: 300,
   SLOT: 140,
   PHASE_GAP: 36,
@@ -58,11 +63,7 @@ export const HORIZONTAL_NARROW = {
   MIN_BLOCK: 252,
   GAP_AFTER_BLOCK: 34,
   PHASE_HEADER: 72,
-  /* On a phone the phase's name sits ON the line, so the stretch of line
-     before its first date has to be long enough to hold the chip and still
-     leave a gap before that dot. The chip is measured, since a phase can be
-     called anything; this is only what is added to whatever it turns out to
-     be. On a desk the name stands above the line and needs no room here. */
+  /* Less of it: the chip is smaller here, and so is everything around it. */
   PHASE_HEAD_PAD: 22,
   LOCKED_BANNER: 220,
   SLOT: 104,

@@ -1341,11 +1341,15 @@ button, input, select, textarea {
 }
 
 
+/* The name sits ON the line, at the point the phase begins: an opaque chip
+   breaking the rule rather than a label floating in the space above it. The
+   layout keeps a stretch of line clear for it — measured, so a long name
+   pushes the phase's first date along instead of covering it. */
 .timeline-canvas.is-horizontal .phase-marker-chip {
-  /* clear of the date labels, which stand between the chip and the line */
   position: absolute;
-  top: calc(var(--line-y) - 96px);
-  left: 12px;
+  top: var(--line-y);
+  left: 0;
+  transform: translateY(-50%);
   white-space: nowrap; /* a two-word phase is still one line */
 }
 
@@ -1917,14 +1921,8 @@ button, input, select, textarea {
      The space that band was wasting goes to the cards below. */
   .timeline-canvas.is-horizontal { --line-y: 82px; }
 
-  /* The name sits ON the line, at the point the phase begins: an opaque chip
-     breaking the rule rather than a label floating in the space above it.
-     The layout leaves a stretch of line clear for it — measured, so a long
-     name pushes the phase's first date along instead of covering it. */
+  /* Smaller, but in the same place on the line as it is on a desk. */
   .timeline-canvas.is-horizontal .phase-marker-chip {
-    top: var(--line-y);
-    left: 0;
-    transform: translateY(-50%);
     font-size: 9px;
     padding: 4px 9px;
   }
