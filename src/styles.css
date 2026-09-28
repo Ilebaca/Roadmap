@@ -920,34 +920,22 @@ button, input, select, textarea {
 .block.state-in_progress,
 .block.state-on_hold,
 .block.state-review {
-  border-color: var(--tone-br);
-  /* A bar along the edge the card hangs from, in the state's own gradient:
-     the loudest colour in the app, on the one card you are meant to be
-     looking at. Painted as a background rather than an inset shadow or a
-     pseudo-element so it can be a gradient and still stay put when a long
-     card scrolls inside itself. */
-  /* A breath of the state's colour, no more. The card stays paper and the
-     bar along its edge does the talking — a fully tinted panel is the pastel
-     look, and it drags the text down with it. */
-  /* Barely tinted. The colour on this card is concentrated in the corner the
-     bar starts from; spread evenly across the whole surface it is a pastel
-     panel again, and it drags the headline down with it. */
-  background-color: color-mix(in srgb, var(--tone-bg) 16%, var(--card));
-  /* Two layers: the bar on top of the card, and under the words a wide soft
-     bleed of the same colour thrown from the corner the bar starts at — as
-     though the bar were the only lit edge and the colour were coming off it.
-     It is the one card in the app that gets this, because it is the one card
-     you are meant to be working on. */
-  background-image:
-    var(--tone-grad),
-    radial-gradient(300px 190px at -4% -10%, var(--tone-bleed), transparent 64%);
-  background-repeat: no-repeat, no-repeat;
-  background-size: 100% 3px, auto;
-  background-position: top left, top left;
+  /* The card itself is the same paper as every other card. It has no selected
+     state, and it does not need one: only one task can be live at a time, the
+     chip inside it already names the state, and the bar along its edge says it
+     again in colour. Tinting the body on top of that was a third telling, and
+     on a phone it was worse than redundant — a tap leaves :hover stuck, so the
+     card went grey and stayed grey for as long as you were working in it.
+
+     A bar along the edge the card hangs from, in the state's own gradient.
+     Painted as a background rather than an inset shadow or a pseudo-element so
+     it can be a gradient and still stay put when a long card scrolls inside
+     itself. */
+  background-image: var(--tone-grad);
+  background-repeat: no-repeat;
+  background-size: 100% 3px;
+  background-position: top left;
 }
-.block.state-in_progress:hover,
-.block.state-on_hold:hover,
-.block.state-review:hover { background: var(--hover); }
 
 /* An approved block is done with: grey, and faded back so the live work
    stands out against it.
@@ -961,7 +949,6 @@ button, input, select, textarea {
    illegible in a way it never did on a dark panel. */
 .block.is-locked .block-inner > * { opacity: 0.86; transition: opacity var(--dur-2) var(--ease); }
 .block.is-locked .block-inner > .link-shelf { opacity: 1; }
-.block.is-locked:hover .block-inner > * { opacity: 1; }
 .block.is-locked:hover .block-inner > .link-shelf { opacity: 1; }
 
 .block.is-dragging { background: var(--card-2); box-shadow: var(--shadow-lg); }
@@ -1053,27 +1040,22 @@ button, input, select, textarea {
 .tone-todo, .state-todo {
   --tone-fg: #4A4842; --tone-bg: #E6E1D4; --tone-dot: #8C897F; --tone-br: transparent;
   --tone-grad: linear-gradient(104deg, #6F6C64 0%, #93908A 52%, #B3AFA4 100%);
-  --tone-bleed: rgba(140, 137, 127, 0.20);
 }
 .tone-in_progress, .state-in_progress {
   --tone-fg: #0F4C81; --tone-bg: #DAE6F3; --tone-dot: #1B4FA8; --tone-br: transparent;
   --tone-grad: linear-gradient(104deg, #131F63 0%, #1B5FC4 46%, #14B8C8 100%);
-  --tone-bleed: rgba(27, 79, 168, 0.22);
 }
 .tone-on_hold, .state-on_hold {
   --tone-fg: #86490A; --tone-bg: #F2E4CE; --tone-dot: #A8590C; --tone-br: transparent;
   --tone-grad: linear-gradient(104deg, #8A3D05 0%, #C8730F 48%, #F0B84A 100%);
-  --tone-bleed: rgba(168, 89, 12, 0.22);
 }
 .tone-review, .state-review {
   --tone-fg: #5B2192; --tone-bg: #E8DEF3; --tone-dot: #64259E; --tone-br: transparent;
   --tone-grad: linear-gradient(104deg, #38127A 0%, #7A22A6 46%, #D02E86 100%);
-  --tone-bleed: rgba(100, 37, 158, 0.20);
 }
 .tone-approved, .state-approved {
   --tone-fg: #1C5C33; --tone-bg: #DCEAD7; --tone-dot: #1E6B37; --tone-br: transparent;
   --tone-grad: linear-gradient(104deg, #0E4623 0%, #2C7B33 48%, #86B01C 100%);
-  --tone-bleed: rgba(30, 107, 55, 0.20);
 }
 
 .state-row { display: flex; margin-top: 2px; }
@@ -1346,9 +1328,12 @@ button, input, select, textarea {
   padding: 5px 0; min-height: 30px;
 }
 .account-email {
-  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
   display: flex; align-items: center; gap: 7px;
 }
+/* The address gives way, and the "you" tag beside it never does. */
+.account-address { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-row .account-you { flex: none; }
 /* Marks the row you are signed in as, whose revoke button is disabled. */
 .account-you {
   font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -1955,10 +1940,13 @@ button, input, select, textarea {
   }
   /* The scrim can be lighter once the dialog does its own frosting — the point
      of it is to push the page back, and the glass is already doing that. */
+  /* Right back. Three pixels of blur leaves the page behind legible enough to
+     compete with the dialog in front of it; at eighteen it is unmistakably a
+     backdrop and the dialog is the only thing there is to read. */
   .modal-backdrop {
-    background: color-mix(in srgb, var(--scrim) 62%, transparent);
-    -webkit-backdrop-filter: blur(3px);
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--scrim) 72%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(115%);
+    backdrop-filter: blur(18px) saturate(115%);
   }
 }
 
@@ -2231,10 +2219,15 @@ button, input, select, textarea {
   .project-menu { min-width: 0; width: calc(100vw - 2 * var(--stage-margin) - 60px); }
   .client-menu { max-width: calc(100vw - 2 * var(--stage-margin)); }
 
-  /* A dialog on a phone is the screen, not a box floating in it. */
+  /* A dialog on a phone is the screen, not a box floating in it.
+     Sized to the space it is given rather than to the window: the backdrop
+     has padding of its own, and a dialog measured against the whole window
+     is wider than the box it is being centred in — it hung off the right
+     edge by exactly the difference. */
+  .modal-backdrop { padding: 10px; }
   .modal, .modal-wide {
-    width: calc(100vw - 20px);
-    max-height: calc(100dvh - 40px);
+    width: 100%;
+    max-height: 100%;
     overflow-y: auto;
   }
   .account-form { grid-template-columns: 1fr; }

@@ -130,7 +130,7 @@ export default function AccountsModal({ onClose }) {
             <h4>Waiting to sign up</h4>
             {pending.map((i) => (
               <div key={i.id} className="account-row">
-                <span className="account-email">{i.email}</span>
+                <span className="account-email"><span className="account-address">{i.email}</span></span>
                 <span className="pill pill-quiet">{i.role === 'admin' ? 'admin' : projectName(i.project_id)}</span>
                 <button
                   className="icon-btn"
@@ -149,7 +149,11 @@ export default function AccountsModal({ onClose }) {
           {accounts.map((u) => (
             <div key={u.id} className="account-row">
               <span className="account-email">
-                {u.email}
+                {/* The address in its own box so it can be the thing that gets
+                    cut short: a bare text node in a flex row has nowhere to
+                    put an ellipsis, and a long address simply ran out of
+                    room mid-word. */}
+                <span className="account-address">{u.email}</span>
                 {u.id === session?.id && <span className="account-you">you</span>}
               </span>
               <span className={`pill ${u.role === 'admin' ? '' : 'pill-quiet'}`}>
