@@ -108,20 +108,20 @@ export default function BlockCard({
           <div className={`block-dates ${editingDates ? 'is-editing' : ''}`}>
             {editingDates ? (
               <>
-                <input
-                  type="date"
+                <DateField
                   value={block.start_date}
                   min={minStart || undefined}
                   max={block.end_date}
-                  onChange={(e) => e.target.value && onPatch(block.id, { start_date: e.target.value })}
+                  label="Start date"
+                  onChange={(v) => onPatch(block.id, { start_date: v })}
                   title={minStart ? `Cannot start before ${minStart} — the block in front finishes then` : undefined}
                 />
                 <span className="arrow">–</span>
-                <input
-                  type="date"
+                <DateField
                   value={block.end_date}
                   min={block.start_date}
-                  onChange={(e) => e.target.value && onPatch(block.id, { end_date: e.target.value })}
+                  label="Deadline"
+                  onChange={(v) => onPatch(block.id, { end_date: v })}
                 />
                 <button className="icon-btn" onClick={() => setEditingDates(false)} title="Done">
                   <Check width="13" height="13" />
@@ -391,5 +391,36 @@ function AutoTextarea({ value, onChange, onCommit, placeholder }) {
       onChange={(e) => onChange(e.target.value)}
       onBlur={onCommit}
     />
+  )
+}
+
+/**
+ * One date in the card's corner.
+ *
+ * A native date field is the right control — on a phone it opens the system
+ * picker, which nothing hand-built will beat — but it is built for a form, not
+ * for the corner of a card. It insists on room for `dd/mm/yyyy`, a picker
+ * button and a gap around each of day, month and year, and it holds that width
+ * whether or not it needs it: two of them plus a confirm came to more than the
+ * card had, so the bin was pushed onto a line of its own and the fields still
+ * had visible slack inside them.
+ *
+ * So the field shows our own text — the same "11 Sep" the card shows when it
+ * is not being edited — and the real input lies over it, invisible, filling
+ * exactly that box. Tapping it opens the same picker; the width is ours.
+ */
+function DateField({ value, min, max, label, title, onChange }) {
+  return (
+    <span className="date-field" title={title}>
+      <span className="date-field-text">{formatShort(value)}</span>
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        aria-label={label}
+        onChange={(e) => e.target.value && onChange(e.target.value)}
+      />
+    </span>
   )
 }

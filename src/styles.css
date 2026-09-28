@@ -970,31 +970,30 @@ button, input, select, textarea {
 .block-span { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .block-dates.is-editing {
   background: var(--card-2); border: 1px solid transparent;
-  border-radius: var(--radius-sm); padding: 2px 3px 2px 6px;
-  gap: 3px; min-width: 0;
+  border-radius: var(--radius-sm); padding: 3px 4px 3px 8px;
+  gap: 6px; min-width: 0;
 }
-/* Two whole dates, an en dash and a confirm, on one line inside a card that is
-   a fraction of a phone. A native date field is built for a form, not for the
-   corner of a card: it carries its own padding, a wide picker button and a
-   gap around each of day, month and year, and all of it added up to more than
-   the card had. Everything that is chrome rather than digits is squeezed; the
-   digits themselves stay at a readable size. */
-.block-dates input[type='date'] {
-  background: transparent; border: 0; font-size: 11px; color: var(--text);
-  font-variant-numeric: tabular-nums;
-  padding: 1px 0; cursor: pointer; color-scheme: light;
-  min-width: 0; flex: 0 1 auto;
+
+/* Our text, with the real control lying over it. The input is out of flow, so
+   whatever width it would like to be it cannot push the row open; the box is
+   the size of the date as we write it. */
+.date-field {
+  position: relative;
+  display: inline-flex; align-items: center;
+  font-size: 11.5px; color: var(--text);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.block-dates input[type='date']::-webkit-datetime-edit { padding: 0; }
-.block-dates input[type='date']::-webkit-datetime-edit-fields-wrapper { padding: 0; }
-.block-dates input[type='date']::-webkit-datetime-edit-day-field,
-.block-dates input[type='date']::-webkit-datetime-edit-month-field,
-.block-dates input[type='date']::-webkit-datetime-edit-year-field { padding: 0 1px; }
-.block-dates input[type='date']::-webkit-calendar-picker-indicator {
-  padding: 0; margin: 0 0 0 2px; width: 11px; height: 11px; opacity: 0.55;
+.date-field-text { pointer-events: none; }
+.date-field input[type='date'] {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0; border: 0; padding: 0; margin: 0;
+  font: inherit; cursor: pointer; color-scheme: light;
 }
-.block-dates input[type='date']:focus { outline: none; }
-.block-dates.is-editing .icon-btn { padding: 3px; min-width: 0; min-height: 0; }
+/* It is invisible, so the box under it has to say when it has focus. */
+.date-field:focus-within { border-radius: var(--radius-xs); box-shadow: 0 0 0 4px var(--ring); }
+.date-field:focus-within .date-field-text { color: var(--ink); font-weight: 550; }
+
 .block-dates .arrow { color: var(--muted-2); font-size: 11px; }
 
 .icon-btn {
@@ -2123,13 +2122,9 @@ button, input, select, textarea {
   /* iOS offers to select or copy on a long press otherwise, which fights it. */
   .phase-tab { -webkit-touch-callout: none; user-select: none; }
 
-  /* The date editor is the one row where a 34px target will not go: two whole
-     dates and a confirm, on a card a fraction of a phone wide, next to the
-     bin. The fields are the target here — tapping one opens the picker, which
-     is why the picker buttons can go entirely — so the confirm is the only
-     thing that has to shrink, and it still clears 26px. */
-  .block-dates input[type='date']::-webkit-calendar-picker-indicator { display: none; }
-  .block-dates.is-editing .icon-btn { min-width: 26px; min-height: 26px; padding: 3px; }
+  /* A date is its own tap target now — the whole box opens the picker — so the
+     confirm beside it is the only thing that needs a hand-sized one. */
+  .date-field { min-height: 30px; }
 
   /* A finger is not a cursor. The primary actions get a proper target; the
      icon buttons stay smaller, since they sit in dense rows and are the
@@ -2276,21 +2271,6 @@ button, input, select, textarea {
   /* Only the dates stand above the line here — the phase's name is on it —
      so the band above is a two-line label and the today pill, and no more.
      The space that band was wasting goes to the cards below. */
-  /* The last few pixels the date editor needs to share its line with the bin.
-     The bin only shrinks while the editor is open, so the everyday target is
-     untouched; the digits stop at 10.5px, which is the floor for something you
-     have to read a date off. */
-  .block-dates input[type='date'] { font-size: 10.5px; }
-  /* The gap a browser leaves around each of day, month and year: six of them
-     across two fields, and nothing but air. */
-  .block-dates input[type='date']::-webkit-datetime-edit-day-field,
-  .block-dates input[type='date']::-webkit-datetime-edit-month-field,
-  .block-dates input[type='date']::-webkit-datetime-edit-year-field { padding: 0; }
-  .block-dates.is-editing { padding: 2px 2px 2px 4px; gap: 2px; }
-  .block-head:has(.block-dates.is-editing) > .icon-btn.danger {
-    min-width: 26px; min-height: 26px;
-  }
-
   .timeline-canvas.is-horizontal { --line-y: 82px; }
 
   /* Smaller, but in the same place on the line as it is on a desk. */
