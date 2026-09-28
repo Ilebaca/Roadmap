@@ -2066,13 +2066,27 @@ button, input, select, textarea {
     gap: 8px;
     padding: 8px var(--stage-margin);
   }
-  /* Who the client is comes first: the name keeps a floor and the buttons
-     give way, rather than the row balancing itself down to a logo and a
-     chevron. */
-  .client-id-wrap, .client-id { flex: 1 1 auto; min-width: 104px; }
+  /* The box hugs what is in it. It was set to grow into whatever width the
+     row had left, so on a phone it ran most of the way across and left the
+     chevron sitting in the middle of a mostly empty box — the arrow reads as
+     the end of the name, and there was a hand's width of nothing after it.
+     Hugging puts the chevron at the edge, which is the same thing said once.
+
+     The name still gives way first if it has to: it can shrink to nothing and
+     ellipsise, so a long client never pushes Accounts and Sign out off the
+     row. */
+  .client-id-wrap, .client-id { flex: 0 1 auto; min-width: 0; }
   .client-name-input, .client-name {
-    min-width: 0; max-width: 100%;
+    min-width: 0; max-width: 46vw;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* An input has no content width of its own, so it is either a guessed
+     number of characters or this. Where it is not supported the fixed width
+     below stands, narrower here than on a desk. */
+  .client-name-input { width: 13ch; }
+  @supports (field-sizing: content) {
+    .client-name-input,
+    .client-name-input:focus { field-sizing: content; width: auto; }
   }
   .topbar-right { gap: 6px; flex: 0 1 auto; min-width: 0; }
   .accounts-btn .btn-label { display: none; }
