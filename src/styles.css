@@ -1284,7 +1284,7 @@ button, input, select, textarea {
 .modal-backdrop {
   position: fixed; inset: 0; background: var(--scrim);
   display: grid; place-items: center; z-index: 50; padding: 24px;
-  animation: scrim-in var(--dur-2) var(--ease) both;
+  animation: scrim-in var(--dur-2) var(--ease) backwards;
 }
 .modal {
   width: min(560px, 100%); max-height: 84vh; overflow-y: auto;
@@ -1923,7 +1923,8 @@ button, input, select, textarea {
    ========================================================================= */
 .client-menu, .project-menu, .state-menu, .tpl-picker,
 .modal, .modal.confirm, .modal-wide {
-  background: color-mix(in srgb, var(--card) 76%, transparent);
+  /* Thin enough that the frosting shows, thick enough to read a form on. */
+  background: color-mix(in srgb, var(--raised) 82%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),   /* the lit top rim */
     inset 0 0 0 1px rgba(255, 255, 255, 0.34), /* the thickness of the sheet */
@@ -1935,18 +1936,20 @@ button, input, select, textarea {
   .modal, .modal.confirm, .modal-wide {
     /* Saturated as well as blurred: blur alone greys out whatever is behind,
        and real glass keeps the colour of what it is over. */
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
-    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(165%);
+    backdrop-filter: blur(30px) saturate(165%);
   }
   /* The scrim can be lighter once the dialog does its own frosting — the point
      of it is to push the page back, and the glass is already doing that. */
   /* Right back. Three pixels of blur leaves the page behind legible enough to
      compete with the dialog in front of it; at eighteen it is unmistakably a
      backdrop and the dialog is the only thing there is to read. */
+  /* The page behind is dimmed, not blurred. Blurring the whole screen throws
+     the app out of focus and leaves the dialog sitting on a smear; what should
+     be frosted is the sheet of glass itself, and only the strip of page
+     directly under it. */
   .modal-backdrop {
-    background: color-mix(in srgb, var(--scrim) 72%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(115%);
-    backdrop-filter: blur(18px) saturate(115%);
+    background: color-mix(in srgb, var(--scrim) 34%, transparent);
   }
 }
 
@@ -1993,22 +1996,31 @@ button, input, select, textarea {
   from { opacity: 0; transform: translateY(-4px) scale(0.985); }
   to   { opacity: 1; transform: none; }
 }
+/* The scrim fades by its own colour, not by opacity. An element with an
+   opacity animation on it becomes a "backdrop root": backdrop-filter inside it
+   can only sample within it, so the dialog's frosting had nothing to work on —
+   it was still see-through, but the page showed through it perfectly sharp. */
 @keyframes scrim-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { background-color: transparent; }
 }
 
+/* `backwards`, never `both`. An element left holding a transform after its
+   animation has finished becomes the containing block for anything fixed
+   inside it — which is how the status menu, positioned in viewport
+   coordinates, ended up measured from the card instead and clipped by it.
+   Filling backwards only applies before the animation runs, so once a card has
+   arrived it holds nothing at all. */
 .block {
-  animation: rise var(--dur-3) var(--ease) both;
+  animation: rise var(--dur-3) var(--ease) backwards;
 }
 /* A card the line scrolls past has already arrived; only the first paint of a
    phase is an arrival, and the phase tabs are what change it. */
 .client-menu, .project-menu, .state-menu, .tpl-picker {
   transform-origin: top center;
-  animation: menu-in var(--dur-2) var(--ease) both;
+  animation: menu-in var(--dur-2) var(--ease) backwards;
 }
 .modal, .modal-wide {
-  animation: rise var(--dur-3) var(--ease) both;
+  animation: rise var(--dur-3) var(--ease) backwards;
 }
 
 /* 2. Answering. Anything you can press says so on the way in and on the way

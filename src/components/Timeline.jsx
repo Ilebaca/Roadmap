@@ -222,9 +222,14 @@ export default function Timeline() {
     const at = live ? live.at : (now?.at ?? blocks[0]?.at)
     if (at == null) return
 
-    const lead = horizontal ? 72 : 28
-    el.scrollTo({ [horizontal ? 'left' : 'top']: Math.max(0, at - lead), behavior: 'auto' })
-  }, [settled, projectId, layout, blockGates, now, horizontal])
+    // Centred in the panel. The task in hand is the subject of the screen, so
+    // it sits in the middle of it rather than tucked against one edge — with
+    // the line running away from it in both directions, which is what a
+    // roadmap looks like from where the work actually is.
+    const cardW = metrics.MIN_BLOCK - SLOT_PAD
+    const to = horizontal ? at + cardW / 2 - el.clientWidth / 2 : at - 28
+    el.scrollTo({ [horizontal ? 'left' : 'top']: Math.max(0, to), behavior: 'auto' })
+  }, [settled, projectId, layout, blockGates, now, horizontal, metrics])
 
   // Selecting a tab scrolls that phase's stretch of the line into view — but
   // never on the way in, where it would drag the view back to the top of the
