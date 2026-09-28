@@ -966,11 +966,22 @@ button, input, select, textarea {
 .pill-quiet { background: var(--card-2); border: 1px solid transparent; color: var(--muted-2); }
 
 /* start date + deadline, top-right corner, pen to edit */
-.block-dates { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.block-dates {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  /* Both states stand the same height, so turning the dates into an editor
+     cannot nudge the title and everything under it down the card. The floor is
+     the height of the icon button that sits in either state — the pen when you
+     are reading, the tick when you are editing. */
+  min-height: 22px;
+}
 .block-span { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .block-dates.is-editing {
-  background: var(--card-2); border: 1px solid transparent;
-  border-radius: var(--radius-sm); padding: 3px 4px 3px 8px;
+  background: var(--card-2); border: 0;
+  border-radius: var(--radius-sm);
+  /* No padding above or below: the row's height is already set by the button
+     inside it, and anything here is added on top of that and pushes the card
+     open. The fill reaches the full height of the row instead. */
+  padding: 0 4px 0 8px;
   gap: 6px; min-width: 0;
 }
 
@@ -2125,6 +2136,7 @@ button, input, select, textarea {
   /* A date is its own tap target now — the whole box opens the picker — so the
      confirm beside it is the only thing that needs a hand-sized one. */
   .date-field { min-height: 30px; }
+  .block-dates { min-height: 34px; }
 
   /* A finger is not a cursor. The primary actions get a proper target; the
      icon buttons stay smaller, since they sit in dense rows and are the
