@@ -52,11 +52,11 @@
   --danger-bg: #F7E7E3;
   --danger-br: #E8C6BE;
   --danger-fg: #8C1810;
-  --grad-danger: linear-gradient(90deg, #A81E14, #D8582C);
+  --grad-danger: linear-gradient(104deg, #8E1109 0%, #C23319 46%, #E4772C 100%);
 
   /* The approved gradient again, where a progress bar can reach it: those
      bars live on the phase tabs, nowhere near a card carrying a state class. */
-  --grad-approved: linear-gradient(90deg, #14562C, #6E9B1E);
+  --grad-approved: linear-gradient(104deg, #0E4623 0%, #2C7B33 48%, #86B01C 100%);
 
   --today: #B8301C;
   --today-rule: rgba(184, 48, 28, 0.32);
@@ -114,6 +114,8 @@
   all: initial;
   display: block;
   height: 100vh;
+  /* Flat paper. A wash across the page was colour on the furniture, which is
+     the one thing all the colour in here is meant not to be. */
   background: var(--bg);
   color: var(--text);
   font-family: 'Switzer', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -1017,23 +1019,23 @@ button, input, select, textarea {
    which is reserved for late and for delete and appears nowhere else. */
 .tone-todo, .state-todo {
   --tone-fg: #4A4842; --tone-bg: #ECE8DF; --tone-dot: #8C897F; --tone-br: #D5CFC1;
-  --tone-grad: linear-gradient(90deg, #8C897F, #A9A599);
+  --tone-grad: linear-gradient(104deg, #6F6C64 0%, #93908A 52%, #B3AFA4 100%);
 }
 .tone-in_progress, .state-in_progress {
   --tone-fg: #0F4C81; --tone-bg: #E3EDF6; --tone-dot: #1B4FA8; --tone-br: #C2D6E8;
-  --tone-grad: linear-gradient(90deg, #14367F, #0E9CC4);
+  --tone-grad: linear-gradient(104deg, #131F63 0%, #1B5FC4 46%, #14B8C8 100%);
 }
 .tone-on_hold, .state-on_hold {
   --tone-fg: #86490A; --tone-bg: #F6EBDA; --tone-dot: #A8590C; --tone-br: #E4CEA8;
-  --tone-grad: linear-gradient(90deg, #A8590C, #E0A03A);
+  --tone-grad: linear-gradient(104deg, #8A3D05 0%, #C8730F 48%, #F0B84A 100%);
 }
 .tone-review, .state-review {
   --tone-fg: #5B2192; --tone-bg: #EEE7F6; --tone-dot: #64259E; --tone-br: #D8C8EA;
-  --tone-grad: linear-gradient(90deg, #4A1B86, #A82590);
+  --tone-grad: linear-gradient(104deg, #38127A 0%, #7A22A6 46%, #D02E86 100%);
 }
 .tone-approved, .state-approved {
   --tone-fg: #1C5C33; --tone-bg: #E4EFE1; --tone-dot: #1E6B37; --tone-br: #C2DBBA;
-  --tone-grad: linear-gradient(90deg, #14562C, #6E9B1E);
+  --tone-grad: linear-gradient(104deg, #0E4623 0%, #2C7B33 48%, #86B01C 100%);
 }
 
 .state-row { display: flex; margin-top: 2px; }
@@ -1045,10 +1047,9 @@ button, input, select, textarea {
   padding: 5px 11px; border-radius: 999px;
   font-size: 12px; font-weight: 550; line-height: 1.4;
 }
-.state-dot {
-  width: 7px; height: 7px; border-radius: 50%; flex: none;
-  background: var(--tone-grad, var(--tone-dot));
-}
+/* Flat, in the state's own colour. Eight pixels is not enough room for a
+   gradient to be anything but noise. */
+.state-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--tone-dot); }
 
 .state-chip.is-button {
   cursor: pointer; padding-right: 8px;
@@ -1219,7 +1220,7 @@ button, input, select, textarea {
    rule itself stays under the cards */
 .now-dot {
   position: absolute; left: var(--line-x);
-  width: 9px; height: 9px; border-radius: 50%;
+  width: 10px; height: 10px; border-radius: 50%;
   background: var(--today);
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 3px var(--card);
@@ -1414,6 +1415,19 @@ button, input, select, textarea {
   scrollbar-width: none;
 }
 .timeline-scroll.is-horizontal::-webkit-scrollbar { display: none; }
+
+/* Where today falls, the panel warms. A radial thrown from the exact point the
+   line crosses `now` — the honest shape for a moment in time, which is a point
+   and not an edge. It is drawn under everything (z-index 0; the rule, the dots
+   and the cards all sit above it), so it lights the paper without touching a
+   word on it, and it slides along with the date as the clock turns. */
+.timeline-canvas.is-horizontal::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(560px 380px at var(--now-x, 50%) var(--line-y),
+      rgba(184, 48, 28, 0.16), rgba(184, 48, 28, 0.05) 42%, transparent 72%);
+}
 
 .timeline-canvas.is-horizontal {
   /* the canvas is as long as the run of dates; its height is the viewport */
