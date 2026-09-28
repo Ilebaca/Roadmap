@@ -129,6 +129,15 @@ does; To Do deliberately has neither, because a task nobody has started should
 not shout as loudly as the one in hand. Red is kept for late and for delete and
 appears nowhere else. A surface with nothing to say stays paper.
 
+**Glass.** Only what floats gets it — the client and project menus, the state
+menu, the template picker, dialogs. Glass is the one material that says a thing
+is held *above* the page rather than part of it: you can see what it is
+covering, slurred, so you never lose your place underneath. A panel is the
+page, not over it, so no panel is frosted. What makes it read as glass is the
+edge rather than the blur — a lit rim along the top and the thickness of the
+sheet around it — and without those a blurred box just looks like a fault.
+Anything solid and inked catches the same light along its top edge.
+
 **Links and files.** Each block has its own *Links & files* shelf. Admins add and
 remove entries; everyone can open them in a new tab. Rows live in their own
 `block_links` table so the `blocks` row stays exactly the shape of its table —

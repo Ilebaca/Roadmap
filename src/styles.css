@@ -917,11 +917,21 @@ button, input, select, textarea {
   /* A breath of the state's colour, no more. The card stays paper and the
      bar along its edge does the talking — a fully tinted panel is the pastel
      look, and it drags the text down with it. */
-  background-color: color-mix(in srgb, var(--tone-bg) 30%, var(--card));
-  background-image: var(--tone-grad);
-  background-repeat: no-repeat;
-  background-size: 100% 3px;
-  background-position: top left;
+  /* Barely tinted. The colour on this card is concentrated in the corner the
+     bar starts from; spread evenly across the whole surface it is a pastel
+     panel again, and it drags the headline down with it. */
+  background-color: color-mix(in srgb, var(--tone-bg) 16%, var(--card));
+  /* Two layers: the bar on top of the card, and under the words a wide soft
+     bleed of the same colour thrown from the corner the bar starts at — as
+     though the bar were the only lit edge and the colour were coming off it.
+     It is the one card in the app that gets this, because it is the one card
+     you are meant to be working on. */
+  background-image:
+    var(--tone-grad),
+    radial-gradient(300px 190px at -4% -10%, var(--tone-bleed), transparent 64%);
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 3px, auto;
+  background-position: top left, top left;
 }
 .block.state-in_progress:hover,
 .block.state-on_hold:hover,
@@ -1027,22 +1037,27 @@ button, input, select, textarea {
 .tone-todo, .state-todo {
   --tone-fg: #4A4842; --tone-bg: #ECE8DF; --tone-dot: #8C897F; --tone-br: #D5CFC1;
   --tone-grad: linear-gradient(104deg, #6F6C64 0%, #93908A 52%, #B3AFA4 100%);
+  --tone-bleed: rgba(140, 137, 127, 0.20);
 }
 .tone-in_progress, .state-in_progress {
   --tone-fg: #0F4C81; --tone-bg: #E3EDF6; --tone-dot: #1B4FA8; --tone-br: #C2D6E8;
   --tone-grad: linear-gradient(104deg, #131F63 0%, #1B5FC4 46%, #14B8C8 100%);
+  --tone-bleed: rgba(27, 79, 168, 0.22);
 }
 .tone-on_hold, .state-on_hold {
   --tone-fg: #86490A; --tone-bg: #F6EBDA; --tone-dot: #A8590C; --tone-br: #E4CEA8;
   --tone-grad: linear-gradient(104deg, #8A3D05 0%, #C8730F 48%, #F0B84A 100%);
+  --tone-bleed: rgba(168, 89, 12, 0.22);
 }
 .tone-review, .state-review {
   --tone-fg: #5B2192; --tone-bg: #EEE7F6; --tone-dot: #64259E; --tone-br: #D8C8EA;
   --tone-grad: linear-gradient(104deg, #38127A 0%, #7A22A6 46%, #D02E86 100%);
+  --tone-bleed: rgba(100, 37, 158, 0.20);
 }
 .tone-approved, .state-approved {
   --tone-fg: #1C5C33; --tone-bg: #E4EFE1; --tone-dot: #1E6B37; --tone-br: #C2DBBA;
   --tone-grad: linear-gradient(104deg, #0E4623 0%, #2C7B33 48%, #86B01C 100%);
+  --tone-bleed: rgba(30, 107, 55, 0.20);
 }
 
 .state-row { display: flex; margin-top: 2px; }
@@ -1900,6 +1915,54 @@ button, input, select, textarea {
 .overdue-reason-input:hover { border-color: var(--today-br); }
 .overdue-reason-input:focus {
   outline: none; border-color: var(--today); background: var(--card);
+}
+
+/* ===========================================================================
+   GLASS
+   Only what floats. A menu, a dialog or a picker is a thing held ABOVE the
+   page, and glass is the one material that says so: you can see what it is
+   covering, slurred, so you never lose your place underneath it. Frosting a
+   surface that is not covering anything is just a blurred nothing, which is
+   why none of the panels get this — they are the page, not over it.
+
+   What makes it read as glass is the edge, not the blur. A sheet of glass
+   catches the light along its top rim and drops a shadow off its bottom; both
+   are here, and without them a blurred box looks like a printing fault.
+   ========================================================================= */
+.client-menu, .project-menu, .state-menu, .tpl-picker,
+.modal, .modal.confirm, .modal-wide {
+  background: color-mix(in srgb, var(--card) 76%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),   /* the lit top rim */
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34), /* the thickness of the sheet */
+    var(--shadow-lg);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .client-menu, .project-menu, .state-menu, .tpl-picker,
+  .modal, .modal.confirm, .modal-wide {
+    /* Saturated as well as blurred: blur alone greys out whatever is behind,
+       and real glass keeps the colour of what it is over. */
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+  }
+  /* The scrim can be lighter once the dialog does its own frosting — the point
+     of it is to push the page back, and the glass is already doing that. */
+  .modal-backdrop {
+    background: color-mix(in srgb, var(--scrim) 62%, transparent);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+}
+
+/* Anything solid and inked catches the same light along its top edge. It is
+   one line of white at 12% and it is the difference between a black rectangle
+   and something with a surface. */
+.workspace.is-stacked .phase-tab.is-active,
+.client-logo,
+.primary-btn,
+.approve-check.done {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 /* ===========================================================================
