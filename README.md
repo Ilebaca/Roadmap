@@ -120,14 +120,26 @@ green *Approved* mark once it is signed off — never both. State sits under the
 description: a coloured dropdown for an admin, the same chip read-only for a
 viewer.
 
-**Colour.** The app is paper: warm beige behind near-white panels, hairlines
-instead of shadows, and no tinted surfaces. Every colour on screen belongs to
+**Colour.** The app is paper: warm beige behind near-white panels, and no
+tinted surfaces. Every colour on screen belongs to
 the work rather than to the furniture — the state a task is in, how much of a
 phase is signed off, where today falls, and what is late. Each of the five
 states owns one hue and a gradient that runs left to right the way the work
 does; To Do deliberately has neither, because a task nobody has started should
 not shout as loudly as the one in hand. Red is kept for late and for delete and
 appears nowhere else. A surface with nothing to say stays paper.
+
+**No strokes.** Nothing in the app is separated by a line. A surface sits on
+the one behind it by being a step away in tone, and lifts off it with a soft
+warm shadow: a card you are working on is raised and near-white, one that has
+not started is recessed into the panel, an empty slot is cut into it. Every
+`border` in the stylesheet is still there and still transparent — the pixel is
+reserved, so nothing moves — which leaves the one or two places that genuinely
+want an edge able to ask for one. The only lines left are the chart itself: the
+date line, today's rule, the duration rails and the progress bars, which are
+lines because that is what they are. A keyboard focus ring is the one exception
+and is a halo rather than an edge; taking it away would leave anyone not using
+a mouse unable to tell what they are about to press.
 
 **Glass.** Only what floats gets it — the client and project menus, the state
 menu, the template picker, dialogs. Glass is the one material that says a thing
