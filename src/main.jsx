@@ -42,6 +42,29 @@ function installFont() {
   document.head.appendChild(style)
 }
 
+/**
+ * The embed ends where the window does.
+ *
+ * `100dvh` in the stylesheet is right when the app starts at the top of the
+ * page, which is the case on its own. Inside somebody else's page it may not
+ * be: anything sitting above the embed pushes the app down by that much, the
+ * app is still a whole window tall, and the page scrolls by the difference.
+ * The running page is the only thing that knows the offset, so it is measured
+ * here and taken off. An app that already starts at the top is left alone, and
+ * keeps the stylesheet's own height.
+ */
+function fitHost(host) {
+  const apply = () => {
+    const top = Math.round(host.getBoundingClientRect().top + window.scrollY)
+    host.style.height = top > 1 ? `${Math.max(320, window.innerHeight - top)}px` : ''
+  }
+  apply()
+  window.addEventListener('resize', apply)
+  window.addEventListener('orientationchange', apply)
+  // A phone's address bar sliding away changes the window without a resize.
+  window.visualViewport?.addEventListener('resize', apply)
+}
+
 const host = findHost()
 if (host) {
   installFont()
@@ -63,4 +86,6 @@ if (host) {
       <App />
     </StrictMode>
   )
+
+  fitHost(host)
 }

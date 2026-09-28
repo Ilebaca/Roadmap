@@ -113,7 +113,14 @@
      the app actually wants is set back below. */
   all: initial;
   display: block;
+  /* The screen you can actually see, not the one you would see if the browser
+     hid its own chrome. On a phone `100vh` is the tall viewport — the address
+     bar's height is included whether or not it is on screen — so the app came
+     out taller than the window and the page scrolled by exactly that much,
+     with the bottom of the panel below the fold. `100dvh` is the live number.
+     The `100vh` above it is there for anything too old to know `dvh`. */
   height: 100vh;
+  height: 100dvh;
   /* Flat paper. A wash across the page was colour on the furniture, which is
      the one thing all the colour in here is meant not to be. */
   background: var(--bg);
@@ -1415,19 +1422,6 @@ button, input, select, textarea {
   scrollbar-width: none;
 }
 .timeline-scroll.is-horizontal::-webkit-scrollbar { display: none; }
-
-/* Where today falls, the panel warms. A radial thrown from the exact point the
-   line crosses `now` — the honest shape for a moment in time, which is a point
-   and not an edge. It is drawn under everything (z-index 0; the rule, the dots
-   and the cards all sit above it), so it lights the paper without touching a
-   word on it, and it slides along with the date as the clock turns. */
-.timeline-canvas.is-horizontal::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(560px 380px at var(--now-x, 50%) var(--line-y),
-      rgba(184, 48, 28, 0.16), rgba(184, 48, 28, 0.05) 42%, transparent 72%);
-}
 
 .timeline-canvas.is-horizontal {
   /* the canvas is as long as the run of dates; its height is the viewport */
