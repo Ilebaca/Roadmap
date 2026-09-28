@@ -184,11 +184,58 @@ export default function Timeline() {
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
-  // Selecting a tab scrolls that phase's stretch of the line into view.
+  /**
+   * Where to be looking when a roadmap opens.
+   *
+   * Not the beginning of it. A project that has been running a while starts
+   * with months of signed-off work, and landing there means scrolling past all
+   * of it every single time to reach the one task anybody can actually act on.
+   * So: the live task, with a little of the line before it so it does not read
+   * as the start of everything.
+   *
+   * The wait matters. Two measurements decide where anything sits — how wide
+   * the panel is, and how much line each phase name takes up — and both arrive
+   * a frame or two after the first paint. Placing before they land puts the
+   * view in the wrong place and leaves it there. The timer is for a browser
+   * with no ResizeObserver, where the second measurement never arrives at all.
+   */
+  const placedFor = useRef(null)
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    if (settled) return
+    if (panelW > 0 && phases.every((p) => heads[p.id] != null)) return setSettled(true)
+    const id = setTimeout(() => setSettled(true), 500)
+    return () => clearTimeout(id)
+  }, [settled, panelW, phases, heads])
+
+  const projectId = store.project?.id ?? null
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !settled || !layout.rows.length) return
+    if (placedFor.current === projectId) return
+    placedFor.current = projectId
+
+    const blocks = layout.rows.filter((r) => r.type === 'block')
+    // The one in hand; failing that where today falls, which is the same
+    // answer on a roadmap that is finished or has not started.
+    const live = blocks.find((r) => blockGates[r.block.id] === 'active')
+    const at = live ? live.at : (now?.at ?? blocks[0]?.at)
+    if (at == null) return
+
+    const lead = horizontal ? 72 : 28
+    el.scrollTo({ [horizontal ? 'left' : 'top']: Math.max(0, at - lead), behavior: 'auto' })
+  }, [settled, projectId, layout, blockGates, now, horizontal])
+
+  // Selecting a tab scrolls that phase's stretch of the line into view — but
+  // never on the way in, where it would drag the view back to the top of the
+  // phase and undo the placement above.
+  const lastPhase = useRef(null)
   useEffect(() => {
     const el = scrollRef.current
     const off = layout.phaseOffsets[activePhaseId]
-    if (!el || !off) return
+    const first = lastPhase.current === null
+    lastPhase.current = activePhaseId
+    if (!el || !off || first) return
     const to = Math.max(0, off.start - 16)
     el.scrollTo({ [horizontal ? 'left' : 'top']: to, behavior: 'smooth' })
     // Only when the active phase changes — not on every relayout.
