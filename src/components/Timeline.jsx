@@ -132,6 +132,15 @@ export default function Timeline() {
     [layout.dots, narrow]
   )
 
+  // Where today falls. Hoisted out of the markup because the line itself is
+  // drawn from it: the stretch already behind us is inked and the stretch
+  // still to come is a hairline, so the line says how far the job has got
+  // before you have read a single date off it.
+  const now = useMemo(
+    () => nowMarker(layout.dots, layout.total, today),
+    [layout.dots, layout.total, today]
+  )
+
   /** A position and a length on the line -> the CSS for whichever way it runs. */
   const place = useCallback(
     (at, len) =>
@@ -258,7 +267,10 @@ export default function Timeline() {
     <div className={`timeline-scroll ${horizontal ? 'is-horizontal' : ''}`} ref={scrollRef}>
       <div
         className={`timeline-canvas ${horizontal ? 'is-horizontal' : ''}`}
-        style={horizontal ? { width: layout.total } : { height: layout.total }}
+        style={{
+          ...(horizontal ? { width: layout.total } : { height: layout.total }),
+          '--now-x': `${Math.round(now?.at ?? 0)}px`
+        }}
       >
         <div className="timeline-rule" />
 
@@ -396,7 +408,6 @@ export default function Timeline() {
 
         {/* Where today falls on the line, live. */}
         {(() => {
-          const now = nowMarker(layout.dots, layout.total, today)
           if (!now) return null
           return (
             <>

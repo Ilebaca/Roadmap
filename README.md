@@ -118,7 +118,16 @@ dates are generated relative to today so there is always something around it.
 **Block chrome.** Top-left is the delete button while work is open, and the
 green *Approved* mark once it is signed off — never both. State sits under the
 description: a coloured dropdown for an admin, the same chip read-only for a
-viewer. State colour is the only colour in the UI.
+viewer.
+
+**Colour.** The app is paper: warm beige behind near-white panels, hairlines
+instead of shadows, and no tinted surfaces. Every colour on screen belongs to
+the work rather than to the furniture — the state a task is in, how much of a
+phase is signed off, where today falls, and what is late. Each of the five
+states owns one hue and a gradient that runs left to right the way the work
+does; To Do deliberately has neither, because a task nobody has started should
+not shout as loudly as the one in hand. Red is kept for late and for delete and
+appears nowhere else. A surface with nothing to say stays paper.
 
 **Links and files.** Each block has its own *Links & files* shelf. Admins add and
 remove entries; everyone can open them in a new tab. Rows live in their own
