@@ -167,6 +167,13 @@ export const Clock = (p) => (
   </svg>
 )
 
+export const SignOut = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+    <path d="M10 8 6 12l4 4M6 12h10" />
+  </svg>
+)
+
 /**
  * The studio's mark, traced from the artwork itself.
  *

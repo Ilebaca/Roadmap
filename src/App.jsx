@@ -9,7 +9,7 @@ import Moodboard from './components/Moodboard'
 import ClientSwitcher from './components/ClientSwitcher'
 import SignIn from './components/SignIn'
 import { canManageAccounts } from './lib/permissions'
-import { Mark, Users } from './components/Icons'
+import { Mark, SignOut, Users } from './components/Icons'
 
 export default function App() {
   return (
@@ -128,8 +128,17 @@ function Shell() {
           {isLive ? (
             <div className="who">
               <span className="dev-email">{session.email}</span>
-              <button className="ghost-btn subtle" onClick={actions.signOut}>
-                Sign out
+              {/* The word goes on a phone and the icon carries it, the same
+                  way Accounts does — it is a row of three controls on a
+                  390px screen and the words are what there is least of. */}
+              <button
+                className="ghost-btn subtle signout-btn"
+                onClick={actions.signOut}
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <SignOut width="15" height="15" />
+                <span className="btn-label">Sign out</span>
               </button>
             </div>
           ) : (
