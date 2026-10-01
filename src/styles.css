@@ -1942,9 +1942,9 @@ button, input, select, textarea {
 
 /* ===========================================================================
    MOOD BOARD
-   The one black surface in the app, and deliberately so: everywhere else is
-   paper you read, and this is a wall you pin things to. Pictures look like
-   themselves against black and like a colour scheme against beige.
+   The same paper as the rest of the app, a shade cooler and flatter than a
+   panel so a picture pinned to it reads as a picture and not as part of the
+   furniture. Nothing on this surface competes with what is put on it.
    ========================================================================= */
 /* No list beside it, but still the flex row every other app is: `.stage`
    takes its height from being a flex child, and a block parent leaves it
@@ -1960,7 +1960,7 @@ button, input, select, textarea {
   height: 100%;
   overflow: auto;
   border-radius: var(--radius-lg);
-  background: #0B0B0D;
+  background: #EFEBE1;
   /* The board is dragged, not flicked: without this a drag across it selects
      every image on the way past, and on a phone it fights the pan. */
   touch-action: none;
@@ -1977,8 +1977,8 @@ button, input, select, textarea {
      paper. It is the only thing that says the board is moving under you when
      every picture has scrolled off the edge. */
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(21, 21, 26, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21, 21, 26, 0.05) 1px, transparent 1px);
   background-size: 120px 120px;
 }
 
@@ -1986,8 +1986,9 @@ button, input, select, textarea {
   position: absolute;
   cursor: grab;
   border-radius: var(--radius-sm);
-  /* Lifted off the black, the way a print on a wall is. */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 14px 32px -12px rgba(0, 0, 0, 0.7);
+  /* Lifted off the board, the way a print pinned to a wall is. Warm and
+     short, like every other shadow here. */
+  box-shadow: 0 1px 2px rgba(58, 48, 32, 0.10), 0 10px 24px -10px rgba(58, 48, 32, 0.30);
   transition: box-shadow var(--dur-2) var(--ease);
 }
 .mood-item img {
@@ -1997,20 +1998,22 @@ button, input, select, textarea {
   user-select: none; -webkit-user-drag: none;
   pointer-events: none; /* the frame takes the drag, never the picture */
 }
-.mood-item:hover { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 18px 44px -12px rgba(0, 0, 0, 0.8); }
+.mood-item:hover { box-shadow: 0 1px 2px rgba(58, 48, 32, 0.12), 0 16px 34px -10px rgba(58, 48, 32, 0.38); }
 .mood-item.is-dragging {
   cursor: grabbing;
-  /* Picked up: bigger shadow, and above everything whatever its own order. */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.55), 0 36px 70px -18px rgba(0, 0, 0, 0.9);
+  /* Picked up: further off the board, and above everything whatever its own
+     order says. */
+  box-shadow: 0 6px 12px rgba(58, 48, 32, 0.18), 0 30px 60px -16px rgba(58, 48, 32, 0.45);
   z-index: 9999 !important;
 }
 
 .mood-remove {
   position: absolute; top: 6px; right: 6px;
-  background: rgba(10, 10, 12, 0.72);
-  color: rgba(255, 255, 255, 0.82);
+  background: color-mix(in srgb, var(--raised) 86%, transparent);
+  color: var(--danger);
   opacity: 0; transition: opacity var(--dur-1) var(--ease);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
 }
 .mood-item:hover .mood-remove { opacity: 1; }
 .mood-remove:hover { background: var(--danger); color: var(--on-danger); }
@@ -2018,28 +2021,29 @@ button, input, select, textarea {
 .mood-empty {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: min(360px, 76vw);
+  width: min(380px, 78vw);
   text-align: center;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
   pointer-events: none;
 }
 .mood-empty h3 {
-  margin: 0 0 6px; font-size: 15px; font-weight: 600;
-  letter-spacing: -0.015em; color: rgba(255, 255, 255, 0.86);
+  margin: 0 0 6px; font-size: 16px; font-weight: 620;
+  letter-spacing: -0.016em; color: var(--ink);
 }
 .mood-empty p { margin: 0; font-size: 12.5px; line-height: 1.6; }
 
 /* Pinned to the panel, so it stays put while the board moves under it. */
 .mood-add {
-  position: absolute; right: calc(var(--stage-margin) + 14px); bottom: 20px;
+  position: absolute; right: 18px; bottom: 18px;
   z-index: 10;
   display: inline-flex; align-items: center; gap: 8px;
   padding: 11px 16px; border: 0; border-radius: 999px;
-  background: var(--raised); color: var(--ink);
+  background: var(--ink); color: var(--on-ink);
   font-size: 12.5px; font-weight: 550; cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 30px -10px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), var(--shadow-lg);
 }
-.mood-add:hover { background: #fff; }
+.mood-add:hover { background: var(--ink-hover); }
+.mood-add:active { transform: translateY(1px); }
 .mood-add:disabled { opacity: 0.6; cursor: default; }
 
 @media (hover: none) {

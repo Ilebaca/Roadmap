@@ -54,3 +54,90 @@ export function clampToBoard(x, y, w, h) {
     y: Math.min(Math.max(0, y), BOARD_H - h)
   }
 }
+
+/**
+ * Make a picture fit the limit rather than turning it away.
+ *
+ * A screenshot off a modern display is three or four megabytes, so a board you
+ * paste screenshots onto and a hard 1 MB cap are the same feature arguing with
+ * itself. The cap is about what the board costs to store, not about which
+ * pictures are allowed on it — so anything over it is re-encoded smaller until
+ * it fits, and only something that still will not fit is refused.
+ *
+ * Tried widest-and-best first, so a picture gives up as little as it has to.
+ * Returns the original untouched when it was already small enough.
+ */
+export async function fitToLimit(file) {
+  if (file.size <= MAX_IMAGE_BYTES) return { file, shrunk: false }
+
+  let bitmap
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch {
+    return null // not something this browser can decode, so not something to shrink
+  }
+
+  // WebP is smaller at the same quality; JPEG is what a browser without it
+  // will give instead. Neither keeps transparency, which a photograph or a
+  // screenshot does not have anyway — and a PNG that big usually is one.
+  for (const maxEdge of [2400, 1800, 1400, 1100, 880, 700]) {
+    for (const [type, quality] of [['image/webp', 0.86], ['image/webp', 0.72], ['image/jpeg', 0.82], ['image/jpeg', 0.66]]) {
+      const blob = await encode(bitmap, maxEdge, type, quality)
+      if (blob && blob.size <= MAX_IMAGE_BYTES) {
+        bitmap.close?.()
+        return {
+          file: new File([blob], renameFor(file.name, blob.type), { type: blob.type }),
+          shrunk: true,
+          from: file.size,
+          to: blob.size
+        }
+      }
+    }
+  }
+  bitmap.close?.()
+  return null
+}
+
+function encode(bitmap, maxEdge, type, quality) {
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
+  const w = Math.max(1, Math.round(bitmap.width * scale))
+  const h = Math.max(1, Math.round(bitmap.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return Promise.resolve(null)
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  return new Promise((resolve) => {
+    // A browser that cannot encode the type asked for hands back a PNG, which
+    // will simply be too big and fall through to the next attempt.
+    canvas.toBlob((b) => resolve(b && b.type === type ? b : null), type, quality)
+  })
+}
+
+const renameFor = (name, type) => {
+  const stem = name.replace(/\.[^.]+$/, '') || 'image'
+  return `${stem}.${type === 'image/webp' ? 'webp' : 'jpg'}`
+}
+
+/** What to tell someone whose picture had to be made smaller to go up. */
+export const shrunkMessage = (r) =>
+  `That image was ${prettyBytes(r.from)}, so it went up at ${prettyBytes(r.to)} to stay under ${MAX_IMAGE_LABEL}.`
+
+/**
+ * The images on a clipboard, if any. A screenshot arrives as a file with no
+ * useful name; copied text and copied HTML arrive alongside it and are not
+ * ours. Returns [] for a paste that carried no picture, so a plain text paste
+ * is simply ignored rather than being an error.
+ */
+export function imagesFromClipboard(data) {
+  if (!data) return []
+  const out = []
+  for (const item of data.items ?? []) {
+    if (item.kind !== 'file') continue
+    const file = item.getAsFile()
+    if (file && isImage(file)) out.push(file)
+  }
+  if (out.length) return out
+  return [...(data.files ?? [])].filter(isImage)
+}

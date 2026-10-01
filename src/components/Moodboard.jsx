@@ -6,10 +6,12 @@ import {
   ACCEPTED,
   BOARD_H,
   BOARD_W,
-  MAX_IMAGE_BYTES,
   clampToBoard,
   dropSize,
+  fitToLimit,
+  imagesFromClipboard,
   isImage,
+  shrunkMessage,
   tooBigMessage
 } from '../lib/moodboard'
 
@@ -80,21 +82,29 @@ export default function Moodboard() {
     async (files) => {
       const list = [...files].filter(isImage)
       if (!list.length) return
-      const tooBig = list.find((f) => f.size > MAX_IMAGE_BYTES)
-      if (tooBig) return setNotice(tooBigMessage(tooBig))
 
       setBusy(true)
+      let shrunk = null
       try {
-        // Fanned out from the middle, so dropping several does not stack them
-        // into one pile with only the last one visible.
+        // Fanned out from the middle of what is on screen, so dropping several
+        // does not stack them into one pile with only the last one visible.
         const mid = centreOfView()
         for (let i = 0; i < list.length; i++) {
-          const file = list[i]
-          const { w, h } = await measure(file)
+          // Anything over the limit is made to fit before it goes anywhere.
+          // Only something that still will not fit is turned away.
+          const fitted = await fitToLimit(list[i])
+          if (!fitted) {
+            setNotice(tooBigMessage(list[i]))
+            continue
+          }
+          if (fitted.shrunk) shrunk = fitted
+
+          const { w, h } = await measure(fitted.file)
           const offset = i * 28
           const { x, y } = clampToBoard(mid.x - w / 2 + offset, mid.y - h / 2 + offset, w, h)
-          await actions.addMoodboardImage({ file, x, y, w, h })
+          await actions.addMoodboardImage({ file: fitted.file, x, y, w, h })
         }
+        if (shrunk) setNotice(shrunkMessage(shrunk))
       } catch (e) {
         setNotice(e.message)
       } finally {
@@ -103,6 +113,28 @@ export default function Moodboard() {
     },
     [actions]
   )
+
+  /**
+   * Paste a picture straight onto the board.
+   *
+   * The whole point of a mood board is the speed of it: take a screenshot, hit
+   * paste, it is up. The listener is on the document because a paste goes to
+   * whatever has focus, and on a board with nothing to type into that is
+   * usually nothing at all — so there is no one element to hang it off.
+   *
+   * A paste carrying no picture is left alone rather than refused: pasting
+   * text onto a mood board is not an error, it is just not a thing it does.
+   */
+  useEffect(() => {
+    const onPaste = (e) => {
+      const images = imagesFromClipboard(e.clipboardData)
+      if (!images.length) return
+      e.preventDefault()
+      add(images)
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [add])
 
   // --- dragging --------------------------------------------------------------
   // An image follows the pointer; the bare canvas scrolls under it. Both are
@@ -125,7 +157,7 @@ export default function Moodboard() {
       now: { x: item.x, y: item.y },
       moved: false
     }
-    setDrag({ id: item.id, x: item.x, y: item.y })
+    setDrag({ id: item.id, x: item.x, y: item.y, live: true })
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId)
     } catch {
@@ -144,18 +176,27 @@ export default function Moodboard() {
     )
     if (!d.moved && Math.hypot(e.clientX - d.from.x, e.clientY - d.from.y) > 3) d.moved = true
     d.now = next
-    setDrag({ id: d.id, ...next })
+    setDrag({ id: d.id, ...next, live: true })
   }
 
   const onImagePointerUp = (e) => {
     const d = dragRef.current
     if (!d || d.pointerId !== e.pointerId) return
     dragRef.current = null
-    setDrag(null)
     // A press that never moved is not a move. Writing one would be a round
     // trip and a reload to say nothing happened.
-    if (!d.moved) return
-    actions.moveMoodboardItem(d.id, { x: Math.round(d.now.x), y: Math.round(d.now.y) })
+    if (!d.moved) return setDrag(null)
+
+    // Keep drawing it where it was put until the store comes back with it.
+    // Letting go of the position the instant the finger lifts puts the picture
+    // back where it started for as long as the write takes, and it blinks home
+    // and then jumps forward again. `live` goes off so it stops looking picked
+    // up; the position stays until there is a real one to replace it.
+    setDrag({ id: d.id, ...d.now, live: false })
+    const settle = () => setDrag((cur) => (cur && cur.id === d.id && !cur.live ? null : cur))
+    Promise.resolve(
+      actions.moveMoodboardItem(d.id, { x: Math.round(d.now.x), y: Math.round(d.now.y) })
+    ).then(settle, settle)
   }
 
   // Panning: the canvas scrolls under a drag on bare board.
@@ -203,7 +244,7 @@ export default function Moodboard() {
             return (
               <div
                 key={item.id}
-                className={`mood-item ${drag?.id === item.id ? 'is-dragging' : ''}`}
+                className={`mood-item ${drag?.id === item.id && drag.live ? 'is-dragging' : ''}`}
                 data-mood-id={item.id}
                 style={{ left: live.x, top: live.y, width: item.w, height: item.h, zIndex: item.z + 1 }}
                 onPointerDown={(e) => onImagePointerDown(e, item)}
@@ -229,7 +270,10 @@ export default function Moodboard() {
           {!moodboard.length && (
             <div className="mood-empty" style={{ left: BOARD_W / 2, top: BOARD_H / 2 }}>
               <h3>Nothing on the board yet</h3>
-              <p>Add a picture and drag it anywhere. Drag the board itself to move around.</p>
+              <p>
+                Paste a screenshot, drop a file in, or add one below. Drag a picture to move it,
+                drag the board to look around.
+              </p>
             </div>
           )}
         </div>

@@ -150,10 +150,7 @@ edge rather than the blur — a lit rim along the top and the thickness of the
 sheet around it — and without those a blurred box just looks like a fault.
 Anything solid and inked catches the same light along its top edge.
 
-**Mood board.** The third app on the rail, and the only black surface in the
-app: everywhere else is paper you read, this is a wall you pin things to.
-Pictures look like themselves against black and like a colour scheme against
-beige. It is a canvas and nothing else — no order, no categories, no approval.
+**Mood board.** The third app on the rail. It is a canvas and nothing else — no order, no categories, no approval.
 The board is larger than any screen, so a drag does one of two things depending
 on what is under it: an image moves, the bare board pans.
 
@@ -161,9 +158,18 @@ It is also the one place a client *writes*. Everywhere else they read and
 approve; here they pin pictures up alongside the studio, which is the point of
 a mood board. Two guard rails: they only reach their own client's board, and
 they can only take down what they themselves put up — the studio can take down
-anything. Images are capped at 1 MB, enforced in `src/lib/moodboard.js` so the
-file picker and the data layer cannot drift apart; a file that passes one and
-fails the other is a file that disappears.
+anything.
+
+Pictures arrive three ways: the button, a file dropped on the board, and paste.
+Paste is the one that matters — take a screenshot, hit paste, it is up — and it
+is also why nothing is refused for being too big. A screenshot off a modern
+display is several megabytes, so a board you paste screenshots onto and a hard
+1 MB cap are the same feature arguing with itself. Anything over the limit is
+re-encoded smaller until it fits, widest-and-best first so it gives up as
+little as it has to, and it says what it did; only something that still will not
+fit is turned away. The limit lives in `src/lib/moodboard.js`, which both the
+picker and the data layer read, because a file that passes one and fails the
+other is a file that disappears.
 
 **Links and files.** Each block has its own *Links & files* shelf. Admins add and
 remove entries; everyone can open them in a new tab. Rows live in their own
