@@ -247,5 +247,11 @@ export const seed = () => ({
     // a client whose system was trimmed to fit the job
     ...brandSectionsFor('prj_2', ['logo-system', 'color-palette', 'typography-system', 'downloadables']),
     ...brandSectionsFor('prj_3')
-  ]
+  ],
+
+  // TABLE: moodboard_items
+  // One black canvas per client, shared with them. A row is a picture and
+  // where it sits, and nothing else. Empty to start: a board is something the
+  // two of you fill, and a seeded one would be somebody else's taste.
+  moodboard_items: []
 })

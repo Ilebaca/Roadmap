@@ -80,6 +80,14 @@ export const BrandGlyph = (p) => (
   </svg>
 )
 
+/** App rail — the mood board: loose pictures pinned up, overlapping. */
+export const MoodGlyph = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <rect x="3" y="6.5" width="10" height="8" rx="1.4" transform="rotate(-7 8 10.5)" />
+    <rect x="11" y="9.5" width="10" height="8.5" rx="1.4" transform="rotate(6 16 13.75)" />
+  </svg>
+)
+
 export const Download = (p) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
     <path d="M12 4v11m0 0 4-4m-4 4-4-4" />

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { MAX_IMAGE_BYTES, tooBigMessage } from '../lib/moodboard'
 import { BRAND_TEMPLATES, DEFAULT_TEMPLATE_SLUGS } from '../lib/brandTemplates'
 
 /**
@@ -452,6 +453,83 @@ export const liveApi = {
   // ===========================================================================
   // VISUAL IDENTITY — contents
   // ===========================================================================
+
+  // ===========================================================================
+  // MOOD BOARD
+  // ===========================================================================
+
+  async listMoodboard(session, project_id) {
+    const rows = ok(
+      await supabase.from('moodboard_items').select('*').eq('project_id', project_id).order('z')
+    )
+    return withSignedUrls(rows)
+  },
+
+  /**
+   * The file goes to Storage under the client it belongs to, in the board's own
+   * folder — which is the folder the bucket lets a client write to, and the
+   * only one. The row keeps the path; the page gets a signed link.
+   */
+  async createMoodboardItem(session, { project_id, file, x, y, w, h }) {
+    if (file.size > MAX_IMAGE_BYTES) throw new Error(tooBigMessage(file))
+
+    const file_path = `${project_id}/moodboard/${crypto.randomUUID()}${ext(file.name)}`
+    const up = await supabase.storage.from(BUCKET).upload(file_path, file)
+    if (up.error) throw new Error(`That image could not be uploaded: ${up.error.message}`)
+
+    // Last up is on top. One extra read, and it keeps z a counter rather than
+    // a sort order that every other row would have to be rewritten for.
+    const top = ok(
+      await supabase
+        .from('moodboard_items')
+        .select('z')
+        .eq('project_id', project_id)
+        .order('z', { ascending: false })
+        .limit(1)
+    )
+
+    try {
+      const row = ok(
+        await supabase
+          .from('moodboard_items')
+          .insert({
+            project_id,
+            file_path,
+            file_name: file.name,
+            file_size: file.size,
+            x, y, w, h,
+            z: (top[0]?.z ?? -1) + 1,
+            created_by: session?.id ?? null
+          })
+          .select()
+          .single()
+      )
+      return (await withSignedUrls([row]))[0]
+    } catch (e) {
+      // The row is what makes the file findable. Without it the upload is an
+      // orphan nobody can see or remove, so it goes back out again.
+      await supabase.storage.from(BUCKET).remove([file_path])
+      throw e
+    }
+  },
+
+  async updateMoodboardItem(session, id, patch) {
+    const clean = {}
+    for (const k of ['x', 'y', 'w', 'h', 'z']) if (k in patch) clean[k] = patch[k]
+    const row = ok(
+      await supabase.from('moodboard_items').update(clean).eq('id', id).select().single()
+    )
+    return (await withSignedUrls([row]))[0]
+  },
+
+  async deleteMoodboardItem(session, id) {
+    const row = ok(await supabase.from('moodboard_items').select('file_path').eq('id', id).single())
+    // The row first: it is what the policy checks, so if it will not go, the
+    // file must not either.
+    ok(await supabase.from('moodboard_items').delete().eq('id', id))
+    if (row?.file_path) await supabase.storage.from(BUCKET).remove([row.file_path])
+    return true
+  },
 
   async listBrandAssets(session, project_id) {
     const sections = ok(

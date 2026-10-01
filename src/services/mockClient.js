@@ -19,6 +19,7 @@
 import { seed } from './mockDb'
 import { addDays, daysBetween } from '../lib/dates'
 import { readFileAsDataUrl } from '../lib/files'
+import { MAX_IMAGE_BYTES, tooBigMessage } from '../lib/moodboard'
 import { BRAND_TEMPLATES, DEFAULT_TEMPLATE_SLUGS } from '../lib/brandTemplates'
 
 const STORAGE_KEY = 'roadmap.mock.v1'
@@ -965,6 +966,78 @@ export const mockApi = {
   async signOut() {},
   onAuthChange() {
     return () => {}
+  },
+
+  // ===========================================================================
+  // MOOD BOARD
+  // ===========================================================================
+
+  /** BACKEND: supabase.from('moodboard_items').select('*').eq('project_id', id) */
+  async listMoodboard(session, project_id) {
+    return wait(clone((db.moodboard_items ?? []).filter((m) => m.project_id === project_id)))
+  },
+
+  /**
+   * Pin a picture up. Anyone who can see the board may — this is the one place
+   * a client writes rather than reads.
+   *
+   * BACKEND: the File goes to Storage under `<project_id>/moodboard/<random>`
+   * and the row keeps the path; here there is nowhere to put it, so it becomes
+   * a data URL inside the snapshot.
+   */
+  async createMoodboardItem(session, { project_id, file, x, y, w, h }) {
+    if (!session) throw new ForbiddenError('Sign in to add to the board.')
+    if (file.size > MAX_IMAGE_BYTES) throw new ForbiddenError(tooBigMessage(file))
+    const read = await readFileAsDataUrl(file)
+    const items = db.moodboard_items ?? (db.moodboard_items = [])
+    const row = {
+      id: uid('mb'),
+      project_id,
+      file_path: null,
+      url: read.url,
+      file_name: read.file_name,
+      file_size: read.file_size,
+      x, y, w, h,
+      z: items.length ? Math.max(...items.map((m) => m.z)) + 1 : 0,
+      created_by: session.id,
+      created_at: new Date().toISOString()
+    }
+    items.push(row)
+    // The picture only exists in browser storage while there is no backend, so
+    // a failed write means it would vanish on reload. Refuse it now instead.
+    if (!persist()) {
+      db.moodboard_items = items.filter((m) => m.id !== row.id)
+      persist()
+      throw new ForbiddenError(
+        'There is no room left in browser storage for that image. Take one off the board — with the backend wired up they go to Supabase Storage instead.'
+      )
+    }
+    return wait(clone(row))
+  },
+
+  /** BACKEND: supabase.from('moodboard_items').update(patch).eq('id', id) */
+  async updateMoodboardItem(session, id, patch) {
+    if (!session) throw new ForbiddenError('Sign in to move things on the board.')
+    const row = (db.moodboard_items ?? []).find((m) => m.id === id)
+    if (!row) throw new Error('That image is no longer on the board')
+    for (const k of ['x', 'y', 'w', 'h', 'z']) if (k in patch) row[k] = patch[k]
+    persist()
+    return wait(clone(row))
+  },
+
+  /**
+   * Your own, or anything if you are the studio. A client taking the studio's
+   * board down from under it is the one thing a shared canvas must not allow.
+   */
+  async deleteMoodboardItem(session, id) {
+    const row = (db.moodboard_items ?? []).find((m) => m.id === id)
+    if (!row) return wait(true)
+    if (!session || (row.created_by !== session.id && session.role !== 'admin')) {
+      throw new ForbiddenError('That one was put up by someone else.')
+    }
+    db.moodboard_items = db.moodboard_items.filter((m) => m.id !== id)
+    persist()
+    return wait(true)
   },
 
   /** Wipes local storage and reloads the seed. No backend equivalent. */

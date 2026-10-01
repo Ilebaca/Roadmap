@@ -5,6 +5,7 @@ import Timeline from './components/Timeline'
 import AccountsModal from './components/AccountsModal'
 import AppRail, { APPS } from './components/AppRail'
 import BrandDelivery from './components/BrandDelivery'
+import Moodboard from './components/Moodboard'
 import ClientSwitcher from './components/ClientSwitcher'
 import SignIn from './components/SignIn'
 import { canManageAccounts } from './lib/permissions'
@@ -161,7 +162,7 @@ function Shell() {
       {/* The date line runs across the page, so a column of phases down the
           left would eat the width it needs: they go on top instead and the
           line gets the whole panel. */}
-      <div className={`workspace ${app === 'roadmap' || narrow ? 'is-stacked' : ''}`}>
+      <div className={`workspace ${app === 'mood' ? '' : app === 'roadmap' || narrow ? 'is-stacked' : ''}`}>
         <AppRail active={app} onSelect={setApp} />
         {app === 'roadmap' ? (
           <div className="workspace-main">
@@ -169,6 +170,12 @@ function Shell() {
             <main className="stage">
               <Timeline />
             </main>
+          </div>
+        ) : app === 'mood' ? (
+          /* No list beside it: the board IS the app, and a column down the
+             side would take width from the one thing there is to look at. */
+          <div className="workspace-main is-bare">
+            <Moodboard />
           </div>
         ) : (
           <div className="workspace-main">

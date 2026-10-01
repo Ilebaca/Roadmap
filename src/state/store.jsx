@@ -29,6 +29,7 @@ export function StoreProvider({ children }) {
   const [links, setLinks] = useState([])
   const [brandSections, setBrandSections] = useState([])
   const [brandAssets, setBrandAssets] = useState([])
+  const [moodboard, setMoodboard] = useState([])
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -118,14 +119,15 @@ export function StoreProvider({ children }) {
       setRoadmaps(rms)
       setActiveRoadmapId(current)
 
-      const [proj, ph, bl, ap, lk, bs, ba] = await Promise.all([
+      const [proj, ph, bl, ap, lk, bs, ba, mb] = await Promise.all([
         api.getProject(who, projectId),
         api.listPhases(who, current),
         api.listBlocks(who, projectId),
         api.listApprovals(who, projectId),
         api.listLinks(who, projectId),
         api.listBrandSections(who, projectId),
-        api.listBrandAssets(who, projectId)
+        api.listBrandAssets(who, projectId),
+        api.listMoodboard(who, projectId)
       ])
       setProject(proj)
       // Blocks come back for the whole client; only this roadmap's are ours.
@@ -136,6 +138,7 @@ export function StoreProvider({ children }) {
       setLinks(lk)
       setBrandSections(bs)
       setBrandAssets(ba)
+      setMoodboard(mb)
       setLoading(false)
       return ph
     } catch (e) {
@@ -358,6 +361,28 @@ export function StoreProvider({ children }) {
       addBrandAsset(input) {
         return run(() => api.createBrandAsset(session, input))
       },
+
+      /**
+       * The board. Unlike everything else here these are open to the client as
+       * well — pinning pictures up together is the whole point of it — so none
+       * of them asks whether you are an admin.
+       */
+      addMoodboardImage({ file, x, y, w, h }) {
+        return run(() =>
+          api.createMoodboardItem(session, { project_id: activeProjectId, file, x, y, w, h })
+        )
+      },
+      /**
+       * A drag ends in a hundred positions and only the last one matters, so
+       * the board moves the image itself and tells us once, on release. This
+       * writes and reloads like everything else.
+       */
+      moveMoodboardItem(id, patch) {
+        return run(() => api.updateMoodboardItem(session, id, patch))
+      },
+      removeMoodboardImage(id) {
+        return run(() => api.deleteMoodboardItem(session, id))
+      },
       /**
        * A grid arrives with its cells already in place — two or three empty
        * ones, nothing else. How many cells it has is what makes it a grid of
@@ -442,6 +467,7 @@ export function StoreProvider({ children }) {
     links,
     brandSections,
     brandAssets,
+    moodboard,
     gates,
     blockGates,
     livePhaseId,

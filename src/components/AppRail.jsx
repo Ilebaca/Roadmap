@@ -1,13 +1,15 @@
-import { BrandGlyph, RoadmapGlyph } from './Icons'
+import { BrandGlyph, MoodGlyph, RoadmapGlyph } from './Icons'
 
 /**
  * The far-left rail: one icon per app. The selected one sits in a white box.
  * Roadmap is where work is scheduled and approved; Visual Identity is where
- * the finished brand is handed over. Same shell, different contents.
+ * the finished brand is handed over; the Mood board is the one surface the
+ * client writes to as freely as the studio. Same shell, different contents.
  */
 export const APPS = [
   { id: 'roadmap', label: 'Roadmap', Glyph: RoadmapGlyph },
-  { id: 'brand', label: 'Visual Identity', Glyph: BrandGlyph }
+  { id: 'brand', label: 'Visual Identity', Glyph: BrandGlyph },
+  { id: 'mood', label: 'Mood board', Glyph: MoodGlyph }
 ]
 
 export default function AppRail({ active, onSelect }) {
