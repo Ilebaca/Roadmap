@@ -106,7 +106,7 @@ function Shell() {
         {/* Ours, and the only thing on this side: whose software this is gets
             said once, on the left, and then stays out of the way. */}
         <span className="brand-mark" aria-label="Mimant Studio">
-          <Mark width="22" height="22" />
+          <Mark />
         </span>
 
         <div className="topbar-right">

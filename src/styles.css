@@ -66,11 +66,12 @@
   --danger-bg: var(--accent-bg);
   --danger-br: transparent;
   --danger-fg: var(--accent-fg);
-  --grad-danger: linear-gradient(104deg, #7C0F06 0%, #D01C0E 54%, #F0674F 100%);
-
-  /* Finished work is the ground colour, not a second hue: the gradient runs
-     from the dark up into the panel rather than away into another colour. */
-  --grad-approved: linear-gradient(104deg, #141414 0%, #3A3A3A 56%, #6E6E6E 100%);
+  /* Flat. A colour here says which state something is in, and a blend of two
+     colours says it twice and neither of them clearly. */
+  --grad-danger: var(--accent);
+  /* What a progress bar measures is approved work, so it is painted in the
+     approved state's own flat colour. */
+  --grad-approved: #1E6B37;
 
   --today: var(--accent);
   --today-rule: rgba(208, 28, 14, 0.34);
@@ -249,6 +250,9 @@ button, input, select, textarea {
   color: var(--accent);
   flex: none;
 }
+/* The mark is taller than it is wide, so it is sized by its height and the
+   width follows — setting both would squash it. */
+.brand-mark svg { height: 23px; width: auto; display: block; }
 
 /* ---------- client identity (far right) ----------------------------------- */
 .client-id-wrap { position: relative; }
@@ -838,7 +842,7 @@ button, input, select, textarea {
   top: 0; bottom: 0; left: var(--line-x);
   width: 1.5px;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, transparent, var(--line) 40px, var(--line) calc(100% - 120px), transparent);
+  background: var(--line);
 }
 
 /* ---------- dots + date labels -------------------------------------------- */
@@ -972,14 +976,10 @@ button, input, select, textarea {
      on a phone it was worse than redundant — a tap leaves :hover stuck, so the
      card went grey and stayed grey for as long as you were working in it.
 
-     A bar along the edge the card hangs from, in the state's own gradient.
-     Painted as a background rather than an inset shadow or a pseudo-element so
-     it can be a gradient and still stay put when a long card scrolls inside
-     itself. */
-  background-image: var(--tone-grad);
-  background-repeat: no-repeat;
-  background-size: 100% 3px;
-  background-position: top left;
+     A bar along the edge the card hangs from, in the state's own flat colour.
+     Drawn with an inset so it is painted on the box rather than on what is in
+     it, and stays put when a long card scrolls inside itself. */
+  box-shadow: inset 0 3px 0 var(--tone-bar);
 }
 
 /* An approved block is done with: grey, and faded back so the live work
@@ -1105,38 +1105,34 @@ button, input, select, textarea {
 
 /* ---------- states (the one place colour is used) -------------------------- */
 /* ---------- the five states ------------------------------------------------
-   Five hues would be five colours, and there are three. So the states are a
-   ladder of tone instead — and the one that matters takes the accent.
+   Each state owns one hue, kept apart on the wheel so two are never mistaken
+   for each other at a glance: graphite, ink blue, ochre, violet, forest. They
+   are flat — one colour each, nothing blended — and they are the only hues in
+   the app that are not the accent. To Do has no hue at all: it is the state of
+   something nobody has started, and giving it a colour would make every future
+   task shout as loudly as the one in hand.
 
-     To do        barely there, a shade lighter than the panel
-     In progress  the accent, and the only accent on the panel
-     On hold      a step down into the grey
-     Review       further down, nearly at the ground
-     Approved     the ground itself, inverted: dark chip, light text
-
-   Told apart by weight rather than by hue, which is what a monochrome has to
-   do, and read top to bottom they are the work getting darker as it settles.
-   Approved inverting is what stops the bottom three turning into one grey:
-   nothing else in the app is a dark chip. */
+   Red stays out of this set entirely. It is the accent, and it means late, or
+   now, or about to be destroyed — never a state of work. */
 .tone-todo, .state-todo {
   --tone-fg: #4F4F4F; --tone-bg: #E2E2E2; --tone-dot: #A5A5A5; --tone-br: transparent;
-  --tone-grad: linear-gradient(104deg, #9C9C9C 0%, #B4B4B4 52%, #C8C8C8 100%);
+  --tone-bar: #A5A5A5;
 }
 .tone-in_progress, .state-in_progress {
-  --tone-fg: #9E1309; --tone-bg: #EFD2CF; --tone-dot: #D01C0E; --tone-br: transparent;
-  --tone-grad: linear-gradient(104deg, #7C0F06 0%, #D01C0E 54%, #F0674F 100%);
+  --tone-fg: #0F4C81; --tone-bg: #DAE6F3; --tone-dot: #1B4FA8; --tone-br: transparent;
+  --tone-bar: #1B4FA8;
 }
 .tone-on_hold, .state-on_hold {
-  --tone-fg: #3F3F3F; --tone-bg: #C9C9C9; --tone-dot: #767676; --tone-br: transparent;
-  --tone-grad: linear-gradient(104deg, #6B6B6B 0%, #8A8A8A 52%, #A8A8A8 100%);
+  --tone-fg: #86490A; --tone-bg: #F2E4CE; --tone-dot: #A8590C; --tone-br: transparent;
+  --tone-bar: #A8590C;
 }
 .tone-review, .state-review {
-  --tone-fg: #202020; --tone-bg: #AEAEAE; --tone-dot: #3C3C3C; --tone-br: transparent;
-  --tone-grad: linear-gradient(104deg, #3A3A3A 0%, #575757 52%, #7A7A7A 100%);
+  --tone-fg: #5B2192; --tone-bg: #E8DEF3; --tone-dot: #64259E; --tone-br: transparent;
+  --tone-bar: #64259E;
 }
 .tone-approved, .state-approved {
-  --tone-fg: #D9D9D9; --tone-bg: #141414; --tone-dot: #D9D9D9; --tone-br: transparent;
-  --tone-grad: linear-gradient(104deg, #141414 0%, #3A3A3A 56%, #6E6E6E 100%);
+  --tone-fg: #1C5C33; --tone-bg: #DCEAD7; --tone-dot: #1E6B37; --tone-br: transparent;
+  --tone-bar: #1E6B37;
 }
 
 .state-row { display: flex; margin-top: 2px; }
@@ -1157,9 +1153,6 @@ button, input, select, textarea {
   transition: border-color var(--dur-1) var(--ease), background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
 }
 .state-chip.is-button:hover { background: var(--hover); }
-/* The approved chip is already the darkest thing on the panel, so it lifts
-   towards the light rather than darkening into itself. */
-.state-approved.is-button:hover { background: #2B2B2B; }
 /* Open is a firmer rule, not a halo round the outside. A glow says nothing a
    border cannot, and a page of them is the look this is getting away from. */
 .state-chip.is-button.is-open { background: color-mix(in srgb, var(--tone-bg) 62%, var(--tone-dot) 14%); }
@@ -1336,9 +1329,9 @@ button, input, select, textarea {
   z-index: 1; /* sits on the rule, never under it */
   transform: translateY(-50%);
   display: inline-flex; align-items: baseline; gap: 7px;
-  /* Filled, not tinted: today is the one fixed point on a line of plans, and
-     it is the only thing on the page allowed to interrupt the paper. */
-  background: var(--grad-danger); border: 0; color: var(--on-danger);
+  /* Filled flat, not tinted: today is the one fixed point on a line of plans,
+     and it is the only thing on the page allowed to interrupt it. */
+  background: var(--accent); border: 0; color: var(--on-danger);
   padding: 5px 11px; border-radius: 999px;
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
 }
@@ -1538,14 +1531,13 @@ button, input, select, textarea {
      dates sit — it is how much of the job is behind you, readable from across
      the room. `--now-x` comes from the component, which is the only thing
      that knows where today landed. */
+  /* Two flat lengths meeting at today, not a blend: the change of colour is
+     the information, and a fade would smear the one place on the line that
+     has to be exact. */
   background:
     linear-gradient(to right,
-      transparent,
-      var(--ink) 40px,
-      var(--ink) calc(var(--now-x, 0px) - 1px),
-      var(--rail) var(--now-x, 0px),
-      var(--rail) calc(100% - 120px),
-      transparent);
+      var(--ink) 0, var(--ink) calc(var(--now-x, 0px) - 1px),
+      var(--rail) var(--now-x, 0px), var(--rail) 100%);
 }
 
 .timeline-canvas.is-horizontal .dot-row {
@@ -1973,15 +1965,11 @@ button, input, select, textarea {
   margin: 0;
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-  /* The number of days is the alarm, so the gradient goes on the words
-     themselves and the box behind them stays a quiet tint. Falls back to a
-     flat colour anywhere the clip is not supported. */
+  /* The number of days is the alarm, so it is the one bit of text in the
+     accent itself; the box behind it stays a quiet tint. */
   color: var(--today-fg);
-  background: var(--grad-danger);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
-.overdue-count svg { -webkit-text-fill-color: initial; color: var(--today); }
+.overdue-count svg { color: var(--today); }
 .overdue-reason, .overdue-reason-input {
   margin: 0; font-size: 12px; line-height: 1.5; color: var(--text);
 }
@@ -2265,6 +2253,55 @@ button, input, select, textarea {
   outline: none;
   box-shadow: 0 0 0 4px var(--ring);
 }
+
+/* ===========================================================================
+   WRITING
+   A field you type into in the middle of the page is not a box. The words are
+   the thing; the field is only where they go. So nothing is filled and nothing
+   is framed — under the cursor there is a faint line to say you may write
+   here, and once you are writing the line is the accent. That is the whole
+   control.
+
+   Drawn as an inset, which paints the line inside the box: a border would move
+   the text by a pixel the moment it appeared, and a box-shadow under the box
+   is the one thing this design does not do.
+
+   Dialog forms are not in this list. A form is a box you fill in, it is
+   surrounded by other controls doing other jobs, and a row of underlines with
+   no fields around them is a worse form, not a cleaner one.
+   ========================================================================= */
+.block-title-input, .block-desc-input,
+.brand-title-input, .brand-blurb-input,
+.asset-title-input, .asset-h-input, .asset-body-input, .tile-text-input,
+.dl-title-input, .overdue-reason-input, .client-name-input {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: inset 0 -1.5px 0 transparent;
+  transition: box-shadow var(--dur-1) var(--ease);
+}
+.block-title-input:hover, .block-desc-input:hover,
+.brand-title-input:hover, .brand-blurb-input:hover,
+.asset-title-input:hover, .asset-h-input:hover, .asset-body-input:hover,
+.tile-text-input:hover, .dl-title-input:hover,
+.overdue-reason-input:hover, .client-name-input:hover {
+  background: transparent;
+  box-shadow: inset 0 -1.5px 0 var(--ring);
+}
+.block-title-input:focus, .block-desc-input:focus,
+.brand-title-input:focus, .brand-blurb-input:focus,
+.asset-title-input:focus, .asset-h-input:focus, .asset-body-input:focus,
+.tile-text-input:focus, .dl-title-input:focus,
+.overdue-reason-input:focus, .client-name-input:focus {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 -1.5px 0 var(--accent);
+}
+/* No halo on these, not even for a keyboard. A text field matches
+   `:focus-visible` whichever way you got into it — it takes typing, so the
+   browser treats every focus as a keyboard focus — which means the halo would
+   be back round every field the moment you touched one, and the halo is the
+   grey box this is getting rid of. The line is the indicator. */
 
 /* ===========================================================================
    MOTION
