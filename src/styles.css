@@ -1965,11 +1965,15 @@ button, input, select, textarea {
      every image on the way past, and on a phone it fights the pan. */
   touch-action: none;
   overscroll-behavior: contain;
-  cursor: grab;
+  /* Not a hand any more: the left button draws a lasso here and the middle one
+     moves the board, so promising a grab would be the wrong promise. */
+  cursor: default;
   scrollbar-width: none;
 }
 .mood-scroll::-webkit-scrollbar { display: none; }
-.mood-scroll:active { cursor: grabbing; }
+/* Space is being held: the left button is the board now, and says so. */
+.mood-scroll.is-grabbing, .mood-scroll.is-grabbing .mood-item { cursor: grab; }
+.mood-scroll.is-grabbing:active, .mood-scroll.is-grabbing:active .mood-item { cursor: grabbing; }
 
 .mood-extent { position: relative; }
 
@@ -2008,12 +2012,35 @@ button, input, select, textarea {
   pointer-events: none; /* the frame takes the drag, never the picture */
 }
 .mood-item:hover { box-shadow: 0 1px 2px rgba(58, 48, 32, 0.12), 0 16px 34px -10px rgba(58, 48, 32, 0.38); }
+/* Picked. A ring rather than a tint, because tinting a picture lies about the
+   picture — and drawn with a shadow, like every other edge here, so there is
+   still not a stroke anywhere in the thing. */
+.mood-item.is-selected {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 1px 2px rgba(58, 48, 32, 0.12),
+    0 16px 34px -10px rgba(58, 48, 32, 0.40);
+}
 .mood-item.is-dragging {
   cursor: grabbing;
   /* Picked up: further off the board, and above everything whatever its own
      order says. */
-  box-shadow: 0 6px 12px rgba(58, 48, 32, 0.18), 0 30px 60px -16px rgba(58, 48, 32, 0.45);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 6px 12px rgba(58, 48, 32, 0.18),
+    0 30px 60px -16px rgba(58, 48, 32, 0.45);
   z-index: 9999 !important;
+}
+
+/* The lasso. Faint fill so you can see what is inside it, and its edge is the
+   same ink as a picked picture — it is the same idea, mid-sentence. */
+.mood-lasso {
+  position: absolute;
+  z-index: 9998;
+  pointer-events: none;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
 .mood-remove {
@@ -2024,7 +2051,8 @@ button, input, select, textarea {
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
 }
-.mood-item:hover .mood-remove { opacity: 1; }
+.mood-item:hover .mood-remove,
+.mood-item.is-selected .mood-remove { opacity: 1; }
 
 /* The corner that resizes. A small square of the picture's own bottom-right,
    lifted off it — the shape every canvas tool uses, so it needs no label. */
@@ -2038,7 +2066,8 @@ button, input, select, textarea {
   opacity: 0; transition: opacity var(--dur-1) var(--ease);
   touch-action: none;
 }
-.mood-item:hover .mood-size { opacity: 1; }
+.mood-item:hover .mood-size,
+.mood-item.is-selected .mood-size,
 .mood-item.is-dragging .mood-size { opacity: 1; }
 .mood-remove:hover { background: var(--danger); color: var(--on-danger); }
 
@@ -2067,6 +2096,18 @@ button, input, select, textarea {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), var(--shadow-lg);
 }
 .mood-add:hover { background: var(--ink-hover); }
+
+/* How many are picked, said once rather than counted off the rings. */
+.mood-count {
+  position: absolute; left: 18px; top: 18px;
+  z-index: 10;
+  padding: 6px 12px; border-radius: 999px;
+  background: var(--ink); color: var(--on-ink);
+  font-size: 11.5px; font-weight: 550; letter-spacing: -0.008em;
+  box-shadow: var(--shadow);
+  animation: rise var(--dur-2) var(--ease) backwards;
+  pointer-events: none;
+}
 
 .mood-zoom {
   position: absolute; left: 18px; bottom: 18px;
@@ -2097,9 +2138,10 @@ button, input, select, textarea {
 }
 
 @media (hover: none) {
-  /* Nothing appears on hover here either, so both are simply always on — and
-     the corner is given a finger-sized target rather than a cursor-sized one. */
-  .mood-remove { opacity: 1; }
+  /* There is no hover to lean on, so the controls belong to whatever is
+     picked — and the corner is given a finger-sized target rather than a
+     cursor-sized one. */
+  .mood-item.is-selected .mood-remove { opacity: 1; }
   .mood-size {
     opacity: 1;
     width: 26px; height: 26px; right: -9px; bottom: -9px; border-radius: 7px;

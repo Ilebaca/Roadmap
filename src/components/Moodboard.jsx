@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
 import { Plus, Trash } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
@@ -10,10 +10,13 @@ import {
   clampZoom,
   dropSize,
   fitToLimit,
+  hits,
   imagesFromClipboard,
   isImage,
   MAX_ZOOM,
   MIN_ZOOM,
+  moveGroup,
+  rectBetween,
   resizeFrom,
   shrunkMessage,
   tooBigMessage
@@ -27,23 +30,53 @@ import {
  * this one is a wall, and the client pins things to it exactly as freely as the
  * studio does.
  *
- * Three gestures, told apart by what is under the pointer and how many there
- * are: one on a picture moves it, one on bare board pans, two pinch. The wheel
- * zooms rather than scrolls, which is what a canvas does and a page does not.
+ * What the pointer does, in one place, because a canvas lives or dies on this:
+ *
+ *   left press on a picture   picks it (and everything picked with it) up
+ *   left press on the board   draws a lasso; a press that never moves clears
+ *   shift / ⌘ / ctrl click    adds one picture to the selection, or drops it
+ *   middle button             pans, anywhere, picture or not
+ *   one finger on the board   pans
+ *   long press on a picture   adds it to the selection — touch has no shift
+ *   two fingers / wheel       zooms
+ *
+ * The middle button pans rather than the left one because the left one is now
+ * the lasso, and a canvas where you cannot pick several things at once is a
+ * canvas you can only tidy one picture at a time.
  */
 export default function Moodboard() {
   const { session, project, moodboard, actions } = useStore()
   const scrollRef = useRef(null)
   const fileRef = useRef(null)
   const [notice, setNotice] = useState(null)
-  const [pending, setPending] = useState(null) // image waiting on a confirm
+  const [pending, setPending] = useState(null) // pictures waiting on a confirm
   const [busy, setBusy] = useState(false)
   const [zoom, setZoom] = useState(1)
   const zoomRef = useRef(1)
   zoomRef.current = zoom
 
   const dragRef = useRef(null)
-  const [dragId, setDragId] = useState(null)
+  const [dragIds, setDragIds] = useState([])
+
+  /**
+   * What is picked. An array because it is small and ordered reads better in
+   * the places that count it.
+   */
+  const [selected, setSelected] = useState([])
+  const selRef = useRef([])
+  const select = useCallback((ids) => {
+    selRef.current = ids
+    setSelected(ids)
+  }, [])
+  const isSelected = (id) => selected.includes(id)
+
+  const byId = useMemo(() => new Map(moodboard.map((i) => [i.id, i])), [moodboard])
+
+  // A picture taken off the board cannot stay picked.
+  useEffect(() => {
+    const live = selRef.current.filter((id) => byId.has(id))
+    if (live.length !== selRef.current.length) select(live)
+  }, [byId, select])
 
   /**
    * Where pictures are, as far as this screen is concerned.
@@ -65,9 +98,19 @@ export default function Moodboard() {
     posRef.current = { ...posRef.current, [id]: p }
     setPos(posRef.current)
   }
+  const setPosForMany = (m) => {
+    posRef.current = { ...posRef.current, ...m }
+    setPos(posRef.current)
+  }
   // Position AND size: a resize is held back by the same round trip a move is.
   const whereIs = (item) =>
     posRef.current[item.id] ?? { x: item.x, y: item.y, w: item.w, h: item.h }
+
+  /** Is this picture in the air right now? Its own answer must not be dropped. */
+  const inFlight = (id) => {
+    const d = dragRef.current
+    return !!d && (d.id === id || d.ids?.includes(id))
+  }
 
   // Let go of a local answer the moment the stored one says the same thing.
   useEffect(() => {
@@ -76,7 +119,7 @@ export default function Moodboard() {
     let next = held
     for (const item of moodboard) {
       const p = held[item.id]
-      if (!p || dragRef.current?.id === item.id) continue
+      if (!p || inFlight(item.id)) continue
       const same = ['x', 'y', 'w', 'h'].every((k) => Math.round(item[k]) === Math.round(p[k]))
       if (same) {
         if (next === held) next = { ...held }
@@ -117,6 +160,18 @@ export default function Moodboard() {
     return {
       x: (el.scrollLeft + el.clientWidth / 2) / z,
       y: (el.scrollTop + el.clientHeight / 2) / z
+    }
+  }
+
+  /** Board coordinates for a point on screen. */
+  const boardPoint = (clientX, clientY) => {
+    const el = scrollRef.current
+    const z = zoomRef.current
+    if (!el) return { x: 0, y: 0 }
+    const r = el.getBoundingClientRect()
+    return {
+      x: (el.scrollLeft + clientX - r.left) / z,
+      y: (el.scrollTop + clientY - r.top) / z
     }
   }
 
@@ -242,36 +297,133 @@ export default function Moodboard() {
     return () => document.removeEventListener('paste', onPaste)
   }, [add])
 
+  const canRemove = useCallback(
+    (item) => !!session && (item.created_by === session.id || session.role === 'admin'),
+    [session]
+  )
+
+  /**
+   * Held space turns the left button into the board itself.
+   *
+   * A trackpad has no middle button, and two fingers on one is the wheel,
+   * which zooms here. Without this a laptop could pick things out and never
+   * move the board at all.
+   */
+  const spaceRef = useRef(false)
+  const [grabbing, setGrabbing] = useState(false)
+
+  // Escape drops the selection; the delete keys ask about it. Both are what a
+  // canvas does, and neither can fire while something is being typed into.
+  useEffect(() => {
+    const onKey = (e) => {
+      const t = e.composedPath?.()[0] ?? e.target
+      const tag = t?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || t?.isContentEditable) return
+      if (e.code === 'Space') {
+        spaceRef.current = true
+        setGrabbing(true)
+        // Space would otherwise scroll the page under the board.
+        e.preventDefault()
+        return
+      }
+      if (e.key === 'Escape') return select([])
+      if (e.key !== 'Backspace' && e.key !== 'Delete') return
+      const mine = selRef.current.map((id) => byId.get(id)).filter((it) => it && canRemove(it))
+      if (!mine.length) return
+      e.preventDefault()
+      setPending(mine)
+    }
+    const onUp = (e) => {
+      if (e.code !== 'Space') return
+      spaceRef.current = false
+      setGrabbing(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('keyup', onUp)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keyup', onUp)
+    }
+  }, [byId, canRemove, select])
+
   // --- moving a picture ------------------------------------------------------
   const pointers = useRef(new Map())
+  const holdRef = useRef(null)
+
+  const clearHold = () => {
+    if (holdRef.current) clearTimeout(holdRef.current)
+    holdRef.current = null
+  }
+
+  /**
+   * A touch has no shift key, so holding a picture is how you add it to the
+   * selection. The timer dies the moment the finger travels, so a hold that
+   * turns into a drag is a drag.
+   *
+   * It toggles against what was picked BEFORE this press, not after: the press
+   * itself has already made this picture the selection, so reading it back
+   * would see the picture it just picked and dutifully unpick it.
+   */
+  const startHold = (id, before) => {
+    clearHold()
+    holdRef.current = setTimeout(() => {
+      holdRef.current = null
+      dragRef.current = null
+      setDragIds([])
+      select(before.includes(id) ? before.filter((x) => x !== id) : [...before, id])
+    }, 450)
+  }
 
   const onImagePointerDown = (e, item) => {
-    if (e.button === 1 || e.button === 2) return
+    // The middle button pans wherever it is pressed, and so does held space, so
+    // both are let through to the board below rather than taken here.
+    if (e.button === 1 || e.button === 2 || spaceRef.current) return
     if (pointers.current.size) return // a second finger means a pinch, not a move
     e.preventDefault()
-    e.stopPropagation() // not a pan
+    e.stopPropagation() // not a pan, and not a lasso
 
-    // From where the picture IS, which is not always where the store thinks.
-    const at = whereIs(item)
+    // What this press does to the selection, before it does anything to the
+    // board: with a modifier it adds or drops this one; on something already
+    // picked it keeps the group, so a group can be dragged by any member; on
+    // anything else it becomes the selection.
+    const together = e.shiftKey || e.metaKey || e.ctrlKey
+    const before = selRef.current
+    let ids = before
+    if (together) {
+      ids = ids.includes(item.id) ? ids.filter((x) => x !== item.id) : [...ids, item.id]
+      select(ids)
+      if (!ids.includes(item.id)) return // just dropped from the group: nothing to drag
+    } else if (!ids.includes(item.id)) {
+      ids = [item.id]
+      select(ids)
+    }
+
+    // From where the pictures ARE, which is not always where the store thinks.
+    const at = {}
+    for (const id of ids) {
+      const it = byId.get(id)
+      if (it) at[id] = whereIs(it)
+    }
     // The drag is set up BEFORE the pointer is captured, and the capture is
     // allowed to fail. It throws if the pointer is already gone, and anything
     // after it in here would then never run — the picture would take the press
     // and refuse to move, which is a worse failure than losing the capture.
     dragRef.current = {
       kind: 'move',
-      id: item.id,
+      ids: Object.keys(at),
       pointerId: e.pointerId,
       from: { x: e.clientX, y: e.clientY },
       at,
       now: at,
       moved: false
     }
-    setDragId(item.id)
+    setDragIds(Object.keys(at))
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId)
     } catch {
       /* the pointer is already gone; the move handlers still work */
     }
+    if (e.pointerType !== 'mouse') startHold(item.id, before)
   }
 
   /** The corner that makes a picture bigger or smaller. */
@@ -291,7 +443,7 @@ export default function Moodboard() {
       now: at,
       moved: false
     }
-    setDragId(item.id)
+    setDragIds([item.id])
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId)
     } catch {
@@ -308,56 +460,128 @@ export default function Moodboard() {
     const dx = (e.clientX - d.from.x) / z
     const dy = (e.clientY - d.from.y) / z
 
-    const next =
-      d.kind === 'size'
-        ? { ...d.at, ...resizeFrom(d.at.w, d.at.h, dx, dy, d.at.x, d.at.y) }
-        : { ...d.at, ...clampToBoard(d.at.x + dx, d.at.y + dy, d.at.w, d.at.h) }
+    if (!d.moved && Math.hypot(e.clientX - d.from.x, e.clientY - d.from.y) > 3) {
+      d.moved = true
+      clearHold() // travelling, so this was a drag and never a hold
+    }
 
-    if (!d.moved && Math.hypot(e.clientX - d.from.x, e.clientY - d.from.y) > 3) d.moved = true
+    if (d.kind === 'size') {
+      const next = {
+        ...d.at,
+        ...resizeFrom(d.at.w, d.at.h, dx, dy, d.at.x, d.at.y)
+      }
+      d.now = next
+      setPosFor(d.id, next)
+      return
+    }
+    const next = moveGroup(d.at, dx, dy)
     d.now = next
-    setPosFor(d.id, next)
+    setPosForMany(next)
   }
 
   const onImagePointerUp = (e) => {
     const d = dragRef.current
     if (!d || d.pointerId !== e.pointerId) return
     dragRef.current = null
-    setDragId(null)
-    // A press that never moved is not a move. Writing one would be a round
-    // trip and a reload to say nothing happened.
+    setDragIds([])
+    clearHold()
+    // A press that never moved is not a move — it was the selection, which has
+    // already happened. Writing one would be a round trip and a reload to say
+    // nothing happened.
     if (!d.moved) return
     // The local answer stays until the store comes back agreeing with it —
     // see the effect at the top. There is nothing to clear here.
-    actions.moveMoodboardItem(
-      d.id,
-      d.kind === 'size'
-        ? { w: Math.round(d.now.w), h: Math.round(d.now.h) }
-        : { x: Math.round(d.now.x), y: Math.round(d.now.y) }
+    if (d.kind === 'size') {
+      actions.moveMoodboardItem(d.id, {
+        w: Math.round(d.now.w),
+        h: Math.round(d.now.h)
+      })
+      return
+    }
+    actions.moveMoodboardItems(
+      Object.entries(d.now).map(([id, p]) => ({
+        id,
+        x: Math.round(p.x),
+        y: Math.round(p.y)
+      }))
     )
   }
 
-  // --- panning and pinching --------------------------------------------------
+  // --- panning, pinching and the lasso ---------------------------------------
   const panRef = useRef(null)
   const pinchRef = useRef(null)
+  const lassoRef = useRef(null)
+  const [lasso, setLasso] = useState(null)
+
+  /**
+   * A release the board never hears about leaves a pointer in the map that is
+   * no longer on the glass, and from then on every press counts as the second
+   * one — the board reads it as a pinch, so nothing pans and no picture can be
+   * picked up. It happens whenever a press ends off the panel, so the window
+   * is asked as well; whichever hears it first, the other finds nothing left
+   * to do.
+   */
+  const endRef = useRef(null)
+  useEffect(() => {
+    const done = (e) => endRef.current?.(e)
+    window.addEventListener('pointerup', done)
+    window.addEventListener('pointercancel', done)
+    return () => {
+      window.removeEventListener('pointerup', done)
+      window.removeEventListener('pointercancel', done)
+    }
+  }, [])
 
   const onBoardPointerDown = (e) => {
     const el = scrollRef.current
-    if (!el || e.button === 1 || e.button === 2) return
+    if (!el || e.button === 2) return
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
     if (pointers.current.size === 2) {
-      // Two fingers: stop panning and start pinching from where they are now.
+      // Two fingers: stop whatever one was doing and pinch from where they are.
       panRef.current = null
+      lassoRef.current = null
+      setLasso(null)
       const [a, b] = [...pointers.current.values()]
-      pinchRef.current = { gap: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoomRef.current }
+      pinchRef.current = {
+        gap: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        zoom: zoomRef.current
+      }
       return
     }
-    if (pointers.current.size === 1) {
-      panRef.current = {
+    if (pointers.current.size !== 1) return
+
+    // The left button draws; everything else here — the middle button, held
+    // space, a finger, a pen — moves the board.
+    if (e.pointerType === 'mouse' && e.button === 0 && !spaceRef.current) {
+      e.preventDefault()
+      const from = boardPoint(e.clientX, e.clientY)
+      lassoRef.current = {
         pointerId: e.pointerId,
-        from: { x: e.clientX, y: e.clientY },
-        at: { left: el.scrollLeft, top: el.scrollTop }
+        from,
+        rect: { ...from, w: 0, h: 0 },
+        moved: false
       }
+      setLasso({ ...from, w: 0, h: 0 })
+      try {
+        el.setPointerCapture?.(e.pointerId)
+      } catch {
+        /* nothing to capture; the move handler still runs */
+      }
+      return
+    }
+    e.preventDefault() // the middle button otherwise starts the browser's own scroll
+    panRef.current = {
+      pointerId: e.pointerId,
+      from: { x: e.clientX, y: e.clientY },
+      at: { left: el.scrollLeft, top: el.scrollTop },
+      moved: false
+    }
+    try {
+      // So a pan that wanders off the panel keeps panning rather than sticking.
+      el.setPointerCapture?.(e.pointerId)
+    } catch {
+      /* nothing to capture; the move handler still runs */
     }
   }
 
@@ -376,19 +600,44 @@ export default function Moodboard() {
       return
     }
 
+    const l = lassoRef.current
+    if (l && l.pointerId === e.pointerId) {
+      const to = boardPoint(e.clientX, e.clientY)
+      const z = zoomRef.current
+      if (!l.moved && Math.hypot(to.x - l.from.x, to.y - l.from.y) * z > 3) l.moved = true
+      l.rect = rectBetween(l.from, to)
+      setLasso(l.rect)
+      return
+    }
+
     const p = panRef.current
     if (!p || p.pointerId !== e.pointerId) return
+    if (!p.moved && Math.hypot(e.clientX - p.from.x, e.clientY - p.from.y) > 4) p.moved = true
     el.scrollLeft = p.at.left - (e.clientX - p.from.x)
     el.scrollTop = p.at.top - (e.clientY - p.from.y)
   }
 
   const endBoardPointer = (e) => {
+    const l = lassoRef.current
+    if (l && l.pointerId === e.pointerId) {
+      lassoRef.current = null
+      setLasso(null)
+      // A press on bare board that went nowhere means: nothing, thank you.
+      select(l.moved ? moodboard.filter((it) => hits(l.rect, whereIs(it))).map((it) => it.id) : [])
+    }
+    // A finger put on bare board and taken off again is a tap, and a tap on
+    // bare board means the same thing it means with a mouse: nothing picked.
+    // Only a pan that actually panned is allowed to leave the selection alone.
+    const p = panRef.current
+    if (p && p.pointerId === e.pointerId && !p.moved && selRef.current.length) select([])
+
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinchRef.current = null
+    if (panRef.current?.pointerId === e.pointerId) panRef.current = null
     if (!pointers.current.size) panRef.current = null
   }
+  endRef.current = endBoardPointer
 
-  const canRemove = (item) => !!session && (item.created_by === session.id || session.role === 'admin')
   const atCentre = (next) => {
     const el = scrollRef.current
     if (!el) return
@@ -396,15 +645,20 @@ export default function Moodboard() {
     zoomAt(next, r.left + r.width / 2, r.top + r.height / 2)
   }
 
+  // One picture gets a resize corner. A group does not: pulling a group out of
+  // its own arrangement needs a different gesture than this corner means.
+  const lone = selected.length === 1
+
   return (
     <main className="stage">
       <div
-        className="mood-scroll"
+        className={`mood-scroll ${grabbing ? 'is-grabbing' : ''}`}
         ref={scrollRef}
         onPointerDown={onBoardPointerDown}
         onPointerMove={onBoardPointerMove}
         onPointerUp={endBoardPointer}
         onPointerCancel={endBoardPointer}
+        onAuxClick={(e) => e.preventDefault()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault()
@@ -418,16 +672,29 @@ export default function Moodboard() {
         <div className="mood-extent" style={{ width: BOARD_W * zoom, height: BOARD_H * zoom }}>
           <div
             className="mood-board"
-            style={{ width: BOARD_W, height: BOARD_H, transform: `scale(${zoom})` }}
+            style={{
+              width: BOARD_W,
+              height: BOARD_H,
+              transform: `scale(${zoom})`
+            }}
           >
             {moodboard.map((item) => {
               const at = pos[item.id] ?? item
+              const picked = isSelected(item.id)
               return (
                 <div
                   key={item.id}
-                  className={`mood-item ${dragId === item.id ? 'is-dragging' : ''}`}
+                  className={`mood-item ${dragIds.includes(item.id) ? 'is-dragging' : ''} ${
+                    picked ? 'is-selected' : ''
+                  }`}
                   data-mood-id={item.id}
-                  style={{ left: at.x, top: at.y, width: at.w, height: at.h, zIndex: item.z + 1 }}
+                  style={{
+                    left: at.x,
+                    top: at.y,
+                    width: at.w,
+                    height: at.h,
+                    zIndex: item.z + 1
+                  }}
                   onPointerDown={(e) => onImagePointerDown(e, item)}
                   onPointerMove={onImagePointerMove}
                   onPointerUp={onImagePointerUp}
@@ -436,20 +703,22 @@ export default function Moodboard() {
                   <img src={item.url} alt={item.file_name || ''} draggable={false} />
                   {/* The corner. Proportional always: a picture pulled out of
                       shape is a different picture. */}
-                  <span
-                    className="mood-size"
-                    title="Drag to resize"
-                    onPointerDown={(e) => onResizePointerDown(e, item)}
-                    onPointerMove={onImagePointerMove}
-                    onPointerUp={onImagePointerUp}
-                    onPointerCancel={onImagePointerUp}
-                  />
-                  {canRemove(item) && (
+                  {picked && lone && (
+                    <span
+                      className="mood-size"
+                      title="Drag to resize"
+                      onPointerDown={(e) => onResizePointerDown(e, item)}
+                      onPointerMove={onImagePointerMove}
+                      onPointerUp={onImagePointerUp}
+                      onPointerCancel={onImagePointerUp}
+                    />
+                  )}
+                  {picked && canRemove(item) && (
                     <button
                       className="icon-btn danger mood-remove"
                       title="Take this off the board"
                       onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => setPending(item)}
+                      onClick={() => setPending([item])}
                     >
                       <Trash width="13" height="13" />
                     </button>
@@ -458,18 +727,37 @@ export default function Moodboard() {
               )
             })}
 
+            {lasso && (
+              <div
+                className="mood-lasso"
+                style={{
+                  left: lasso.x,
+                  top: lasso.y,
+                  width: lasso.w,
+                  height: lasso.h
+                }}
+              />
+            )}
+
             {!moodboard.length && (
               <div className="mood-empty" style={{ left: BOARD_W / 2, top: BOARD_H / 2 }}>
                 <h3>Nothing on the board yet</h3>
                 <p>
-                  Paste a screenshot, drop a file in, or add one below. Drag a picture to move it,
-                  drag the board to look around, scroll to zoom.
+                  Paste a screenshot, drop a file in, or add one below. Click a picture to pick it
+                  up, drag across the board to pick out several, hold the middle mouse button or the
+                  space bar to look around, scroll to zoom.
                 </p>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {selected.length > 1 && (
+        <div className="mood-count" role="status">
+          {selected.length} picked
+        </div>
+      )}
 
       {/* Pinned to the panel, so they stay put while the board moves under. */}
       <div className="mood-zoom">
@@ -513,12 +801,23 @@ export default function Moodboard() {
 
       {pending && (
         <ConfirmDialog
-          title="Take this off the board?"
-          body="It is removed for everyone. This cannot be undone."
+          title={
+            pending.length > 1
+              ? `Take ${pending.length} pictures off the board?`
+              : 'Take this off the board?'
+          }
+          body={
+            pending.length > 1
+              ? 'They are removed for everyone. This cannot be undone.'
+              : 'It is removed for everyone. This cannot be undone.'
+          }
           confirmLabel="Remove"
           onCancel={() => setPending(null)}
           onConfirm={() => {
-            actions.removeMoodboardImage(pending.id)
+            const ids = pending.map((p) => p.id)
+            if (ids.length > 1) actions.removeMoodboardImages(ids)
+            else actions.removeMoodboardImage(ids[0])
+            select(selRef.current.filter((id) => !ids.includes(id)))
             setPending(null)
           }}
         />

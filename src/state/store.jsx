@@ -380,8 +380,23 @@ export function StoreProvider({ children }) {
       moveMoodboardItem(id, patch) {
         return run(() => api.updateMoodboardItem(session, id, patch))
       },
+      /**
+       * Several pictures dragged as one group. Written together and reloaded
+       * once: a reload per picture would come back agreeing about the first and
+       * still disagreeing about the rest, and the board would be drawn with the
+       * group pulled apart mid-flight.
+       */
+      moveMoodboardItems(patches) {
+        return run(() =>
+          Promise.all(patches.map(({ id, ...patch }) => api.updateMoodboardItem(session, id, patch)))
+        )
+      },
       removeMoodboardImage(id) {
         return run(() => api.deleteMoodboardItem(session, id))
+      },
+      /** The whole selection, in one go and one reload. */
+      removeMoodboardImages(ids) {
+        return run(() => Promise.all(ids.map((id) => api.deleteMoodboardItem(session, id))))
       },
       /**
        * A grid arrives with its cells already in place — two or three empty

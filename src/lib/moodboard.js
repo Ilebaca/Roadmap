@@ -87,6 +87,56 @@ export function clampToBoard(x, y, w, h) {
 }
 
 /**
+ * Move a whole group of pictures by one drag.
+ *
+ * The edge of the board is held against the group, not against each picture:
+ * clamping them one at a time would let the ones already at the edge stop while
+ * the rest kept going, and a group that changes shape as it moves is not a
+ * group any more. So the delta is trimmed once, by whichever picture reaches an
+ * edge first, and everything keeps its place relative to everything else.
+ *
+ * `at` is {id: {x, y, w, h}} — where each one started.
+ */
+export function moveGroup(at, dx, dy) {
+  let minX = Infinity
+  let minY = Infinity
+  let maxR = -Infinity
+  let maxB = -Infinity
+  for (const p of Object.values(at)) {
+    minX = Math.min(minX, p.x)
+    minY = Math.min(minY, p.y)
+    maxR = Math.max(maxR, p.x + p.w)
+    maxB = Math.max(maxB, p.y + p.h)
+  }
+  const cdx = Math.min(Math.max(dx, -minX), BOARD_W - maxR)
+  const cdy = Math.min(Math.max(dy, -minY), BOARD_H - maxB)
+  const out = {}
+  for (const [id, p] of Object.entries(at)) out[id] = { ...p, x: p.x + cdx, y: p.y + cdy }
+  return out
+}
+
+/** The box between two corners, whichever way round they were dragged. */
+export function rectBetween(a, b) {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    w: Math.abs(a.x - b.x),
+    h: Math.abs(a.y - b.y)
+  }
+}
+
+/**
+ * Does the lasso touch this picture?
+ *
+ * Touching is enough — a picture does not have to be swallowed whole. Asking
+ * for containment means a careful drag around four thumbnails misses the one
+ * whose corner pokes out, and from looking at it you cannot tell why.
+ */
+export function hits(r, p) {
+  return r.x < p.x + p.w && r.x + r.w > p.x && r.y < p.y + p.h && r.y + r.h > p.y
+}
+
+/**
  * Make a picture fit the limit rather than turning it away.
  *
  * A screenshot off a modern display is three or four megabytes, so a board you
