@@ -166,3 +166,23 @@ export const Clock = (p) => (
     <path d="M8 4.8V8l2.2 1.4" />
   </svg>
 )
+
+/**
+ * The studio's mark.
+ *
+ * Drawn as one path with the ring cut out of it rather than a red disc with a
+ * lighter one on top, so the hole is whatever is behind the mark — the dark
+ * ground in the topbar, a panel anywhere else — and the mark never carries a
+ * patch of the wrong colour around with it.
+ */
+export const Mark = (p) => (
+  <svg viewBox="0 0 100 100" fill="none" {...p}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      fill="currentColor"
+      d="M50 0c32 0 48 13 48 39 0 23-13 35.5-33 38.6L84 100H34V77.6C14 74.5 2 62 2 39 2 13 18 0 50 0Zm0 17c-10.5 0-19 8.5-19 19s8.5 19 19 19 19-8.5 19-19-8.5-19-19-19Z"
+    />
+    <circle cx="50" cy="36" r="4.8" fill="currentColor" />
+  </svg>
+)

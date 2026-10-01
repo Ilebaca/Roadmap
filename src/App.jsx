@@ -9,7 +9,7 @@ import Moodboard from './components/Moodboard'
 import ClientSwitcher from './components/ClientSwitcher'
 import SignIn from './components/SignIn'
 import { canManageAccounts } from './lib/permissions'
-import { Users } from './components/Icons'
+import { Mark, Users } from './components/Icons'
 
 export default function App() {
   return (
@@ -103,9 +103,11 @@ function Shell() {
   return (
     <div className="app-frame">
       <header className="topbar">
-        {/* The client this account is looking at. An admin picks between
-            their clients here; a viewer only ever sees their own. */}
-        <ClientSwitcher />
+        {/* Ours, and the only thing on this side: whose software this is gets
+            said once, on the left, and then stays out of the way. */}
+        <span className="brand-mark" aria-label="Mimant Studio">
+          <Mark width="22" height="22" />
+        </span>
 
         <div className="topbar-right">
           {canManageAccounts(session) && (
@@ -154,6 +156,12 @@ function Shell() {
             </button>
           </div>
           )}
+
+          {/* The client this account is looking at. An admin picks between
+              their clients here; a viewer only ever sees their own. It sits
+              last, at the far end: it is the one control that changes what
+              every other thing on the screen is about. */}
+          <ClientSwitcher />
         </div>
       </header>
 
