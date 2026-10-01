@@ -14,9 +14,17 @@ export const MAX_IMAGE_LABEL = '1 MB'
 /** How big a picture is drawn when it first lands, longest side in px. */
 export const DROP_SIZE = 300
 
-/** The board itself: big enough to spread out on, small enough to find things. */
-export const BOARD_W = 3200
-export const BOARD_H = 2200
+/** The board itself. Room to spread out and leave gaps between groups — the
+ *  gaps are half of what a mood board says. You can zoom out to see all of it. */
+export const BOARD_W = 8000
+export const BOARD_H = 5600
+
+/** How far in and out the board goes. Out far enough to see the whole thing on
+ *  a phone, in far enough to look closely at one picture. */
+export const MIN_ZOOM = 0.1
+export const MAX_ZOOM = 3
+
+export const clampZoom = (z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z))
 
 export const prettyBytes = (n) =>
   n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`
@@ -45,6 +53,29 @@ export function dropSize(naturalW, naturalH) {
   const h = naturalH || DROP_SIZE
   const scale = DROP_SIZE / Math.max(w, h)
   return { w: Math.round(w * scale), h: Math.round(h * scale) }
+}
+
+/** How small and how large a picture may be made. Small enough to be a note
+ *  in the corner of a group, large enough to be the one everything else is
+ *  arranged around. */
+export const MIN_ITEM = 72
+export const MAX_ITEM = 2400
+
+/**
+ * A new size from a corner drag, with the shape kept.
+ *
+ * Always proportional: a mood board is pictures, and a picture squashed out of
+ * shape is a different picture. The corner follows the longer of the two
+ * movements so the drag feels like it is pulling the corner rather than one
+ * edge at a time.
+ */
+export function resizeFrom(w0, h0, dx, dy, x, y) {
+  const ratio = h0 / w0
+  const w = Math.max(MIN_ITEM, Math.min(MAX_ITEM, w0 + Math.max(dx, dy / ratio)))
+  // Never past the edge of the board, in either direction.
+  const fit = Math.min(w, BOARD_W - x, (BOARD_H - y) / ratio)
+  const out = Math.max(MIN_ITEM, fit)
+  return { w: Math.round(out), h: Math.round(out * ratio) }
 }
 
 /** Keeps an image on the board however hard it is thrown at the edge. */

@@ -151,8 +151,20 @@ sheet around it — and without those a blurred box just looks like a fault.
 Anything solid and inked catches the same light along its top edge.
 
 **Mood board.** The third app on the rail. It is a canvas and nothing else — no order, no categories, no approval.
-The board is larger than any screen, so a drag does one of two things depending
-on what is under it: an image moves, the bare board pans.
+The board is far larger than any screen. Three gestures, told apart by what is
+under the pointer and how many there are: one on a picture moves it, one on
+bare board pans, two pinch. The wheel zooms rather than scrolls — a board is
+not a page, there is no "down" to scroll to, and dragging is what panning is
+for. Zoom is anchored to the pointer, so whatever you were looking at stays
+where it was. A corner on each picture resizes it, always proportionally: a
+picture pulled out of shape is a different picture.
+
+Both position and size are held locally until the stored row comes back
+agreeing with them. A write reloads the whole store, and until that lands the
+row still holds the old answer — so a second drag begun before the first had
+saved would start from the stale place and the picture would jump backwards.
+Moving quickly is precisely the case where the next grab beats the last save
+home.
 
 It is also the one place a client *writes*. Everywhere else they read and
 approve; here they pin pictures up alongside the studio, which is the point of
