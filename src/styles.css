@@ -244,15 +244,20 @@ button, input, select, textarea {
 }
 
 /* ---------- the studio's mark (top-left) ----------------------------------- */
+/* An icon, not a mark floating on the ground: the artwork comes with its own
+   light tile and keeps it here, at the proportions it is drawn at — the mark
+   two thirds the height of the tile, centred, on the tile's own grey. */
 .brand-mark {
-  display: inline-flex; align-items: center;
-  padding: 0 6px;
+  display: grid; place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: #ECEDEF;
   color: var(--accent);
   flex: none;
 }
-/* The mark is taller than it is wide, so it is sized by its height and the
-   width follows — setting both would squash it. */
-.brand-mark svg { height: 23px; width: auto; display: block; }
+/* Taller than it is wide, so it is sized by its height and the width follows —
+   setting both would squash it. */
+.brand-mark svg { height: 22px; width: auto; display: block; }
 
 /* ---------- client identity (far right) ----------------------------------- */
 .client-id-wrap { position: relative; }
@@ -2295,7 +2300,10 @@ button, input, select, textarea {
 .overdue-reason-input:focus, .client-name-input:focus {
   background: transparent;
   color: var(--text);
-  box-shadow: inset 0 -1.5px 0 var(--accent);
+  /* The line is the ink you are writing in, not an alarm — the accent is kept
+     for what is late or live. On the dark ground the ink token is the light
+     one, so the line follows the surface it is on without being told. */
+  box-shadow: inset 0 -1.5px 0 var(--ink);
 }
 /* No halo on these, not even for a keyboard. A text field matches
    `:focus-visible` whichever way you got into it — it takes typing, so the
