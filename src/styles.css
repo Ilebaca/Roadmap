@@ -2491,39 +2491,23 @@ button, input, select, textarea {
     gap: 8px;
     padding: 8px var(--stage-margin);
   }
-  /* The box hugs what is in it. It was set to grow into whatever width the
-     row had left, so on a phone it ran most of the way across and left the
-     chevron sitting in the middle of a mostly empty box — the arrow reads as
-     the end of the name, and there was a hand's width of nothing after it.
-     Hugging puts the chevron at the edge, which is the same thing said once.
+  /* On a phone the client is its mark and nothing else. The name was the
+     widest thing in the row and it is already on every screen inside the app,
+     so up here it was a third of the bar spent repeating it. The mark still
+     opens the list, and the list still says which client each one is.
 
-     The name still gives way first if it has to: it can shrink to nothing and
-     ellipsise, so a long client never pushes Accounts and Sign out off the
-     row. */
-  .client-id-wrap, .client-id { flex: 0 1 auto; min-width: 0; }
-  /* It is at the far end of the row now, after everything else, so the name
-     gets what is left rather than first call on it. */
-  .client-name-input, .client-name {
-    min-width: 0; max-width: 32vw;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  /* An input has no content width of its own, so it is either a guessed
-     number of characters or this. Where it is not supported the fixed width
-     below stands, narrower here than on a desk. */
-  .client-name-input { width: 13ch; }
-  @supports (field-sizing: content) {
-    .client-name-input,
-    .client-name-input:focus { field-sizing: content; width: auto; }
-  }
+     It is a rename field on a desk, which a phone therefore cannot do — the
+     one thing lost, and the one least likely to be wanted with a thumb. */
+  .client-id-wrap, .client-id { flex: none; min-width: 0; }
+  .client-name-input, .client-name, .client-caret-btn { display: none; }
+  .client-id, .client-id.is-button { padding: 0; }
+  /* A mark on its own still has to be a target big enough to hit. */
+  .client-logo-btn { padding: 4px; border-radius: var(--radius); }
   .topbar-right { gap: 6px; flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
-  /* Everything in the row has to be able to give a little, or the part that
-     refuses simply overruns whatever is next to it — which on a 390px screen
-     is the client's own name sitting under the role switch. */
+  /* Everything else in the row can still give a little, so nothing overruns
+     what is next to it if a client is added to the dev switch. */
   .dev-switch { flex: 0 1 auto; }
   .role-toggle { flex: 0 1 auto; min-width: 0; }
-  /* Dev chrome, so it gives way first and gives way properly: set small enough
-     that the client's own name keeps its width rather than both ending in an
-     ellipsis and neither being readable. */
   .role-toggle button {
     min-width: 0; padding: 5px 9px; font-size: 11px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
