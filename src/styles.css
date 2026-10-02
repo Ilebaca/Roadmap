@@ -34,7 +34,7 @@
      to read as parts of the card rather than as grey lumps on it, while still
      being told apart from it at a glance. */
   --card-2: #E2E2E2;      /* recessed inside a panel: a field, an inner box */
-  --card-3: #D4D4D4;      /* deeper still: a track, a hover, an empty slot */
+  --card-3: #CCCCCC;      /* deeper still: a track, a hover, finished work */
   /* Kept, and kept transparent: every border in this file still occupies its
      pixel so nothing moves, and they simply have nothing to draw. */
   --line: transparent;
@@ -59,7 +59,7 @@
   --ring: rgba(20, 20, 20, 0.16);
   --scrim: rgba(10, 10, 10, 0.55);
   --scroll-thumb: #B4B4B4;
-  --rail: #B0B0B0;        /* a block's duration, drawn on the line */
+  --rail: #9A9A9A;        /* a block's duration, drawn on the line */
 
   /* ---- the accent --------------------------------------------------------
      One colour, and it means: this is happening now, this is late, or this is
@@ -888,17 +888,20 @@ button, input, select, textarea {
   transform: translate(-50%, -50%);
   width: 10px; height: 10px;
   border-radius: 50%;
-  /* A date that has not come yet is a pale dot, not a hollow ring: a ring is
-     an outline. The halo round it is the panel showing through, which is what
-     breaks the line cleanly at each date. */
-  background: var(--card-3);
+  /* A date that has not come yet. Not pale: it was a shade off the panel it
+     sits on, which on a phone in daylight is no dot at all — these are the
+     only marks saying where the work falls, so they are dark enough to count.
+     Solid, never a ring: a ring is an outline. The halo round it is the panel
+     showing through, which is what breaks the line cleanly at each date. */
+  background: #7A7A7A;
   border: 1.5px solid transparent;
   box-shadow: 0 0 0 4px var(--card);
 }
 .dot-approved { background: var(--ink); }
 .dot-live { background: var(--accent); box-shadow: 0 0 0 4px var(--card), 0 0 0 8px var(--ring); }
 
-.kind-slot .dot { background: var(--card-3); }
+/* An empty slot is not work yet, so its dot is lighter than one that is. */
+.kind-slot .dot { background: #B4B4B4; }
 
 /* ---------- phase markers on the line ------------------------------------- */
 .phase-marker {
@@ -1000,11 +1003,18 @@ button, input, select, textarea {
   box-shadow: inset 0 3px 0 var(--tone-bar);
 }
 
-/* An approved block is done with, and sits in a recess to say so. It is not
-   faded: a signed-off task is the one people come back to read months later,
-   and taking contrast off its words to mean "finished" makes it harder to read
-   the longer it has been true. The surface says quiet; the words stay black. */
-.block.is-locked { background: var(--card-2); box-shadow: none; }
+/* Three states of card, three surfaces, and the ladder runs the way the work
+   does: the one in hand is the brightest thing on the panel, the one that has
+   not started yet is flat and a step down from it, and a finished one has sunk
+   below the panel it sits on. Told apart by tone before you read a word of
+   them — a lock icon and a tick are not a difference you can see at arm's
+   length.
+
+   None of them is faded. A signed-off task is the one people come back to read
+   months later, and taking contrast off its words to mean "finished" makes it
+   harder to read the longer it has been true. The surface says quiet; the
+   words stay black. */
+.block.is-locked { background: var(--card-3); box-shadow: none; }
 
 .block.is-dragging { background: var(--card-2); box-shadow: var(--shadow-lg); }
 
@@ -1948,9 +1958,11 @@ button, input, select, textarea {
 .block.is-waiting .block-inner > * { opacity: 1; }
 .block.is-waiting:hover .block-inner > .link-shelf { opacity: 1; }
 
-/* The rail on the line, and the dot, say the same thing at a glance. */
-.block-row.is-future .block-extent { opacity: 0.4; }
-.block-row.is-past .block-extent { opacity: 0.55; }
+/* The rail on the line, and the dot, say the same thing at a glance. Held
+   back a little, not rubbed out: it is how long a job takes, and on a phone
+   at a quarter opacity it was not there at all. */
+.block-row.is-future .block-extent { opacity: 0.72; }
+.block-row.is-past .block-extent { opacity: 0.88; }
 
 .waiting-note {
   display: inline-flex; align-items: center; gap: 5px;
