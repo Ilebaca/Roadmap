@@ -24,13 +24,17 @@
   /* ---- surfaces ---------------------------------------------------------- */
   --bg: #141414;          /* the ground: seen around and between the panels */
   --card: #D9D9D9;        /* the panels themselves */
-  --raised: #E6E6E6;      /* something sitting on a panel: a card, a menu */
-  /* Inside a card, a recess is a half step down, not a grey block sitting in
-     it: a task carries five or six of these — the owner switch, the link
-     chips, the approve box, the queued cards — and at a full step down they
-     stop being parts of the card and start being lumps on it. */
-  --card-2: #DEDEDE;      /* recessed inside a panel: a field, an inner box */
-  --card-3: #D2D2D2;      /* deeper still: a track, a hover, an empty slot */
+  /* A card is a clear step brighter than the panel it is on, not a shade. The
+     words live on this, so it is the lightest surface in the app and the one
+     with the most room under the text. */
+  --raised: #EFEFEF;      /* something sitting on a panel: a card, a menu */
+  /* Inside a card, a recess steps down from the card without going darker
+     than the panel around it: a task carries five or six of these — the owner
+     switch, the link chips, the approve box, the queued cards — and they have
+     to read as parts of the card rather than as grey lumps on it, while still
+     being told apart from it at a glance. */
+  --card-2: #E2E2E2;      /* recessed inside a panel: a field, an inner box */
+  --card-3: #D4D4D4;      /* deeper still: a track, a hover, an empty slot */
   /* Kept, and kept transparent: every border in this file still occupies its
      pixel so nothing moves, and they simply have nothing to draw. */
   --line: transparent;
@@ -41,11 +45,14 @@
   --ink-hover: #2E2E2E;   /* a solid button under the cursor lifts, not drops */
   --on-ink: #D9D9D9;      /* what sits on top of that fill */
   --on-ink-soft: rgba(217, 217, 217, 0.30);
-  /* Three steps of grey on the panel, each one a step you can actually see.
-     The lightest still carries 11px text at reading contrast on #D9D9D9. */
+  /* Three steps of grey, and all three are dark. Grey text on a grey surface
+     is the one thing this palette can get wrong, and 4.5:1 is a floor for
+     whether text is legible at all, not a target for whether it is easy to
+     read — at 10 and 11px, which is most of the labels in here, it is not.
+     These clear 7:1 on every surface they are used on. */
   --text: #141414;
-  --muted: #3F3F3F;
-  --muted-2: #4F4F4F;
+  --muted: #2E2E2E;
+  --muted-2: #3A3A3A;
 
   --hover: rgba(20, 20, 20, 0.08);
   --hover-soft: rgba(20, 20, 20, 0.045);
@@ -60,9 +67,9 @@
      is the only reason it still reads as urgent when it does appear. */
   --accent: #D01C0E;
   --accent-hover: #AE1409;
-  --on-accent: #F7E7E5;
+  --on-accent: #FFFFFF;   /* on a red fill, nothing less is readable */
   --accent-bg: #EFD2CF;   /* the accent as a tint, to sit a chip on */
-  --accent-fg: #9E1309;   /* the accent dark enough to be read as small text */
+  --accent-fg: #7E0F07;   /* the accent dark enough to be read as small text */
 
   --danger: var(--accent);
   --danger-hover: var(--accent-hover);
@@ -231,8 +238,8 @@ button, input, select, textarea {
   --ink-hover: #EDEDED;
   --on-ink: #141414;
   --on-ink-soft: rgba(20, 20, 20, 0.30);
-  --muted: #9A9A9A;
-  --muted-2: #8A8A8A;
+  --muted: #C4C4C4;
+  --muted-2: #B4B4B4;
   --card: #202020;
   --raised: #242424;
   --card-2: #262626;
@@ -868,7 +875,10 @@ button, input, select, textarea {
   white-space: nowrap;
   z-index: 3;
 }
-.date-label.is-slot { opacity: 0.85; }
+/* A date that belongs to an empty slot rather than to work. Set back by a
+   hair — any further and the year under it stops being readable, which is a
+   lot of cost for a distinction nobody is looking for. */
+.date-label.is-slot { opacity: 0.95; }
 .date-day { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .date-year { font-size: 10.5px; color: var(--muted); }
 
@@ -990,19 +1000,11 @@ button, input, select, textarea {
   box-shadow: inset 0 3px 0 var(--tone-bar);
 }
 
-/* An approved block is done with: grey, and faded back so the live work
-   stands out against it.
-   The fade is on each part rather than the card, because opacity on the card
-   would composite the whole thing as one group and nothing inside could be
-   lifted back out of it — and the links have to stay readable and clickable
-   long after the work is signed off. */
+/* An approved block is done with, and sits in a recess to say so. It is not
+   faded: a signed-off task is the one people come back to read months later,
+   and taking contrast off its words to mean "finished" makes it harder to read
+   the longer it has been true. The surface says quiet; the words stay black. */
 .block.is-locked { background: var(--card-2); box-shadow: none; }
-/* Further back than the live card, but still a document somebody has to be
-   able to read: on paper a half-opacity grey goes past quiet and into
-   illegible in a way it never did on a dark panel. */
-.block.is-locked .block-inner > * { opacity: 0.86; transition: opacity var(--dur-2) var(--ease); }
-.block.is-locked .block-inner > .link-shelf { opacity: 1; }
-.block.is-locked:hover .block-inner > .link-shelf { opacity: 1; }
 
 .block.is-dragging { background: var(--card-2); box-shadow: var(--shadow-lg); }
 
@@ -1123,23 +1125,23 @@ button, input, select, textarea {
    Red stays out of this set entirely. It is the accent, and it means late, or
    now, or about to be destroyed — never a state of work. */
 .tone-todo, .state-todo {
-  --tone-fg: #4F4F4F; --tone-bg: #E2E2E2; --tone-dot: #A5A5A5; --tone-br: transparent;
+  --tone-fg: #3A3A3A; --tone-bg: #E2E2E2; --tone-dot: #8E8E8E; --tone-br: transparent;
   --tone-bar: #A5A5A5;
 }
 .tone-in_progress, .state-in_progress {
-  --tone-fg: #0F4C81; --tone-bg: #DAE6F3; --tone-dot: #1B4FA8; --tone-br: transparent;
+  --tone-fg: #0C3E6B; --tone-bg: #DAE6F3; --tone-dot: #1B4FA8; --tone-br: transparent;
   --tone-bar: #1B4FA8;
 }
 .tone-on_hold, .state-on_hold {
-  --tone-fg: #86490A; --tone-bg: #F2E4CE; --tone-dot: #A8590C; --tone-br: transparent;
+  --tone-fg: #6B3A06; --tone-bg: #F2E4CE; --tone-dot: #A8590C; --tone-br: transparent;
   --tone-bar: #A8590C;
 }
 .tone-review, .state-review {
-  --tone-fg: #5B2192; --tone-bg: #E8DEF3; --tone-dot: #64259E; --tone-br: transparent;
+  --tone-fg: #4C1A7B; --tone-bg: #E8DEF3; --tone-dot: #64259E; --tone-br: transparent;
   --tone-bar: #64259E;
 }
 .tone-approved, .state-approved {
-  --tone-fg: #1C5C33; --tone-bg: #DCEAD7; --tone-dot: #1E6B37; --tone-br: transparent;
+  --tone-fg: #14502A; --tone-bg: #DCEAD7; --tone-dot: #1E6B37; --tone-br: transparent;
   --tone-bar: #1E6B37;
 }
 
@@ -1940,12 +1942,10 @@ button, input, select, textarea {
    in it, and on paper text gives up its contrast much faster than it did on
    a dark panel. What marks this one out is the dashed edge and the missing
    colour bar, not how faint the words are. */
-/* Held back by a hair, not faded out: the recess is what says "not yet", and
-   on this palette the card it is set into is already darker than the panel —
-   any more than this and the smallest labels stop clearing contrast. */
-.block.is-waiting .block-inner > * { opacity: 0.95; transition: opacity var(--dur-2) var(--ease); }
-.block.is-waiting .block-inner > .link-shelf { opacity: 1; }
-.block.is-waiting:hover .block-inner > * { opacity: 0.98; }
+/* Not faded at all. The recess is what says "not yet"; taking contrast off the
+   words on top of it says "do not read this", which is not the same thing and
+   is never what was wanted. */
+.block.is-waiting .block-inner > * { opacity: 1; }
 .block.is-waiting:hover .block-inner > .link-shelf { opacity: 1; }
 
 /* The rail on the line, and the dot, say the same thing at a glance. */
