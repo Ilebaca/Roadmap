@@ -251,16 +251,13 @@ export default function Timeline() {
   const onResizeStart = useCallback(
     (e, edge, block, minStart) => {
       e.preventDefault()
-      // Dots to snap onto — every other date already on the line.
-      const snapDates = layout.dots.filter((d) => d.blockId !== block.id).map((d) => d.date)
       dragRef.current = {
         blockId: block.id,
         edge,
         origin: horizontal ? e.clientX : e.clientY,
         start_date: block.start_date,
         end_date: block.end_date,
-        minStart,
-        snapDates
+        minStart
       }
       setDrag({ blockId: block.id, start_date: block.start_date, end_date: block.end_date })
 
@@ -271,10 +268,10 @@ export default function Timeline() {
         let start_date = d.start_date
         let end_date = d.end_date
         if (d.edge === 'bottom') {
-          end_date = dateFromDrag(d.end_date, delta, d.snapDates)
+          end_date = dateFromDrag(d.end_date, delta)
           if (daysBetween(start_date, end_date) < 1) end_date = addDays(start_date, 1)
         } else {
-          start_date = dateFromDrag(d.start_date, delta, d.snapDates)
+          start_date = dateFromDrag(d.start_date, delta)
           // A block can never start before the block in front of it finishes.
           if (d.minStart && daysBetween(d.minStart, start_date) < 0) start_date = d.minStart
           if (daysBetween(start_date, end_date) < 1) start_date = addDays(end_date, -1)
@@ -302,7 +299,7 @@ export default function Timeline() {
       window.addEventListener('pointermove', move)
       window.addEventListener('pointerup', up)
     },
-    [layout.dots, actions, horizontal]
+    [actions, horizontal]
   )
 
   const handleCreate = (row) => {

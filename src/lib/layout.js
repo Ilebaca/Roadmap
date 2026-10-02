@@ -256,25 +256,20 @@ export function nowMarker(dots, total, today = todayISO()) {
 }
 
 /**
- * Snap a dragged date to a nearby dot on the line, so edges click onto the next
- * date — and past it to the one after, anywhere along the line.
+ * Pixels dragged -> a new date.
+ *
+ * One day per DRAG_PX_PER_DAY, and nothing else: every day between where you
+ * started and where you let go is reachable, in order.
+ *
+ * There used to be a magnet here that pulled the date onto any other block's
+ * date within three days. It meant a third of the calendar could not be chosen
+ * at all — drag past a neighbour and the date sat still for five pixels of
+ * travel, then jumped four days at once. Lining two blocks up is worth less
+ * than being able to pick the day you meant.
+ *
+ * The card does not move with the cursor; the dates in its corner and the
+ * readout pill are the feedback.
  */
-export function snapDate(candidate, snapDates, toleranceDays = 3) {
-  let best = null
-  let bestDist = Infinity
-  for (const d of snapDates) {
-    const dist = Math.abs(daysBetween(candidate, d))
-    if (dist < bestDist) {
-      bestDist = dist
-      best = d
-    }
-  }
-  return bestDist <= toleranceDays && best ? best : candidate
-}
-
-/** Pixels dragged -> a new date, snapped. The card does not move with the
- *  cursor; the dates in its corner and the readout pill are the feedback. */
-export function dateFromDrag(originDate, deltaPx, snapDates) {
-  const days = Math.round(deltaPx / DRAG_PX_PER_DAY)
-  return snapDate(addDays(originDate, days), snapDates)
+export function dateFromDrag(originDate, deltaPx) {
+  return addDays(originDate, Math.round(deltaPx / DRAG_PX_PER_DAY))
 }

@@ -1287,7 +1287,14 @@ button, input, select, textarea {
 .unapprove-btn:hover { color: var(--ink); background: var(--card); }
 
 /* drag handles on the block edges */
-.resize-handle { position: absolute; left: 0; right: 0; height: 12px; cursor: ns-resize; z-index: 3; }
+.resize-handle {
+  position: absolute; left: 0; right: 0; height: 12px;
+  cursor: ns-resize; z-index: 3;
+  /* The gesture is ours. Left to the browser, a finger on the handle scrolls
+     the timeline instead, and the drag is cancelled halfway through — which
+     looks like the date jumping about for no reason. */
+  touch-action: none;
+}
 .resize-handle.top { top: -1px; }
 .resize-handle.bottom { bottom: -1px; }
 .resize-handle::after {
