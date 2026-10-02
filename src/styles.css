@@ -1940,23 +1940,26 @@ button, input, select, textarea {
    say "done"; held back instead, so the live block is the only lit thing on
    the line. Its links stay readable: a brief written now is worth reading
    before the work starts. */
-/* Work that has not started is recessed: set into the panel rather than
-   raised off it, which is the difference between the card you are on and the
-   ones queued behind it — and it says so without an outline. */
+/* Work that has not started is drawn, not filled: a dashed edge round nothing,
+   the way an empty slot on this line already is. It is the one stroke in the
+   app and it earns itself — a dash is the universal mark for "this is planned,
+   not made", it cannot be mistaken for a card that is in hand, and it reads at
+   arm's length on a phone, which a half-shade of grey does not.
+
+   The card keeps its border width whatever state it is in, so turning the
+   dashes on moves nothing.
+
+   Its words are not faded. Not started is not the same as not worth reading:
+   the brief for next month's work is exactly the thing a client opens this to
+   read. The edge says "not yet"; the text stays black. */
 .block.is-waiting {
-  background: var(--card-2);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+  border-style: dashed;
   box-shadow: none;
 }
-/* Not started yet, so it sits back — but far enough forward to be read. A
-   card you cannot make out is not "quiet", it is a card with no information
-   in it, and on paper text gives up its contrast much faster than it did on
-   a dark panel. What marks this one out is the dashed edge and the missing
-   colour bar, not how faint the words are. */
-/* Not faded at all. The recess is what says "not yet"; taking contrast off the
-   words on top of it says "do not read this", which is not the same thing and
-   is never what was wanted. */
+.block.is-waiting:hover { border-color: color-mix(in srgb, var(--ink) 45%, transparent); }
 .block.is-waiting .block-inner > * { opacity: 1; }
-.block.is-waiting:hover .block-inner > .link-shelf { opacity: 1; }
 
 /* The rail on the line, and the dot, say the same thing at a glance. Held
    back a little, not rubbed out: it is how long a job takes, and on a phone
