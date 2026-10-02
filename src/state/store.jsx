@@ -346,6 +346,10 @@ export function StoreProvider({ children }) {
       createPhase(title) {
         return run(() => api.createPhase(session, { roadmap_id: activeRoadmapId, title }))
       },
+      /** Admin only: a phase's name, and nothing else about it. */
+      renamePhase(id, title) {
+        return run(() => api.updatePhase(session, id, { title }))
+      },
       addBrandSection(input) {
         return run(() => api.createBrandSection(session, { project_id: activeProjectId, ...input }))
       },

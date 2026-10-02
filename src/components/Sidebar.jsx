@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
 import { canCreate } from '../lib/permissions'
-import { Check, Lock, Plus, Trash } from './Icons'
-import ConfirmDialog from './ConfirmDialog'
+import { Check, Lock, Pen, Plus } from './Icons'
+import PhaseDialog from './PhaseDialog'
 import ProjectSwitcher from './ProjectSwitcher'
 import { useHoldDrag } from '../lib/useHoldDrag'
 
@@ -11,7 +11,7 @@ export default function Sidebar() {
   const { session, phases, gates, activePhaseId, livePhaseId, actions } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
-  const [pending, setPending] = useState(null) // phase waiting on a confirm
+  const [open, setOpen] = useState(null) // the phase whose sheet is open
   const admin = canCreate(session)
 
   const submit = (e) => {
@@ -68,26 +68,27 @@ export default function Sidebar() {
               live={phase.id === livePhaseId}
               admin={admin}
               onSelect={() => actions.selectPhase(phase.id)}
-              onAskDelete={() => setPending({ phase, blocks: gates[phase.id]?.total ?? 0 })}
+              onOpenSheet={() => setOpen({ phase, blocks: gates[phase.id]?.total ?? 0 })}
             />
           ))}
         </nav>
       </div>
 
-      {pending && (
-        <ConfirmDialog
-          title={`Delete "${pending.phase.title}"?`}
-          body={
-            pending.blocks
-              ? `Its ${pending.blocks} block${pending.blocks > 1 ? 's' : ''} go with it, along with their links and approvals. This cannot be undone.`
+      {open && (
+        <PhaseDialog
+          title={open.phase.title}
+          value={open.phase.title}
+          note={
+            open.blocks
+              ? `Its ${open.blocks} block${open.blocks > 1 ? 's' : ''} go with it, along with their links and approvals. This cannot be undone.`
               : 'This cannot be undone.'
           }
-          confirmLabel="Delete phase"
-          onCancel={() => setPending(null)}
-          onConfirm={() => {
-            actions.removePhase(pending.phase.id)
-            setPending(null)
+          onRename={(title) => actions.renamePhase(open.phase.id, title)}
+          onDelete={() => {
+            actions.removePhase(open.phase.id)
+            setOpen(null)
           }}
+          onClose={() => setOpen(null)}
         />
       )}
 
@@ -107,11 +108,12 @@ export default function Sidebar() {
  * called inside the map it would be a different number of hooks every time a
  * phase was added or removed.
  */
-function PhaseTab({ phase, index, gate, active, live, admin, onSelect, onAskDelete }) {
-  // Hold the pill to be asked about deleting it. Phases keep their order, so
-  // a hold that turns into a drag is a finger changing its mind: it picks the
-  // pill up, and letting go puts it back without asking anything.
-  const { holding, handlers } = useHoldDrag({ onRelease: (moved) => !moved && onAskDelete() })
+function PhaseTab({ phase, index, gate, active, live, admin, onSelect, onOpenSheet }) {
+  // Hold the pill to open what can be done to it: rename it, or delete it.
+  // Phases keep their order, so a hold that turns into a drag is a finger
+  // changing its mind — it picks the pill up, and letting go puts it back
+  // without opening anything.
+  const { holding, handlers } = useHoldDrag({ onRelease: (moved) => !moved && onOpenSheet() })
 
   return (
     <div className="cat-row">
@@ -157,16 +159,17 @@ function PhaseTab({ phase, index, gate, active, live, admin, onSelect, onAskDele
         </span>
       </button>
 
-      {/* On a pointer, the bin. On touch it is hidden and the same question
-          comes from holding the pill instead — there is no room beside a
-          label for a button that can never be revealed. */}
+      {/* On a pointer, a pen on the row. On touch it is hidden and holding the
+          pill opens the same sheet — there is no room beside a label for a
+          button that can never be revealed. It is a pen rather than a bin
+          because the sheet leads with the name; deleting is inside it. */}
       {admin && (
         <button
-          className="icon-btn danger cat-remove"
-          onClick={onAskDelete}
-          title={`Delete ${phase.title}${gate.total ? ` and its ${gate.total} block${gate.total > 1 ? 's' : ''}` : ''}`}
+          className="icon-btn cat-remove"
+          onClick={onOpenSheet}
+          title={`Rename or delete ${phase.title}`}
         >
-          <Trash width="13" height="13" />
+          <Pen width="13" height="13" />
         </button>
       )}
     </div>
