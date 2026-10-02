@@ -3,6 +3,7 @@ import { StoreProvider, useStore } from './state/store'
 import Sidebar from './components/Sidebar'
 import Timeline from './components/Timeline'
 import AccountsModal from './components/AccountsModal'
+import ConfirmDialog from './components/ConfirmDialog'
 import AppRail, { APPS } from './components/AppRail'
 import BrandDelivery from './components/BrandDelivery'
 import Moodboard from './components/Moodboard'
@@ -35,6 +36,9 @@ function readRail() {
 function Shell() {
   const { session, accounts, loading, error, authReady, isLive, actions } = useStore()
   const [accountsOpen, setAccountsOpen] = useState(false)
+  // Signing out is one tap next to the apps, and getting back in costs a
+  // password and an email round trip — so it is asked about first.
+  const [signOutOpen, setSignOutOpen] = useState(false)
   // Which icon on the rail is lit, remembered across a reload: you were
   // reading the brand when the page went away, so that is where you come
   // back. Kept in the browser rather than the URL — the app is embedded in a
@@ -109,6 +113,11 @@ function Shell() {
           <Mark />
         </span>
 
+        {/* On a phone the rail joins the bar rather than standing on its own
+            line under it. One strip across the top: who we are, which app,
+            and then everything to do with the account at the far end. */}
+        {narrow && <AppRail active={app} onSelect={setApp} />}
+
         <div className="topbar-right">
           {canManageAccounts(session) && (
             <button
@@ -133,7 +142,7 @@ function Shell() {
                   390px screen and the words are what there is least of. */}
               <button
                 className="ghost-btn subtle signout-btn"
-                onClick={actions.signOut}
+                onClick={() => setSignOutOpen(true)}
                 title="Sign out"
                 aria-label="Sign out"
               >
@@ -180,7 +189,7 @@ function Shell() {
           left would eat the width it needs: they go on top instead and the
           line gets the whole panel. */}
       <div className={`workspace ${app === 'mood' ? '' : app === 'roadmap' || narrow ? 'is-stacked' : ''}`}>
-        <AppRail active={app} onSelect={setApp} />
+        {!narrow && <AppRail active={app} onSelect={setApp} />}
         {app === 'roadmap' ? (
           <div className="workspace-main">
             <Sidebar />
@@ -203,6 +212,19 @@ function Shell() {
 
       {error && <div className="toast">{error}</div>}
       {accountsOpen && <AccountsModal onClose={() => setAccountsOpen(false)} />}
+
+      {signOutOpen && (
+        <ConfirmDialog
+          title="Sign out?"
+          body="You will need your password to get back in."
+          confirmLabel="Sign out"
+          onCancel={() => setSignOutOpen(false)}
+          onConfirm={() => {
+            setSignOutOpen(false)
+            actions.signOut()
+          }}
+        />
+      )}
     </div>
   )
 }

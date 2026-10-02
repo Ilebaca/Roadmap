@@ -25,8 +25,12 @@
   --bg: #141414;          /* the ground: seen around and between the panels */
   --card: #D9D9D9;        /* the panels themselves */
   --raised: #E6E6E6;      /* something sitting on a panel: a card, a menu */
-  --card-2: #CDCDCD;      /* recessed inside a panel: a field, an inner box */
-  --card-3: #BEBEBE;      /* deeper still: a track, a hover, an empty slot */
+  /* Inside a card, a recess is a half step down, not a grey block sitting in
+     it: a task carries five or six of these — the owner switch, the link
+     chips, the approve box, the queued cards — and at a full step down they
+     stop being parts of the card and start being lumps on it. */
+  --card-2: #DEDEDE;      /* recessed inside a panel: a field, an inner box */
+  --card-3: #D2D2D2;      /* deeper still: a track, a hover, an empty slot */
   /* Kept, and kept transparent: every border in this file still occupies its
      pixel so nothing moves, and they simply have nothing to draw. */
   --line: transparent;
@@ -205,6 +209,11 @@ button, input, select, textarea {
 .rail-btn.is-on:hover { background: var(--accent-hover); color: var(--on-accent); }
 
 .booting { margin: auto; color: var(--muted); letter-spacing: 0.02em; }
+
+/* The apps you are not in. Light enough to read as a row of choices on the
+   dark ground, without competing with the one you are in. */
+.app-rail .rail-btn { color: #B0B0B0; }
+.app-rail .rail-btn:hover { color: #ECEDEF; }
 
 /* ---------- the chrome, which stands on the ground -------------------------
    The topbar and the rail have no panel under them — they sit straight on
@@ -505,8 +514,6 @@ button, input, select, textarea {
   background: var(--card);
   box-shadow: var(--shadow);
   padding: 34px 38px 38px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
 }
 
 /* Text keeps a readable measure; images take the full width of the panel. */
@@ -833,11 +840,7 @@ button, input, select, textarea {
   border-radius: var(--radius-lg);
   background: var(--card);
   box-shadow: var(--shadow);
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
 }
-.timeline-scroll::-webkit-scrollbar { width: 10px; }
-.timeline-scroll::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 99px; border: 3px solid var(--card); }
 
 .timeline-canvas { position: relative; width: 100%; min-height: 100%; }
 
@@ -1908,7 +1911,9 @@ button, input, select, textarea {
 /* Deliberately colourless. There is one colour in this app and it is spent on
    what is live or late; a side of the table is neither. The words say which
    side it is, and the fill only says which one is chosen. */
-.owner-switch button.is-on { background: var(--card); color: var(--ink); }
+/* Chosen lifts: the track is a half step down from the card, so the one in
+   hand has to come back up past it rather than sink further. */
+.owner-switch button.is-on { background: var(--raised); color: var(--ink); }
 
 .owner-chip {
   display: inline-flex; align-items: center;
@@ -2027,6 +2032,27 @@ button, input, select, textarea {
   scrollbar-width: none;
 }
 .mood-scroll::-webkit-scrollbar { display: none; }
+
+/* ===========================================================================
+   SCROLLING, UNANNOUNCED
+   Everything in here scrolls; nothing in here draws a scrollbar. A phone has
+   never shown one, so a bar down the side of the same panel on a desk is a
+   difference for no reason — and a 10px channel of furniture down a panel
+   whose whole design is "no lines" is the loudest line on the page.
+   ========================================================================= */
+.brand-panel, .timeline-scroll, .sidebar, .phase-list,
+.timeline-canvas.is-horizontal .block,
+.modal, .modal-wide, .modal.confirm, .client-menu, .project-menu, .state-menu {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.brand-panel::-webkit-scrollbar, .timeline-scroll::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar, .phase-list::-webkit-scrollbar,
+.timeline-canvas.is-horizontal .block::-webkit-scrollbar,
+.modal::-webkit-scrollbar, .modal-wide::-webkit-scrollbar,
+.modal.confirm::-webkit-scrollbar, .client-menu::-webkit-scrollbar,
+.project-menu::-webkit-scrollbar, .state-menu::-webkit-scrollbar { display: none; }
+
 /* Space is being held: the left button is the board now, and says so. */
 .mood-scroll.is-grabbing, .mood-scroll.is-grabbing .mood-item { cursor: grab; }
 .mood-scroll.is-grabbing:active, .mood-scroll.is-grabbing:active .mood-item { cursor: grabbing; }
@@ -2495,7 +2521,7 @@ button, input, select, textarea {
      header. What gives instead is the width of each part — Accounts keeps its
      icon and drops its word. */
   .topbar {
-    gap: 8px;
+    gap: 6px;
     padding: 8px var(--stage-margin);
   }
   /* On a phone the client is its mark and nothing else. The name was the
@@ -2527,18 +2553,23 @@ button, input, select, textarea {
   .dev-switch { gap: 6px; min-width: 0; }
   .dev-tag { display: none; }
 
-  /* The rail lies flat above the content instead of standing down the side.
-     Vertical it cost 38px of width on a 390px screen for two icons; on its
-     side it costs a row it shares with nothing else. */
+  /* The rail joins the bar instead of standing on its own line under it.
+     Down the side it cost 38px of width on a 390px screen; on its own row it
+     cost a whole row; in the bar it costs nothing, because the bar was mostly
+     empty between the mark and the account controls. */
   .workspace { flex-direction: column; }
   .app-rail {
     width: auto;
+    flex: none;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
+    gap: 4px;
   }
-  .rail-btn { width: 40px; height: 40px; }
+  .rail-btn { width: 36px; height: 36px; border-radius: var(--radius); }
+  .rail-btn svg { width: 18px; height: 18px; }
+  /* Three things on this side now, so the account end is pushed over rather
+     than spaced out from them. */
+  .topbar { justify-content: flex-start; }
 
   /* Dev-only, and the widest thing in the bar. The role toggle is the part
      worth keeping on a phone; wiping the data is not something to do by
