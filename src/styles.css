@@ -1084,17 +1084,22 @@ button, input, select, textarea {
 .icon-btn.danger:hover { color: var(--danger-fg); background: var(--danger-bg); }
 
 /* The name of a task is the headline of the card: set larger than everything
-   around it and tracked in a touch, the way a headline is, so the eye lands
-   on it first and the rest of the card reads as its standfirst. */
-.block-title {
+   around it and tracked in a touch, the way a headline is, so the eye lands on
+   it first and the rest of the card reads as its standfirst.
+
+   One size, written once for both. A card you can type into renders an input
+   and one you cannot renders a heading, and they had drifted two points and
+   twenty weights apart — so a finished task, which nobody can edit, shouted
+   over the one actually in hand, and the title changed size the moment an
+   admin's cursor arrived. */
+.block-title, .block-title-input {
   margin: 0;
-  font-size: 18px; font-weight: 620; line-height: 1.22;
+  font-size: 16px; font-weight: 600; line-height: 1.22;
   letter-spacing: -0.016em;
   color: var(--ink);
 }
 .block-title-input {
   background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
-  font-size: 16px; font-weight: 600;
   padding: 4px 6px; margin: -4px -6px; width: calc(100% + 12px);
 }
 .block-title-input:hover { background: var(--hover); }
@@ -1103,14 +1108,16 @@ button, input, select, textarea {
 /* Held to a reading measure. A card is as wide as the panel gives it, and a
    line of text running the whole way across a desk monitor is a line you lose
    your place in — the limit is on the words, not on the card. */
-.block-desc {
+/* Same again for the body: one size for the card you can type into and the
+   card you cannot, so neither the reading nor the writing of it moves. */
+.block-desc, .block-desc-input {
   margin: 0; color: var(--muted);
   line-height: 1.6; font-size: 13.5px;
   max-width: 68ch;
 }
-.block-desc-input { max-width: 68ch; 
+.block-desc-input {
   background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
-  color: var(--muted); line-height: 1.55; font-size: 13px; resize: none; overflow: hidden;
+  resize: none; overflow: hidden;
   padding: 5px 6px; margin: -5px -6px; width: calc(100% + 12px);
 }
 .block-desc-input:hover { background: var(--hover); }
