@@ -12,6 +12,28 @@ import { addDays, todayISO } from '../lib/dates'
 
 const StoreContext = createContext(null)
 
+/**
+ * The client you were last looking at.
+ *
+ * An admin runs several and works one at a time; coming back to whichever one
+ * happened to be first in the list means re-picking it on every reload. Kept
+ * in the browser rather than the address, the same as the rail is: the app is
+ * embedded in a page whose URL is not ours to write to.
+ *
+ * It is only ever a hint. The id is checked against the clients this account
+ * can actually open, so a stale one — a client that was deleted, or one from
+ * whoever used this browser before — is ignored rather than trusted.
+ */
+const CLIENT_KEY = 'mimant.client'
+
+function readClient() {
+  try {
+    return localStorage.getItem(CLIENT_KEY)
+  } catch {
+    return null /* storage can be blocked outright; the default is fine */
+  }
+}
+
 export function StoreProvider({ children }) {
   const [session, setSession] = useState(null) // the signed-in user row
   const [accounts, setAccounts] = useState([]) // everyone with access
@@ -96,13 +118,30 @@ export function StoreProvider({ children }) {
         api.listUsers().then((u) => alive && setAccounts(u)).catch(() => {})
         api.listInvites().then((i) => alive && setInvites(i)).catch(() => {})
       }
-      // A viewer always lands on their own project; an admin starts on theirs.
-      setActiveProjectId(rows.some((p) => p.id === session.project_id) ? session.project_id : rows[0]?.id ?? null)
+      // Where you left off, if it is still a client you can open; failing
+      // that a viewer lands on their own, and an admin on theirs.
+      const saved = readClient()
+      const has = (id) => !!id && rows.some((p) => p.id === id)
+      setActiveProjectId(
+        has(saved) ? saved : has(session.project_id) ? session.project_id : (rows[0]?.id ?? null)
+      )
     })()
     return () => {
       alive = false
     }
   }, [session])
+
+  // Remember it for the next load. Written here rather than in the switcher so
+  // every way of changing client — the menu, creating one, a client being
+  // taken away — is remembered the same way.
+  useEffect(() => {
+    if (!activeProjectId) return
+    try {
+      localStorage.setItem(CLIENT_KEY, activeProjectId)
+    } catch {
+      /* private browsing: it simply will not be remembered */
+    }
+  }, [activeProjectId])
 
   // --- load everything scoped to the active project --------------------------
   const refresh = useCallback(

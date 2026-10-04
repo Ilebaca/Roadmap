@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store'
 import { buildLayout, dateFromDrag, dateLabels, EMPTY_SLOT_AT, METRICS, nowMarker } from '../lib/layout'
-import { addDays, daysBetween, formatDotGroup, formatShort, todayISO } from '../lib/dates'
+import { addDays, daysBetween, formatDot, formatDotGroup, formatShort, todayISO } from '../lib/dates'
 import { canApprove, canCreate, canEditBlock, canSetState, canUnapprove } from '../lib/permissions'
 import BlockCard from './BlockCard'
 import { Lock, Plus } from './Icons'
@@ -140,6 +140,9 @@ export default function Timeline() {
     () => nowMarker(layout.dots, layout.total, today),
     [layout.dots, layout.total, today]
   )
+
+  /** Today, broken up for the label an empty roadmap carries. */
+  const emptyDate = useMemo(() => formatDot(today), [today])
 
   /** A position and a length on the line -> the CSS for whichever way it runs. */
   const place = useCallback(
@@ -328,13 +331,16 @@ export default function Timeline() {
         {!phases.length && (
           <>
             <div className="dot-row kind-slot" style={place(EMPTY_SLOT_AT)}>
-              <div className="date-label">
-                <span className="date-day">
-                  {formatDot(today).day} {formatDot(today).month}
-                </span>
-                <span className="date-year">{formatDot(today).year}</span>
-              </div>
               <span className="dot" />
+            </div>
+            {/* Placed the same way every other label on the line is, rather
+                than nested inside the dot: inside, it has no position of its
+                own and lands on top of the button underneath it. */}
+            <div className="date-label is-slot" style={place(EMPTY_SLOT_AT)}>
+              <span className="date-day">
+                {emptyDate.day} {emptyDate.month}
+              </span>
+              <span className="date-year">{emptyDate.year}</span>
             </div>
             {admin ? (
               <div className="slot" style={place(EMPTY_SLOT_AT)}>
