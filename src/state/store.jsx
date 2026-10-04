@@ -385,6 +385,16 @@ export function StoreProvider({ children }) {
       createPhase(title) {
         return run(() => api.createPhase(session, { roadmap_id: activeRoadmapId, title }))
       },
+      /**
+       * One block's history, read when somebody asks to see it.
+       *
+       * Not part of the project load and not kept in this store: it is the one
+       * thing nobody looks at until they open it, and the card that asked for
+       * it is the only thing that wants it.
+       */
+      blockHistory(block_id) {
+        return api.listBlockEvents(session, block_id)
+      },
       /** Admin only: a phase's name, and nothing else about it. */
       renamePhase(id, title) {
         return run(() => api.updatePhase(session, id, { title }))

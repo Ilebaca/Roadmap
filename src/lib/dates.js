@@ -50,6 +50,9 @@ export const formatLong = (iso) => {
 
 /** Compact range for the block's top-right corner: "23 Feb – 6 Mar 2026". */
 export const formatRange = (a, b) => {
+  // A day's work says its day once. "4 Oct – 4 Oct" is the same date twice
+  // with a dash of nothing between them.
+  if (a === b) return formatShort(a)
   const s = parse(a)
   const e = parse(b)
   const left = `${s.getUTCDate()} ${MONTHS[s.getUTCMonth()]}${s.getUTCFullYear() === e.getUTCFullYear() ? '' : ` ${s.getUTCFullYear()}`}`

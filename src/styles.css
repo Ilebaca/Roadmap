@@ -2040,6 +2040,37 @@ button, input, select, textarea {
   font-size: 10.5px; color: var(--muted-2);
 }
 
+/* ---------- what happened to this block ------------------------------------
+   The quietest thing on the card: small, grey, and shut. The card is about the
+   work; this is about the paperwork, and it only matters on the day somebody
+   asks who moved what. Open, it is a plain list of sentences — a table of
+   from/to columns reads as data, and this is meant to be read as a story.
+   -------------------------------------------------------------------------- */
+.history { margin-top: 10px; }
+.history-toggle {
+  background: transparent; border: 0; padding: 0; cursor: pointer;
+  font-size: 11px; color: var(--muted-2);
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+.history-toggle:hover { color: var(--ink); }
+
+.history-list {
+  margin: 10px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 7px;
+  font-size: 11.5px; line-height: 1.5; color: var(--muted);
+  animation: rise var(--dur-2) var(--ease) backwards;
+}
+.history-list li { display: block; }
+.history-who { color: var(--text); font-weight: 550; }
+/* The date sits at the end of the sentence rather than in a column of its own:
+   a column would need a width, and an address is as long as it is. */
+.history-when {
+  color: var(--muted-2); font-variant-numeric: tabular-nums;
+}
+.history-when::before { content: ' · '; }
+.history-empty { color: var(--muted-2); }
+
 /* ---------- running late -------------------------------------------------- */
 /* The span reads to where the work has actually got to; the agreed deadline
    sits beside it, because the slip only means something against it. */

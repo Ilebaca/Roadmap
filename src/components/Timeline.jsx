@@ -270,14 +270,19 @@ export default function Timeline() {
         const delta = (horizontal ? ev.clientX : ev.clientY) - d.origin
         let start_date = d.start_date
         let end_date = d.end_date
+        // An edge dragged onto the other one is a block that starts and ends
+        // on the same day, which is a normal shape for a job — what neither
+        // edge may do is cross the other.
         if (d.edge === 'bottom') {
           end_date = dateFromDrag(d.end_date, delta)
-          if (daysBetween(start_date, end_date) < 1) end_date = addDays(start_date, 1)
+          if (daysBetween(start_date, end_date) < 0) end_date = start_date
         } else {
           start_date = dateFromDrag(d.start_date, delta)
-          // A block can never start before the block in front of it finishes.
+          // A block can never start before the block in front of it finishes —
+          // on that day is allowed; the day one ends is the day the next can
+          // begin.
           if (d.minStart && daysBetween(d.minStart, start_date) < 0) start_date = d.minStart
-          if (daysBetween(start_date, end_date) < 1) start_date = addDays(end_date, -1)
+          if (daysBetween(start_date, end_date) < 0) start_date = end_date
         }
         setDrag({ blockId: d.blockId, start_date, end_date })
       }

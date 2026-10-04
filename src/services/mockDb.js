@@ -203,6 +203,11 @@ export const seed = () => ({
     { id: 'apr_4', block_id: 'blk_9', approved_by: 'u_viewer_2', approved_at: TS(-17) }
   ],
 
+  // TABLE: block_events — who did what to a block, oldest first.
+  // Seeded empty: the history starts the day the app does. Real rows are
+  // written by every edit from here on.
+  block_events: [],
+
   // TABLE: brand_assets — the contents of a Visual Identity category.
   // kind: 'text' | 'image' | 'file' | 'link'
   //   text  -> title + body

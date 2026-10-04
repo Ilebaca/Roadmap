@@ -118,6 +118,26 @@ function chainOf(project_id) {
     )
 }
 
+/**
+ * Write a line in a block's history.
+ *
+ * The actor's address is copied onto the row rather than looked up later: a
+ * client cannot read the studio's user rows, so a join would show them
+ * "someone" for every move the studio made, and a log that cannot say who is
+ * not a log.
+ */
+function logEvent(session, block_id, kind, detail = {}) {
+  db.block_events.push({
+    id: uid('ev'),
+    block_id,
+    actor_id: session?.id ?? null,
+    actor_email: session?.email ?? null,
+    kind,
+    detail,
+    created_at: new Date().toISOString()
+  })
+}
+
 /** The earliest a block may start: the deadline of the block before it. */
 function earliestStart(project_id, block_id) {
   const chain = chainOf(project_id)
@@ -545,11 +565,14 @@ export const mockApi = {
       if (prev && daysBetween(prev.end_date, row.start_date) < 0) {
         const duration = daysBetween(row.start_date, row.end_date)
         row.start_date = prev.end_date
-        row.end_date = addDays(row.start_date, Math.max(1, duration))
+        row.end_date = addDays(row.start_date, Math.max(0, duration))
       }
+      logEvent(session, row.id, 'created')
       if (next?.locked && daysBetween(row.end_date, next.start_date) < 0) {
         row.end_date = next.start_date
-        if (daysBetween(row.start_date, row.end_date) < 1) {
+        // A day's room is room. There is only none when the approved block
+        // starts before this one does.
+        if (daysBetween(row.start_date, row.end_date) < 0) {
           throw new ForbiddenError(
             `There is no room before "${next.title}", which is approved. Unapprove it or move it back first.`
           )
@@ -575,11 +598,24 @@ export const mockApi = {
     const allowed = ['title', 'description', 'start_date', 'end_date', 'state', 'owner', 'overdue_reason', 'order_index']
 
     withChain(project_id, () => {
+      // What it was, so the log can say what changed rather than only what it
+      // is now. Read before the patch lands, obviously.
+      const was = { state: row.state, owner: row.owner, title: row.title,
+                    start_date: row.start_date, end_date: row.end_date }
       for (const k of Object.keys(patch)) {
         if (!allowed.includes(k)) continue
         // 'approved' is never set through here — it is the result of an approval.
         if (k === 'state' && patch.state === 'approved') continue
         row[k] = patch[k]
+      }
+      if (row.state !== was.state) {
+        logEvent(session, row.id, 'state', { from: was.state, to: row.state })
+      }
+      if (row.owner !== was.owner) {
+        logEvent(session, row.id, 'owner', { from: was.owner, to: row.owner })
+      }
+      if (row.title !== was.title) {
+        logEvent(session, row.id, 'renamed', { from: was.title, to: row.title })
       }
       // A block can never start before the one in front of it finishes; the
       // blocks behind it are pushed along by reflowChain().
@@ -587,10 +623,20 @@ export const mockApi = {
       if (floor && daysBetween(floor, row.start_date) < 0) {
         const duration = daysBetween(row.start_date, row.end_date)
         row.start_date = floor
-        row.end_date = addDays(floor, Math.max(1, duration))
+        row.end_date = addDays(floor, Math.max(0, duration))
       }
-      if (daysBetween(row.start_date, row.end_date) < 1) {
-        row.end_date = addDays(row.start_date, 1)
+      // A block may begin and end on the same day — plenty of work is a day's
+      // work. What it may not do is end before it starts.
+      if (daysBetween(row.start_date, row.end_date) < 0) {
+        row.end_date = row.start_date
+      }
+      // Logged after the clamps, so the line says where the dates actually
+      // landed rather than where they were asked to go.
+      if (row.start_date !== was.start_date || row.end_date !== was.end_date) {
+        logEvent(session, row.id, 'dates', {
+          from: { start: was.start_date, end: was.end_date },
+          to: { start: row.start_date, end: row.end_date }
+        })
       }
     })
 
@@ -914,6 +960,23 @@ export const mockApi = {
    *   --   and state = 'review'
    * then: await supabase.rpc('approve_block', { p_block_id: blockId })
    */
+  /**
+   * Everything that has happened to one block, oldest first.
+   *
+   * Read on demand rather than with the rest of the project: it is the one
+   * thing nobody looks at until they ask for it, and loading every line of
+   * every block to show none of them is a waste of a round trip.
+   *
+   * BACKEND: supabase.from('block_events').select('*').eq('block_id', id)
+   *          .order('created_at')
+   */
+  async listBlockEvents(session, block_id) {
+    const rows = db.block_events
+      .filter((e) => e.block_id === block_id)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    return wait(clone(rows))
+  },
+
   async approveBlock(session, block_id) {
     const row = db.blocks.find((b) => b.id === block_id)
     if (!row) throw new Error('Block not found')
@@ -929,6 +992,7 @@ export const mockApi = {
     db.approvals.push(approval)
     row.state = 'approved'
     row.locked = true
+    logEvent(session, block_id, 'approved')
     persist()
     return wait({ block: clone(row), approval: clone(approval) })
   },
@@ -953,6 +1017,7 @@ export const mockApi = {
     db.approvals = db.approvals.filter((a) => a.block_id !== block_id)
     row.state = 'in_progress'
     row.locked = false
+    logEvent(session, block_id, 'unapproved')
     persist()
     return wait(clone(row))
   },

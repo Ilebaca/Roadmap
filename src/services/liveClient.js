@@ -22,6 +22,31 @@ function ok({ data, error }) {
   return data
 }
 
+/**
+ * Write a line in a block's history, and never let it get in the way.
+ *
+ * The log is a record, not a dependency: if the row cannot be written — the
+ * table is not migrated yet, the network blinked — the edit it describes has
+ * already happened and must still be reported as done. So this is deliberately
+ * not awaited and deliberately swallows its errors.
+ *
+ * The actor's address is copied onto the row rather than joined at read time:
+ * a client cannot read the studio's user rows, so a join would show them
+ * "someone" for every move the studio made.
+ */
+function logBlockEvent(session, block_id, kind, detail = {}) {
+  supabase
+    .from('block_events')
+    .insert({
+      block_id,
+      actor_id: session?.id ?? null,
+      actor_email: session?.email ?? null,
+      kind,
+      detail
+    })
+    .then(() => {}, () => {})
+}
+
 /** Signed links for the files in a set of rows, in one round trip. */
 async function withSignedUrls(rows) {
   const paths = rows.map((r) => r.file_path).filter(Boolean)
@@ -286,12 +311,15 @@ export const liveApi = {
     if (before && before.end_date > start) {
       const span = (Date.parse(end) - Date.parse(start)) / day
       start = before.end_date
-      end = iso(Date.parse(start) + Math.max(1, span) * day)
+      // A block may be a single day long, so a span of nothing is kept.
+      end = iso(Date.parse(start) + Math.max(0, span) * day)
     }
     const after = ordered.find((b) => b.start_date >= start)
     if (after?.locked && after.start_date < end) {
       end = after.start_date
-      if (Date.parse(end) - Date.parse(start) < day) {
+      // A day's room is room. There is only none when the approved block
+      // starts before this one does.
+      if (Date.parse(end) - Date.parse(start) < 0) {
         throw new Error(
           `There is no room before "${after.title}", which is approved. Unapprove it or move it back first.`
         )
@@ -299,7 +327,7 @@ export const liveApi = {
     }
 
     const siblings = ok(await supabase.from('blocks').select('order_index').eq('phase_id', phase_id))
-    return ok(
+    const made = ok(
       await supabase
         .from('blocks')
         .insert({
@@ -315,6 +343,8 @@ export const liveApi = {
         .select()
         .single()
     )
+    logBlockEvent(session, made.id, 'created')
+    return made
   },
 
   /** Approving is not an edit — it goes through approveBlock(). */
@@ -323,7 +353,36 @@ export const liveApi = {
     for (const k of ['title', 'description', 'start_date', 'end_date', 'state', 'owner', 'overdue_reason', 'order_index']) {
       if (k in patch && !(k === 'state' && patch.state === 'approved')) clean[k] = patch[k]
     }
-    return ok(await supabase.from('blocks').update(clean).eq('id', id).select().single())
+    // What it was, so the log can say what changed. One extra read on an edit
+    // is cheap; reconstructing a history afterwards is not possible at all.
+    const was = ok(
+      await supabase.from('blocks').select('state, owner, title, start_date, end_date').eq('id', id).single()
+    )
+    const row = ok(await supabase.from('blocks').update(clean).eq('id', id).select().single())
+
+    if (row.state !== was.state) logBlockEvent(session, id, 'state', { from: was.state, to: row.state })
+    if (row.owner !== was.owner) logBlockEvent(session, id, 'owner', { from: was.owner, to: row.owner })
+    if (row.title !== was.title) logBlockEvent(session, id, 'renamed', { from: was.title, to: row.title })
+    if (row.start_date !== was.start_date || row.end_date !== was.end_date) {
+      logBlockEvent(session, id, 'dates', {
+        from: { start: was.start_date, end: was.end_date },
+        to: { start: row.start_date, end: row.end_date }
+      })
+    }
+    return row
+  },
+
+  /** Everything that has happened to one block, oldest first. */
+  async listBlockEvents(session, block_id) {
+    const { data, error } = await supabase
+      .from('block_events')
+      .select('*')
+      .eq('block_id', block_id)
+      .order('created_at', { ascending: true })
+    // A board whose history table has not been migrated yet still works; it
+    // simply has nothing to show.
+    if (error) return []
+    return data ?? []
   },
 
   async deleteBlock(session, id) {
@@ -388,11 +447,14 @@ export const liveApi = {
   /** One function, so the approval row and the lock land together or not at all. */
   async approveBlock(session, block_id) {
     const block = ok(await supabase.rpc('approve_block', { p_block_id: block_id }))
+    logBlockEvent(session, block_id, 'approved')
     return { block, approval: null }
   },
 
   async unapproveBlock(session, block_id) {
-    return ok(await supabase.rpc('unapprove_block', { p_block_id: block_id }))
+    const row = ok(await supabase.rpc('unapprove_block', { p_block_id: block_id }))
+    logBlockEvent(session, block_id, 'unapproved')
+    return row
   },
 
   // ===========================================================================
@@ -427,6 +489,8 @@ export const liveApi = {
         .select()
         .single()
     )
+    logBlockEvent(session, made.id, 'created')
+    return made
   },
 
   async updateBrandSection(session, id, patch) {

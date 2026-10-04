@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatRange, formatStamp, formatShort, overdue } from '../lib/dates'
 import { Check, Clock, Link as LinkIcon, Pen, Plus, Trash, X, Lock } from './Icons'
 import StateSelect from './StateSelect'
+import BlockHistory from './BlockHistory'
 import OwnerSwitch from './OwnerSwitch'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -271,6 +272,10 @@ export default function BlockCard({
             )}
           </div>
         )}
+
+        {/* Last thing in the card, and quiet with it: what has happened to
+            this block and who did it, shut until somebody asks. */}
+        <BlockHistory blockId={block.id} />
       </div>
 
       {confirming && (

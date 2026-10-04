@@ -161,7 +161,9 @@ export function buildLayout({ phases, blocks, gates, heights = {}, phaseHeads = 
     if (canCreate) {
       // An empty date slot: the dashed plus placeholder.
       const last = mine.at(-1)
-      const start = last ? addDays(last.end_date, 1) : phaseStartGuess(ordered, phase, blocks, chainFloor)
+      // The day a block ends is the day the next one can begin: a deadline is
+      // a handover, not a day off. It can still be dragged later afterwards.
+      const start = last ? last.end_date : phaseStartGuess(ordered, phase, blocks, chainFloor)
       rows.push({
         key: `sl-${phase.id}`,
         type: 'slot',
