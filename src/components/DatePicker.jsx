@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { addMonths, formatMonth, monthGrid, todayISO } from '../lib/dates'
 import { Chevron } from './Icons'
-import { eventInside } from '../lib/dom'
+import { eventInside, overlayLayer } from '../lib/dom'
 
 const WEEK = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -64,8 +65,11 @@ export default function DatePicker({ value, min, max, anchorRef, onPick, onClose
   if (!at) return null
   const days = monthGrid(month)
   const blocked = (iso) => (min && iso < min) || (max && iso > max)
+  // Out of the card and into the app's own overlay layer: inside the card it
+  // is painted under whichever card comes after it, fixed or not.
+  const layer = overlayLayer(anchorRef.current)
 
-  return (
+  const cal = (
     <div ref={ref} className="cal" style={at} role="dialog" aria-label="Pick a date">
       <div className="cal-head">
         <button
@@ -111,4 +115,6 @@ export default function DatePicker({ value, min, max, anchorRef, onPick, onClose
       </div>
     </div>
   )
+
+  return layer ? createPortal(cal, layer) : cal
 }

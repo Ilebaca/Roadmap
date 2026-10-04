@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SELECTABLE_STATES, stateLabel } from '../lib/permissions'
 import { Check, Chevron } from './Icons'
-import { eventInside } from '../lib/dom'
+import { eventInside, overlayLayer } from '../lib/dom'
 
 /**
  * The block's state control, sitting under the description.
@@ -77,7 +78,7 @@ export default function StateSelect({ value, editable, onChange }) {
         <Chevron width="12" height="12" className="state-caret" />
       </button>
 
-      {open && menu && (
+      {open && menu && createPortal(
         <div ref={menuRef} className="state-menu" style={menu} role="listbox">
           {/* 'Approved' is not here on purpose: it is the result of an
               approval, never something an admin picks. */}
@@ -97,7 +98,10 @@ export default function StateSelect({ value, editable, onChange }) {
               {s.value === value && <Check width="12" height="12" />}
             </button>
           ))}
-        </div>
+        </div>,
+        // Same reason as the calendar: a menu belonging to one card is painted
+        // under the next card unless it leaves the card altogether.
+        overlayLayer(btnRef.current) ?? document.body
       )}
     </>
   )

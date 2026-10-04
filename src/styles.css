@@ -1089,7 +1089,30 @@ button, input, select, textarea {
 }
 .date-field-btn:hover,
 .date-field-btn.is-open { color: var(--ink); font-weight: 550; }
+
+@media (hover: hover) {
+  /* On a desk a date is four or five characters, which is a small thing to hit
+     with a cursor. The air around it is part of the button, and it lights up
+     so there is no doubt there is something there to press. A step past the
+     editor's own fill, since that is what it sits on. */
+  .date-field-btn { padding: 0 8px; }
+  .date-field-btn:hover,
+  .date-field-btn.is-open { background: var(--card-3); }
+  /* Taken back off the row so the wider button does not widen the header. */
+  .block-dates .date-field:first-of-type { margin-left: -8px; }
+}
 .date-field:focus-within { border-radius: var(--radius-xs); box-shadow: 0 0 0 4px var(--ring); }
+
+/* Everything that floats is rendered here, at the end of the app's own root,
+   so a menu or a calendar is never painted under the card that happens to come
+   after the one it belongs to. The layer itself is not a surface and takes no
+   presses; what is put into it does. */
+.overlay-layer {
+  position: fixed; inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.overlay-layer > * { pointer-events: auto; }
 
 /* ---------- the calendar ---------------------------------------------------
    The app's own, because the browser's is the browser's: its own typeface,
