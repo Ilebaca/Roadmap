@@ -20,11 +20,6 @@ import { Lock, Plus } from './Icons'
  *  anything in it, with a line of description running the whole way across. */
 const BLOCK_SHARE = 0.8
 
-/** The gap the stylesheet leaves between a card and its own end dot
- *  (`.timeline-canvas.is-horizontal .block-slot { padding-right }`). Added
- *  back on so the share above is the width of the card you actually see. */
-const SLOT_PAD = 16
-
 export default function Timeline() {
   const store = useStore()
   const { session, phases, blocks, gates, blockGates, activePhaseId, actions } = store
@@ -116,7 +111,7 @@ export default function Timeline() {
     // Before the first measurement there is nothing to take a share of, so the
     // fixed width stands in for one frame.
     if (!panelW) return METRICS.horizontalNarrow
-    return { ...METRICS.horizontalNarrow, MIN_BLOCK: Math.round(panelW * BLOCK_SHARE) + SLOT_PAD }
+    return { ...METRICS.horizontalNarrow, MIN_BLOCK: Math.round(panelW * BLOCK_SHARE) }
   }, [narrow, panelW])
 
   const layout = useMemo(
@@ -229,7 +224,7 @@ export default function Timeline() {
     // it sits in the middle of it rather than tucked against one edge — with
     // the line running away from it in both directions, which is what a
     // roadmap looks like from where the work actually is.
-    const cardW = metrics.MIN_BLOCK - SLOT_PAD
+    const cardW = metrics.MIN_BLOCK
     const to = horizontal ? at + cardW / 2 - el.clientWidth / 2 : at - 28
     el.scrollTo({ [horizontal ? 'left' : 'top']: Math.max(0, to), behavior: 'auto' })
   }, [settled, projectId, layout, blockGates, now, horizontal, metrics])

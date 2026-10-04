@@ -93,6 +93,56 @@ export const formatShort = (iso) => {
  *
  * Returns { days, since, effectiveEnd } — days is 0 when it is not overdue.
  */
+const MONTHS_LONG = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
+
+/** "October 2026", for the head of a calendar. */
+export const formatMonth = (iso) => {
+  const d = parse(iso)
+  return `${MONTHS_LONG[d.getUTCMonth()]} ${d.getUTCFullYear()}`
+}
+
+/** The first of the month a date falls in, and n months either side of it. */
+export const addMonths = (iso, n) => {
+  const d = parse(iso)
+  const day = d.getUTCDate()
+  d.setUTCDate(1)
+  d.setUTCMonth(d.getUTCMonth() + n)
+  // Clamp the day to the month's own length: a month after 31 Jan is 28 Feb,
+  // not 3 March.
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate()
+  d.setUTCDate(Math.min(day, last))
+  return toISO(d)
+}
+
+/**
+ * Six weeks of days for the month a date falls in, Monday first.
+ *
+ * Always six rows, so the calendar is the same height whichever month is on
+ * screen — a grid that grows a row in March and loses it again in April makes
+ * everything under it jump, and the thing under it is the rest of the card.
+ *
+ * Every cell is a real date, including the ones spilling in from the months
+ * either side: they are drawn quieter but they are still days, and clicking
+ * one is a perfectly reasonable way to mean the 30th of last month.
+ */
+export function monthGrid(iso) {
+  const d = parse(iso)
+  const first = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))
+  // getUTCDay() is Sunday-first; the week here starts on Monday.
+  const lead = (first.getUTCDay() + 6) % 7
+  const start = new Date(first)
+  start.setUTCDate(1 - lead)
+  const month = d.getUTCMonth()
+  return Array.from({ length: 42 }, (_, i) => {
+    const day = new Date(start)
+    day.setUTCDate(start.getUTCDate() + i)
+    return { iso: toISO(day), day: day.getUTCDate(), outside: day.getUTCMonth() !== month }
+  })
+}
+
 export function overdue(block, today = todayISO()) {
   const late = block.state !== 'approved' && daysBetween(block.end_date, today) > 0
   return {

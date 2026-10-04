@@ -211,9 +211,11 @@ button, input, select, textarea {
 .rail-btn.is-on {
   background: var(--accent);
   border-color: var(--line);
-  color: var(--on-accent);
+  /* The mark's own light grey rather than white: the icon in the red square
+     is the same material as the icon in the white square beside it. */
+  color: #ECEDEF;
 }
-.rail-btn.is-on:hover { background: var(--accent-hover); color: var(--on-accent); }
+.rail-btn.is-on:hover { background: var(--accent-hover); color: #ECEDEF; }
 
 .booting { margin: auto; color: var(--muted); letter-spacing: 0.02em; }
 
@@ -1073,16 +1075,79 @@ button, input, select, textarea {
   font-size: 11.5px; color: var(--text);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.date-field-text { pointer-events: none; }
-.date-field input[type='date'] {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  opacity: 0; border: 0; padding: 0; margin: 0;
-  font: inherit; cursor: pointer; color-scheme: light;
+/* The whole date is the button — every character of it. Half a date that
+   opens nothing is worse than no affordance at all. */
+.date-field-btn {
+  background: transparent; border: 0; padding: 0; margin: 0;
+  font: inherit; color: inherit; cursor: pointer;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  border-radius: var(--radius-xs);
+  /* Fills the field it sits in rather than only the line of text: on a phone
+     the field is given a 30px target, and a button half that height inside it
+     is a date you have to aim at. */
+  display: inline-flex; align-items: center; align-self: stretch;
 }
-/* It is invisible, so the box under it has to say when it has focus. */
+.date-field-btn:hover,
+.date-field-btn.is-open { color: var(--ink); font-weight: 550; }
 .date-field:focus-within { border-radius: var(--radius-xs); box-shadow: 0 0 0 4px var(--ring); }
-.date-field:focus-within .date-field-text { color: var(--ink); font-weight: 550; }
+
+/* ---------- the calendar ---------------------------------------------------
+   The app's own, because the browser's is the browser's: its own typeface,
+   its own blue, its own shadow, in the middle of a page that has none of
+   them. Fixed and measured from the field, like the state menu, because a
+   card clips its own overflow.
+   -------------------------------------------------------------------------- */
+.cal {
+  position: fixed; z-index: 80;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  display: flex; flex-direction: column; gap: 8px;
+  animation: menu-in var(--dur-2) var(--ease) backwards;
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cal-month {
+  font-size: 12.5px; font-weight: 600; color: var(--text);
+  letter-spacing: -0.01em;
+}
+.cal-prev { transform: rotate(90deg); }
+.cal-next { transform: rotate(-90deg); }
+
+.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-week {
+  gap: 2px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--muted-2); text-align: center;
+}
+.cal-grid { gap: 2px; }
+
+.cal-day {
+  height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: var(--radius-sm);
+  font-size: 12px; font-variant-numeric: tabular-nums;
+  color: var(--text); cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.cal-day:hover:not(:disabled) { background: var(--card-2); }
+/* Spilling in from the month either side. Still a day, still clickable —
+   quieter, because it is not the month you are looking at. */
+.cal-day.is-outside { color: var(--muted-2); }
+/* Today is marked in the one colour this app marks now with — including when
+   it is one of the days spilling in from next month, which is exactly when
+   knowing where today falls is worth something. */
+.cal-day.is-today, .cal-day.is-today.is-outside { color: var(--accent-fg); font-weight: 700; }
+/* The day it is set to. Filled, so it reads before anything else in the grid. */
+.cal-day.is-picked {
+  background: var(--ink); color: var(--on-ink); font-weight: 600;
+}
+.cal-day.is-picked:hover { background: var(--ink-hover); }
+.cal-day:disabled { color: #A5A5A5; cursor: default; }
+
+@media (hover: none) {
+  /* A finger needs a target; the grid grows rather than the popup shrinking. */
+  .cal { padding: 12px; }
+  .cal-day { height: 38px; font-size: 13px; }
+}
 
 .block-dates .arrow { color: var(--muted-2); font-size: 11px; }
 
@@ -1686,8 +1751,11 @@ button, input, select, textarea {
      off the bottom of the panel, clipped, with no way to reach its end. */
   bottom: 14px;
   width: auto;
-  /* the card starts at its dot and runs to the next one */
-  padding-right: 16px;
+  /* A card runs from its start dot to its end dot and stops there: both
+     edges land on the date they stand for. There is no padding holding the
+     right edge short of its own deadline — the space between one card and the
+     next is the gap the layout leaves between the dots, which is the space
+     between those two dates and nothing to do with the card. */
 }
 /* Across the page the card's length is its width, so its height is free.
    Cap it at the panel and let a long one scroll inside itself rather than
@@ -2354,7 +2422,7 @@ button, input, select, textarea {
    its sides. Both are drawn on the inside of the box, which is where the light
    would be — there is no shadow under it, here or anywhere.
    ========================================================================= */
-.client-menu, .project-menu, .state-menu, .tpl-picker,
+.client-menu, .project-menu, .state-menu, .tpl-picker, .cal,
 .modal, .modal.confirm, .modal-wide {
   /* Thin enough that the frosting shows, thick enough to read a form on. */
   background: color-mix(in srgb, var(--raised) 82%, transparent);
@@ -2364,7 +2432,7 @@ button, input, select, textarea {
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .client-menu, .project-menu, .state-menu, .tpl-picker,
+  .client-menu, .project-menu, .state-menu, .tpl-picker, .cal,
   .modal, .modal.confirm, .modal-wide {
     /* Saturated as well as blurred: blur alone greys out whatever is behind,
        and real glass keeps the colour of what it is over. */

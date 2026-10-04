@@ -3,6 +3,7 @@ import { formatRange, formatStamp, formatShort, overdue } from '../lib/dates'
 import { Check, Clock, Link as LinkIcon, Pen, Plus, Trash, X, Lock } from './Icons'
 import StateSelect from './StateSelect'
 import BlockHistory from './BlockHistory'
+import DatePicker from './DatePicker'
 import OwnerSwitch from './OwnerSwitch'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -414,18 +415,44 @@ function AutoTextarea({ value, onChange, onCommit, placeholder }) {
  * is not being edited — and the real input lies over it, invisible, filling
  * exactly that box. Tapping it opens the same picker; the width is ours.
  */
+/**
+ * A date you can change: the date itself, and the app's own calendar under it.
+ *
+ * It used to be our text with an invisible `input[type=date]` lying over it.
+ * That input only opens its calendar from its own indicator — clicking the day
+ * number lands in a segment and opens nothing — so the obvious way to change a
+ * date quietly did nothing, and what did open was the browser's calendar,
+ * which looks like the browser and not like this.
+ *
+ * Now the whole date is one button and the calendar is ours.
+ */
 function DateField({ value, min, max, label, title, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
   return (
     <span className="date-field" title={title}>
-      <span className="date-field-text">{formatShort(value)}</span>
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
+      <button
+        ref={ref}
+        type="button"
+        className={`date-field-btn ${open ? 'is-open' : ''}`}
         aria-label={label}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
-      />
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {formatShort(value)}
+      </button>
+      {open && (
+        <DatePicker
+          value={value}
+          min={min}
+          max={max}
+          anchorRef={ref}
+          onPick={onChange}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </span>
   )
 }
