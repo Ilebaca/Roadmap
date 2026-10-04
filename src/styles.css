@@ -1122,6 +1122,12 @@ button, input, select, textarea {
    -------------------------------------------------------------------------- */
 .cal {
   position: fixed; z-index: 80;
+  /* White, and solid with it. The other floating surfaces are glass because
+     what they cover is worth keeping sight of; a calendar is a grid of forty
+     small numbers, and the one thing it must not do is let the page show
+     through them. It is also the only white in the app, which is what makes
+     it read as a sheet laid on top rather than another panel. */
+  background: #FFFFFF;
   padding: 10px;
   border-radius: var(--radius-md);
   display: flex; flex-direction: column; gap: 8px;
@@ -2445,7 +2451,7 @@ button, input, select, textarea {
    its sides. Both are drawn on the inside of the box, which is where the light
    would be — there is no shadow under it, here or anywhere.
    ========================================================================= */
-.client-menu, .project-menu, .state-menu, .tpl-picker, .cal,
+.client-menu, .project-menu, .state-menu, .tpl-picker,
 .modal, .modal.confirm, .modal-wide {
   /* Thin enough that the frosting shows, thick enough to read a form on. */
   background: color-mix(in srgb, var(--raised) 82%, transparent);
@@ -2455,7 +2461,7 @@ button, input, select, textarea {
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .client-menu, .project-menu, .state-menu, .tpl-picker, .cal,
+  .client-menu, .project-menu, .state-menu, .tpl-picker,
   .modal, .modal.confirm, .modal-wide {
     /* Saturated as well as blurred: blur alone greys out whatever is behind,
        and real glass keeps the colour of what it is over. */
